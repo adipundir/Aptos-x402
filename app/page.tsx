@@ -195,21 +195,20 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Navbar */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-black">
-              Aptos x402
-            </h1>
-          </div>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Navbar */}
+      <div className="fixed top-0 left-0 right-0 h-16 border-b border-gray-200 bg-white z-50">
+        <div className="max-w-full px-6 h-full flex items-center justify-between">
+          <a href="/" className="text-2xl font-bold text-black hover:text-gray-700">
+            Aptos x402
+          </a>
+          
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/adipundir/aptos-x402"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-700 hover:text-black transition-colors"
+              className="text-sm text-gray-700 hover:text-black transition-colors"
             >
               GitHub
             </a>
@@ -217,21 +216,25 @@ export default function Home() {
               href="https://www.npmjs.com/package/@adipundir/aptos-x402"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-700 hover:text-black transition-colors"
+              className="text-sm text-gray-700 hover:text-black transition-colors"
             >
               NPM
             </a>
             <a
               href="/docs"
-              className="bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
             >
               Docs
             </a>
           </div>
         </div>
+      </div>
+
+      <div className="flex-1 pt-24 px-8 pb-8">
+        <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-black mb-2">
             x402 Payment Protocol Demo
           </h1>
@@ -450,6 +453,7 @@ export default function Home() {
               </ol>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
