@@ -46,7 +46,7 @@ Add cryptocurrency payments to your Next.js API in just 3 steps:
 ### Step 1: Install the Package
 
 ```bash
-npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk
+npm install @adipundir/aptos-x402
 ```
 
 ## 🛒 For Buyers (Consuming Paid APIs)

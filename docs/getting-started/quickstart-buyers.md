@@ -1,24 +1,48 @@
 # Quickstart for Buyers
 
-This guide explains how to build clients that can pay for x402-protected APIs automatically.
+This guide explains how to consume x402-protected APIs with automatic payment handling.
 
 ## Understanding the Client Flow
 
-When your application requests a resource protected by x402, it receives a 402 Payment Required response containing payment instructions. Your client creates and signs an Aptos transaction offline, includes it in a retry request, and receives the resource after successful payment settlement.
+When your application requests a resource protected by x402, it receives a 402 Payment Required response containing payment instructions. The `x402axios` function automatically handles this entire flow for you - detecting the 402, creating and signing the transaction, and retrying with payment.
 
-The key advantage of this approach is that payment signing happens entirely on the client side. Your private keys never leave your machine, and the transaction is only submitted to the blockchain when the server verifies and settles it.
+The key advantage is that payment signing happens entirely on the client side. Your private keys never leave your machine, and the transaction is only submitted to the blockchain when the server verifies and settles it.
 
 ## Prerequisites
 
-You need Node.js 20 or higher and an Aptos wallet with testnet APT. If you don't have testnet APT, you can get free tokens from the Aptos testnet faucet at aptoslabs.com/testnet-faucet.
+You need Node.js 20 or higher and an Aptos wallet with testnet APT. If you don't have testnet APT, get free tokens from the Aptos testnet faucet at [aptoslabs.com/testnet-faucet](https://aptoslabs.com/testnet-faucet).
 
 ## Installation
 
-Install the Aptos SDK:
+Install the x402 SDK:
 
 ```bash
-npm install @aptos-labs/ts-sdk
+npm install @adipundir/aptos-x402
 ```
+
+## Simple Usage with x402axios
+
+The easiest way to consume paid APIs is with the `x402axios` function:
+
+```typescript
+import { x402axios } from '@adipundir/aptos-x402';
+
+const response = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/premium/weather'
+});
+
+console.log(response.data);
+console.log('TX:', response.paymentInfo?.transactionHash);
+```
+
+That's it! The function automatically:
+- ✅ Detects 402 Payment Required responses
+- ✅ Extracts payment requirements
+- ✅ Determines the correct network (testnet/mainnet)
+- ✅ Builds and signs the payment transaction
+- ✅ Retries with the X-PAYMENT header
+- ✅ Returns your data with payment info
 
 ## Creating a Test Wallet
 
@@ -34,147 +58,171 @@ console.log('Private Key:', account.privateKey.toString());
 
 Save the private key securely. You'll need it to sign transactions. Fund this address with testnet APT from the faucet before making paid requests.
 
-## Complete Payment Flow Example
+## Complete Example
 
-Here's a full implementation showing how to detect 402 responses and handle payment:
+Here's a complete example with error handling:
 
 ```typescript
-import {
-  Aptos,
-  AptosConfig,
-  Network,
-  Account,
-  Ed25519PrivateKey
-} from '@aptos-labs/ts-sdk';
+import { x402axios } from '@adipundir/aptos-x402';
 
-async function callProtectedAPI(url: string, privateKey: string) {
-  const config = new AptosConfig({ network: Network.TESTNET });
-  const aptos = new Aptos(config);
-  
-  const account = Account.fromPrivateKey({
-    privateKey: new Ed25519PrivateKey(privateKey)
-  });
-  
-  let response = await fetch(url);
-  
-  if (response.status === 402) {
-    const paymentReqs = await response.json();
-    const requirement = paymentReqs.accepts[0];
-    
-    const transaction = await aptos.transaction.build.simple({
-      sender: account.accountAddress,
-      data: {
-        function: '0x1::aptos_account::transfer',
-        functionArguments: [
-          requirement.payTo,
-          requirement.maxAmountRequired
-        ]
-      }
+async function getPremiumWeather() {
+  try {
+    const response = await x402axios({
+      privateKey: process.env.PRIVATE_KEY!,
+      url: 'https://api.example.com/premium/weather',
+      method: 'GET'
     });
+
+    console.log('Weather data:', response.data);
     
-    const authenticator = aptos.transaction.sign({
-      signer: account,
-      transaction
-    });
+    if (response.paymentInfo) {
+      console.log('Payment made:');
+      console.log('  TX:', response.paymentInfo.transactionHash);
+      console.log('  Amount:', response.paymentInfo.amount, 'Octas');
+      console.log('  To:', response.paymentInfo.recipient);
+    }
     
-    const txBytes = transaction.bcsToBytes();
-    const sigBytes = authenticator.bcsToBytes();
-    
-    const paymentPayload = {
-      x402Version: 1,
-      scheme: requirement.scheme,
-      network: requirement.network,
-      payload: {
-        transaction: Buffer.from(txBytes).toString('base64'),
-        signature: Buffer.from(sigBytes).toString('base64')
-      }
-    };
-    
-    const paymentHeader = Buffer.from(
-      JSON.stringify(paymentPayload)
-    ).toString('base64');
-    
-    response = await fetch(url, {
-      headers: { 'X-PAYMENT': paymentHeader }
-    });
+    return response.data;
+  } catch (error) {
+    console.error('Request failed:', error);
+    throw error;
   }
-  
-  return response.json();
 }
+```
 
-const data = await callProtectedAPI(
-  'http://localhost:3000/api/premium/weather',
-  '0x...'
-);
+## Different HTTP Methods
+
+### GET Request
+
+```typescript
+const weather = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/weather'
+});
+```
+
+### POST Request
+
+```typescript
+const analysis = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/analyze',
+  method: 'POST',
+  body: { text: 'Analyze this content' }
+});
+```
+
+### Custom Headers
+
+```typescript
+const response = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/data',
+  headers: {
+    'X-Custom-Header': 'value'
+  }
+});
+```
+
+## Using with Aptos Account
+
+Instead of a private key string, you can pass an Aptos Account object:
+
+```typescript
+import { Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
+import { x402axios } from '@adipundir/aptos-x402';
+
+const privateKey = new Ed25519PrivateKey(process.env.PRIVATE_KEY!);
+const account = Account.fromPrivateKey({ privateKey });
+
+const response = await x402axios({
+  account: account,  // Use account instead of privateKey
+  url: 'https://api.example.com/premium/data'
+});
 ```
 
 ## Understanding the Payment Payload
 
-The X-PAYMENT header contains a base64-encoded JSON object with the transaction and signature, both separately encoded in BCS (Binary Canonical Serialization) format. This structure allows the server to verify the payment offline before submitting it to the blockchain.
-
-The transaction specifies the exact recipient, amount, and network. The signature proves that the transaction was authorized by the holder of the private key. Together, they form a complete but unsubmitted blockchain transaction.
-
-## Handling Payment Receipts
-
-After successful payment, the server includes an X-PAYMENT-RESPONSE header with settlement details:
+Behind the scenes, `x402axios` creates a payment payload with:
 
 ```typescript
-const receiptHeader = response.headers.get('x-payment-response');
-if (receiptHeader) {
-  const receipt = JSON.parse(
-    Buffer.from(receiptHeader, 'base64').toString()
-  );
-  console.log('Transaction Hash:', receipt.settlement.txHash);
-  console.log('Network:', receipt.settlement.networkId);
-}
-```
-
-The transaction hash can be used to verify the payment on the Aptos blockchain explorer. This provides cryptographic proof that payment occurred and was settled successfully.
-
-## Error Handling
-
-Common errors you might encounter:
-
-**Insufficient Balance**: The account doesn't have enough APT to cover both the payment amount and transaction gas fees. Fund the account from the testnet faucet.
-
-**Sequence Number Errors**: Each transaction can only be used once. If you receive this error, create a new transaction rather than reusing the old one.
-
-**Invalid Signature**: Usually indicates a problem with how the transaction was signed or serialized. Verify that you're using the correct private key and following the BCS encoding properly.
-
-## Browser Integration
-
-For browser applications, you can integrate with Aptos wallets like Petra:
-
-```typescript
-import { useWallet } from '@petra/wallet-adapter-react';
-
-function PaidAPICall() {
-  const { signTransaction, account } = useWallet();
-  
-  async function callAPI() {
-    const response = await fetch(url);
-    
-    if (response.status === 402) {
-      const reqs = await response.json();
-      const tx = await buildTransaction(reqs.accepts[0]);
-      const signed = await signTransaction(tx);
-      // Retry with signed transaction...
-    }
+{
+  x402Version: 1,
+  scheme: "exact",
+  network: "aptos-testnet",  // or aptos-mainnet
+  payload: {
+    transaction: "base64...",  // BCS-encoded transaction
+    signature: "base64..."     // BCS-encoded signature
   }
 }
 ```
 
-Wallet integrations handle key management and transaction signing through a user interface, making it easier to build consumer-facing applications.
+The transaction and signature are separately BCS-encoded (Binary Canonical Serialization), then base64-encoded for HTTP transport. This allows servers to verify payments offline before blockchain submission.
 
-## Testing Your Implementation
+## Handling Payment Receipts
 
-To test locally, you'll need both a funded testnet account and a running x402-protected API. Start the API server, make a request, verify you receive a 402 response, then retry with a properly formatted payment header.
+The `paymentInfo` object in the response contains settlement details:
 
-Monitor the Aptos testnet explorer to confirm your transactions are being submitted and confirmed successfully. Each payment should appear as a transfer from your address to the API provider's address.
+```typescript
+const response = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/data'
+});
+
+if (response.paymentInfo) {
+  console.log('TX Hash:', response.paymentInfo.transactionHash);
+  console.log('Amount:', response.paymentInfo.amount, 'Octas');
+  console.log('Recipient:', response.paymentInfo.recipient);
+  console.log('Settled:', response.paymentInfo.settled);
+}
+```
+
+You can verify the transaction on the Aptos blockchain explorer using the transaction hash.
+
+## Error Handling
+
+Common errors:
+
+**Insufficient Balance**: Your account doesn't have enough APT for payment + gas fees. Fund it from the testnet faucet.
+
+**Invalid Private Key**: The private key format is incorrect. Ensure it starts with `0x` and is a valid hex string.
+
+**Network Errors**: Cannot reach the API or blockchain. Check your internet connection and API availability.
+
+**Payment Failed**: The server rejected the payment. Check the error message for details.
+
+## Free vs Paid Endpoints
+
+`x402axios` handles both automatically:
+
+```typescript
+// Free endpoint - no payment made
+const free = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/free-data'
+});
+console.log(free.paymentInfo);  // undefined
+
+// Paid endpoint - automatic payment
+const paid = await x402axios({
+  privateKey: process.env.PRIVATE_KEY!,
+  url: 'https://api.example.com/premium-data'
+});
+console.log(paid.paymentInfo);  // { transactionHash: "0x...", ... }
+```
+
+## Network Auto-Detection
+
+The function automatically detects the network from the 402 response:
+- `"network": "aptos-testnet"` → uses Testnet
+- `"network": "aptos-mainnet"` → uses Mainnet  
+- `"network": "aptos-devnet"` → uses Devnet
+
+No manual network configuration needed!
 
 ## Next Steps
 
-You now understand how to build clients that can pay for protected APIs. For production use:
+You now understand how to consume x402-protected APIs with automatic payment handling. For production use:
 
 - Implement proper error handling and retry logic
 - Cache payment receipts for audit purposes

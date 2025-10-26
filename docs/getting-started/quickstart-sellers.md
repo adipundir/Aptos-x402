@@ -8,11 +8,13 @@ You'll need a Next.js 15+ application with the App Router, Node.js 20 or higher,
 
 ## Installation
 
-Install the required packages:
+Install the x402 SDK:
 
 ```bash
-npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk
+npm install @adipundir/aptos-x402
 ```
+
+The Aptos SDK is included as a dependency, so you don't need to install it separately.
 
 ## Set Up Your Wallet
 

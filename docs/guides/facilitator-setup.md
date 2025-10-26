@@ -278,4 +278,4 @@ For high-volume deployments, dedicated infrastructure may prove more cost-effect
 
 Once your facilitator is deployed and tested, update your API middleware to use it, monitor operation in production, and implement alerting for errors or performance degradation. As your service grows, consider scaling the facilitator independently from your API tier.
 
-See [Testing Your Implementation](testing.md) for verification strategies.
+Monitor your facilitator's performance metrics, error rates, and transaction success rates to ensure smooth operation.

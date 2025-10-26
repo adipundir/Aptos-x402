@@ -16,7 +16,6 @@
 ## Guides
 
 * [Setting Up Your Own Facilitator](guides/facilitator-setup.md)
-* [Testing Your Implementation](guides/testing.md)
 
 ## API Reference
 
