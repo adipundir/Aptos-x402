@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./lib",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -21,12 +21,12 @@
     "noEmit": false,
     "emitDeclarationOnly": false
   },
-  "include": ["src/**/*"],
+  "include": ["lib/**/*"],
   "exclude": [
     "node_modules",
     "dist",
     "app",
-    "lib",
+    "src",
     "scripts",
     "examples",
     "tests",

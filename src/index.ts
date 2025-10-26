@@ -10,9 +10,25 @@
 // Export all types
 export * from './types';
 
+// ============================================
+// FOR SELLERS (Creating Paid APIs)
+// ============================================
+
 // Export server middleware
 export { paymentMiddleware } from './server';
 
+// ============================================
+// FOR BUYERS (Consuming Paid APIs)
+// ============================================
+
+// Re-export buyer functions from lib/
+export { x402axios, decodeXPaymentResponse } from '../lib/x402-axios';
+export type { 
+  WithPaymentInterceptorOptions,
+  X402Response, 
+  X402PaymentResponse 
+} from '../lib/x402-axios';
+
 // Version
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.3';
 

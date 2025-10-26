@@ -141,7 +141,7 @@ export function paymentMiddleware(
         body: JSON.stringify(verifyRequest),
       });
 
-      const verification: VerifyResponse = await verifyResponse.json();
+      const verification: VerifyResponse = await verifyResponse.json() as VerifyResponse;
       const verificationTime = verifyResponse.headers.get('x-verification-time');
       console.log(`[x402 Middleware] Verification result:`, verification);
       if (verificationTime) {
@@ -179,7 +179,7 @@ export function paymentMiddleware(
         body: JSON.stringify(settleRequest),
       });
 
-      const settlement: SettleResponse = await settleResponse.json();
+      const settlement: SettleResponse = await settleResponse.json() as SettleResponse;
       const settlementTime = settleResponse.headers.get('x-settlement-time');
       console.log(`[x402 Middleware] Settlement result:`, settlement);
       if (settlementTime) {

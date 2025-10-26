@@ -64,7 +64,7 @@ export async function verifyPayment(
       }),
     });
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     if (!response.ok) {
       return {
@@ -109,7 +109,7 @@ export async function settlePayment(
       }),
     });
 
-    const data = await response.json();
+    const data = await response.json() as any;
 
     if (!response.ok) {
       return {

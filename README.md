@@ -7,6 +7,38 @@ HTTP 402 Payment Required for machine-to-machine micropayments on Aptos.
 [![npm version](https://img.shields.io/npm/v/@adipundir/aptos-x402.svg)](https://www.npmjs.com/package/@adipundir/aptos-x402)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 🎮 Try the Interactive Demo
+
+See x402 in action with our interactive CLI demo:
+
+```bash
+# Clone the repo
+git clone https://github.com/adipundir/aptos-x402
+cd aptos-x402
+
+# Install dependencies
+npm install
+
+# Start the server
+npm run dev
+
+# In another terminal, run the demo
+npx tsx scripts/test-x402-axios.ts
+```
+
+The demo will:
+1. Ask for your Aptos private key (testnet)
+2. Check your balance
+3. Make a request to a protected API endpoint
+4. **Automatically handle the payment** using x402-axios
+5. Show you the response and transaction details
+
+**Don't have testnet APT?** Generate an account and fund it:
+```bash
+npx tsx scripts/generate-account.ts
+npx tsx scripts/fund-account.ts <your-address>
+```
+
 ## Quick Start (5 Minutes)
 
 Add cryptocurrency payments to your Next.js API in just 3 steps:
