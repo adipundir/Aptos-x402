@@ -10,7 +10,7 @@
  * ```
  */
 
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 // Configure your protected routes
 export const middleware = paymentMiddleware(

@@ -25,7 +25,7 @@ FACILITATOR_URL=https://your-app.com/api/facilitator
 ### 2. Create middleware.ts
 
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,

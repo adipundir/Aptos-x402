@@ -36,7 +36,7 @@ Replace the address with your actual Aptos wallet address. The facilitator URL p
 Create a file named `middleware.ts` in your project root (at the same level as your `app` directory, not inside it):
 
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,

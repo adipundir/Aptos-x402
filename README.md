@@ -55,7 +55,7 @@ Create a file called `middleware.ts` in the root of your Next.js project (same l
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
@@ -270,7 +270,7 @@ FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,

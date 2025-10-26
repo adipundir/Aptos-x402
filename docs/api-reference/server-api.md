@@ -85,7 +85,7 @@ Next.js middleware function that can be exported as `middleware`.
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402/server';
+import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
