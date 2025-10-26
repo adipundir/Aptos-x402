@@ -32,11 +32,11 @@ The architecture separates concerns through a facilitator service that handles b
 
 Start building with x402 by following the quickstart guide for your role:
 
-**For API Providers:** Learn how to add payment requirements to your Next.js APIs in minutes. See [Quickstart for Sellers](getting-started/quickstart-sellers.md).
+**For API Providers:** [Quickstart for Sellers](getting-started/quickstart-sellers.md)
 
-**For API Consumers:** Understand how to build clients that can pay for protected resources automatically. See [Quickstart for Buyers](getting-started/quickstart-buyers.md).
+**For API Consumers:** [Quickstart for Buyers](getting-started/quickstart-buyers.md)
 
-**Learn the Protocol:** Dive into how x402 works at the protocol level. See [HTTP 402](core-concepts/http-402.md).
+**Learn the Protocol:** [HTTP 402](core-concepts/http-402.md)
 
 ## Resources
 
