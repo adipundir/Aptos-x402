@@ -89,22 +89,27 @@ export function createX402Client(config: X402ClientConfig) {
     const paymentRequirements = await initialResponse.json();
     console.log(`[x402 Client] Payment requirements:`, JSON.stringify(paymentRequirements, null, 2));
     
-    if (!paymentRequirements.price || !paymentRequirements.paymentAddress) {
+    if (!paymentRequirements.accepts || paymentRequirements.accepts.length === 0) {
+      throw new Error("Invalid 402 response: missing payment requirements");
+    }
+    
+    const firstAccept = paymentRequirements.accepts[0];
+    if (!firstAccept.maxAmountRequired || !firstAccept.payTo) {
       throw new Error("Invalid 402 response: missing payment requirements");
     }
 
     console.log(`\n[x402 Client] 🔨 Step 3: Creating payment transaction`);
     console.log(`[x402 Client] Building Aptos transfer transaction...`);
     console.log(`[x402 Client]   Function: 0x1::aptos_account::transfer`);
-    console.log(`[x402 Client]   Recipient: ${paymentRequirements.paymentAddress}`);
-    console.log(`[x402 Client]   Amount: ${paymentRequirements.price} Octas`);
+    console.log(`[x402 Client]   Recipient: ${firstAccept.payTo}`);
+    console.log(`[x402 Client]   Amount: ${firstAccept.maxAmountRequired} Octas`);
     const transaction = await aptos.transaction.build.simple({
       sender: account.accountAddress,
       data: {
         function: "0x1::aptos_account::transfer",
         functionArguments: [
-          paymentRequirements.paymentAddress,
-          paymentRequirements.price,
+          firstAccept.payTo,
+          firstAccept.maxAmountRequired,
         ],
       },
     });
@@ -130,25 +135,46 @@ export function createX402Client(config: X402ClientConfig) {
     
     console.log(`[x402 Client] ✅ Serialized to ${signedTxBytes.length} bytes\n`);
 
-    // Step 6: Encode as base64 for HTTP transport (per x402 spec)
-    console.log(`[x402 Client] 🔐 Step 6: Encoding for HTTP transport`);
-    console.log(`[x402 Client] Encoding as base64 for X-PAYMENT header (per x402 spec)...`);
-    const signedTxBase64 = Buffer.from(signedTxBytes).toString("base64");
+    // Step 6: Create PaymentPayload structure (per x402 spec for Aptos)
+    console.log(`[x402 Client] 🔐 Step 6: Creating PaymentPayload`);
+    console.log(`[x402 Client] For Aptos, we send the complete signed transaction...`);
     
-    console.log(`[x402 Client] ✅ Encoded to ${signedTxBase64.length} characters`);
-    console.log(`[x402 Client] Preview: ${signedTxBase64.substring(0, 80)}...`);
+    // The signedTx is a SimpleTransaction that contains everything needed
+    // The facilitator will deserialize it and submit to blockchain
+    // We encode the entire SimpleTransaction as a single payload
+    
+    // Create PaymentPayload per x402 spec
+    // For Aptos, we use the complete signed transaction in both fields
+    // The facilitator knows how to extract transaction and authenticator from it
+    const paymentPayload = {
+      x402Version: 1,
+      scheme: firstAccept.scheme,
+      network: firstAccept.network,
+      payload: {
+        // Both contain the complete signed transaction
+        // The facilitator will deserialize it properly
+        signature: Buffer.from(signedTxBytes).toString('base64'),
+        transaction: Buffer.from(signedTxBytes).toString('base64'),
+      }
+    };
+    
+    // Base64 encode the entire payload for HTTP transport
+    const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
+    
+    console.log(`[x402 Client] ✅ Created PaymentPayload structure`);
+    console.log(`[x402 Client] ✅ Encoded to ${paymentHeader.length} characters`);
+    console.log(`[x402 Client] Preview: ${paymentHeader.substring(0, 80)}...`);
     console.log(`[x402 Client] This will be sent in X-PAYMENT header\n`);
 
     // Step 7: Retry request with X-PAYMENT header (per x402 spec)
-    // The signed transaction is sent in the X-PAYMENT header as base64
     console.log(`[x402 Client] 🔄 Step 7: Retrying request with payment`);
     const requestHeaders = {
       ...options.headers,
-      "X-PAYMENT": signedTxBase64,
+      "X-PAYMENT": paymentHeader,
     };
 
     console.log(`[x402 Client] Headers being sent:`);
-    console.log(`[x402 Client]   X-PAYMENT: ${signedTxBase64.substring(0, 50)}... (${signedTxBase64.length} chars)`);
+    console.log(`[x402 Client]   X-PAYMENT: ${paymentHeader.substring(0, 50)}... (${paymentHeader.length} chars)`);
     console.log(`[x402 Client] Making request to: ${url}\n`);
 
     const paidResponse = await fetch(url, {

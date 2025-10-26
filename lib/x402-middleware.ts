@@ -202,31 +202,33 @@ export function paymentMiddleware(
       console.log(`✅ [x402 Middleware] Settlement SUCCESS`);
       console.log(`[x402 Middleware] Transaction hash:`, settlement.txHash);
 
-      // Step 4: Payment settled! Now execute the route handler
-      const response = await NextResponse.next();
-
-      // Step 5: Add X-PAYMENT-RESPONSE header per x402 spec
-      const responseHeaders = new Headers(response.headers);
+      // Step 4: Payment settled! Pass settlement data to route handler via request headers
+      // Next.js middleware cannot modify API route responses, so we pass data via request headers
+      // The route handler will read these and add the X-PAYMENT-RESPONSE header
+      const requestHeaders = new Headers(request.headers);
+      
+      // Store settlement data for route handler
       const paymentResponse = {
         settlement: settlement,
       };
-      responseHeaders.set(
-        "X-Payment-Response",
-        Buffer.from(JSON.stringify(paymentResponse)).toString('base64')
+      requestHeaders.set(
+        "x-payment-settlement",
+        JSON.stringify(paymentResponse)
       );
-
-      // Add timing headers for client debugging
+      
+      // Add timing headers
       if (verificationTime) {
-        responseHeaders.set('X-Verification-Time', verificationTime);
+        requestHeaders.set('x-verification-time-internal', verificationTime);
       }
       if (settlementTime) {
-        responseHeaders.set('X-Settlement-Time', settlementTime);
+        requestHeaders.set('x-settlement-time-internal', settlementTime);
       }
 
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: responseHeaders,
+      // Continue to route handler with settlement data in request headers
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
       });
     } catch (error) {
       console.error(`[x402 Middleware] Error processing payment for ${pathname}:`, error);

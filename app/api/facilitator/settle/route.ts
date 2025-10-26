@@ -168,47 +168,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
     
-    // Deserialize BCS bytes back into SDK objects (per official Aptos SDK docs)
-    console.log(`\n🔄 [Facilitator Settle] Deserializing BCS back to SDK objects...`);
-    let transaction: SimpleTransaction;
-    let senderAuthenticator: AccountAuthenticator;
-    
-    try {
-      // Deserialize the RawTransaction from BCS
-      const txDeserializer = new Deserializer(transactionBytes);
-      transaction = SimpleTransaction.deserialize(txDeserializer);
-      console.log(`[Facilitator Settle] ✅ Deserialized transaction object`);
-      
-      // Deserialize the AccountAuthenticator from BCS
-      const authDeserializer = new Deserializer(signatureBytes);
-      senderAuthenticator = AccountAuthenticator.deserialize(authDeserializer);
-      console.log(`[Facilitator Settle] ✅ Deserialized authenticator object`);
-    } catch (deserializeError: any) {
-      console.error(`[Facilitator Settle] ❌ Failed to deserialize BCS:`, deserializeError);
-      const settleResponse: SettleResponse = {
-        success: false,
-        error: `BCS deserialization failed: ${deserializeError.message}`,
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(settleResponse, { status: 400 });
-    }
-    
-    // Submit using SDK's proper method (Pattern A from official Aptos SDK docs)
-    console.log(`\n📤 [Facilitator Settle] Submitting via SDK submit.simple()...`);
+    // For Aptos, the client sends the complete signed transaction as BCS bytes
+    // We can submit it directly without needing to deserialize first
+    console.log(`\n📤 [Facilitator Settle] Submitting signed transaction...`);
     
     let pendingTx;
     try {
+      // Submit the raw BCS bytes directly
+      // The signatureBytes contains the complete SimpleTransaction
       const committed = await aptos.transaction.submit.simple({
-        transaction,
-        senderAuthenticator,
-      });
+        transaction: signatureBytes,
+      } as any);
       
       pendingTx = { hash: committed.hash };
       console.log(`[Facilitator Settle] ✅ Transaction submitted!`);
       console.log(`[Facilitator Settle] Transaction hash: ${pendingTx.hash}`);
     } catch (submitError: any) {
       console.error(`[Facilitator Settle] ❌ Submission failed:`, submitError);
+      console.error(`[Facilitator Settle] Error details:`, submitError);
+      
+      // Try deserializing to get better error info
+      try {
+        const deserializer = new Deserializer(signatureBytes);
+        const transaction = SimpleTransaction.deserialize(deserializer);
+        console.log(`[Facilitator Settle] ℹ️  Transaction deserialized successfully for debugging`);
+        console.log(`[Facilitator Settle] ℹ️  Sender:`, transaction.rawTransaction.sender.toString());
+      } catch (e) {
+        console.error(`[Facilitator Settle] ⚠️  Could not deserialize for debugging:`, e);
+      }
+      
       const settleResponse: SettleResponse = {
         success: false,
         error: submitError.message || String(submitError),
