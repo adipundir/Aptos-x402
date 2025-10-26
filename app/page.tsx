@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Aptos, AptosConfig, Network, Account, Ed25519PrivateKey } from "@aptos-labs/ts-sdk";
+import { CheckCircle } from "lucide-react";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
@@ -146,6 +147,18 @@ export default function Home() {
       // Extract timing headers if present
       const verificationTime = res.headers.get('x-verification-time');
       const settlementTime = res.headers.get('x-settlement-time');
+      
+      // Extract payment response header for transaction hash
+      const paymentResponseHeader = res.headers.get('x-payment-response');
+      let transactionHash = null;
+      if (paymentResponseHeader) {
+        try {
+          const paymentResponse = JSON.parse(Buffer.from(paymentResponseHeader, 'base64').toString('utf-8'));
+          transactionHash = paymentResponse.settlement?.txHash;
+        } catch (error) {
+          console.error('Failed to parse payment response header:', error);
+        }
+      }
 
       setResponse({
         status: res.status,
@@ -155,6 +168,7 @@ export default function Home() {
         },
         responseHeaders: Object.fromEntries(res.headers.entries()),
         body: data,
+        transactionHash,
       });
 
       setTiming({
@@ -299,22 +313,28 @@ export default function Home() {
                     {paymentDetails.accepts?.[0] ? (
                       <>
                         <p className="text-gray-700">
-                          <strong>Amount:</strong> {paymentDetails.accepts[0].maxAmountRequired} Octas
+                          <strong>Amount:</strong> <span className="font-mono text-sm">{parseInt(paymentDetails.accepts[0].maxAmountRequired) / 100000000} APT</span>
                         </p>
                         <p className="text-gray-700">
-                          <strong>Recipient:</strong> {paymentDetails.accepts[0].payTo?.slice(0, 10)}...
+                          <strong>Recipient:</strong> <span className="font-mono text-sm break-all">{paymentDetails.accepts[0].payTo}</span>
                         </p>
                         <p className="text-gray-700">
-                          <strong>Scheme:</strong> {paymentDetails.accepts[0].scheme}
+                          <strong>Chain:</strong> <span className="font-mono text-sm">Aptos Testnet</span>
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Scheme:</strong> <span className="font-mono text-sm">{paymentDetails.accepts[0].scheme}</span>
                         </p>
                       </>
                     ) : (
                       <>
                         <p className="text-gray-700">
-                          <strong>Amount:</strong> {paymentDetails.price} Octas
+                          <strong>Amount:</strong> <span className="font-mono text-sm">{parseInt(paymentDetails.price) / 100000000} APT</span>
                         </p>
                         <p className="text-gray-700">
-                          <strong>Recipient:</strong> {paymentDetails.paymentAddress?.slice(0, 10)}...
+                          <strong>Recipient:</strong> <span className="font-mono text-sm break-all">{paymentDetails.paymentAddress}</span>
+                        </p>
+                        <p className="text-gray-700">
+                          <strong>Chain:</strong> <span className="font-mono text-sm">Aptos Testnet</span>
                         </p>
                       </>
                     )}
@@ -334,12 +354,33 @@ export default function Home() {
             {/* Step 3: Success */}
             {step === "success" && (
               <div className="bg-gray-50 border border-black rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3 text-black">
-                  ✓ Payment Successful
+                <h2 className="text-xl font-semibold mb-3 text-black flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  Payment Successful
                 </h2>
                 <p className="text-gray-700 mb-4 text-sm">
                   Payment verified and settled. The protected resource has been delivered.
                 </p>
+                
+                {response?.transactionHash && (
+                  <div className="mb-4 p-3 bg-white border border-gray-300 rounded text-sm">
+                    <p className="text-gray-700 mb-2">
+                      <strong>Transaction Hash:</strong>
+                    </p>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-black break-all block mb-2">
+                      {response.transactionHash}
+                    </code>
+                    <a
+                      href={`https://explorer.aptoslabs.com/txn/${response.transactionHash}?network=testnet`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 text-xs underline"
+                    >
+                      View on Explorer →
+                    </a>
+                  </div>
+                )}
+                
                 <button
                   onClick={reset}
                   className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800"

@@ -52,7 +52,7 @@ Create `.env.local` in your project root:
 
 ```env
 # Your Aptos wallet address (where payments go)
-PAYMENT_RECIPIENT_ADDRESS=0x1234...your_address_here
+PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS_HERE
 ```
 
 **How to get your wallet address:**
@@ -141,7 +141,7 @@ curl http://localhost:3000/api/premium/weather
     "scheme": "exact",
     "network": "aptos-testnet",
     "maxAmountRequired": "1000000",
-    "payTo": "0x1234...",
+    "payTo": "0xYOUR_WALLET_ADDRESS",
     "description": "Premium weather data",
     "resource": "http://localhost:3000/api/premium/weather"
   }]
@@ -224,14 +224,14 @@ npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk next
 
 ```env
 # Your wallet address (receives payments)
-PAYMENT_RECIPIENT_ADDRESS=0x...
+PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS_HERE
 
 # Facilitator URL (required)
 # Option 1: Use public demo facilitator (easiest for testing)
 FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 
 # Option 2: Deploy your own for production
-# FACILITATOR_URL=https://your-app.com/api/facilitator
+# FACILITATOR_URL=https://yourdomain.com/api/facilitator
 ```
 
 ### 3. Create Middleware
@@ -301,7 +301,7 @@ The facilitator handles blockchain interactions. You need to deploy facilitator 
 // app/api/facilitator/settle/route.ts
 ```
 
-See the [full facilitator implementation](https://github.com/yourusername/aptos-x402/tree/main/app/api/facilitator) in the repository.
+See the [full facilitator implementation](https://github.com/adipundir/aptos-x402/tree/main/app/api/facilitator) in the repository.
 
 ## API Reference
 
@@ -481,7 +481,7 @@ async function callProtectedAPI(url: string, privateKey: string) {
 // Usage
 await callProtectedAPI(
   'http://localhost:3000/api/premium/weather',
-  '0x...your_private_key...'
+  '0xYOUR_PRIVATE_KEY_HERE'
 );
 ```
 
@@ -500,7 +500,7 @@ curl http://localhost:3000/api/premium/weather
     "scheme": "exact",
     "network": "aptos-testnet",
     "maxAmountRequired": "1000000",
-    "payTo": "0x...",
+    "payTo": "0xYOUR_WALLET_ADDRESS",
     "resource": "http://localhost:3000/api/premium/weather"
   }]
 }
@@ -588,7 +588,7 @@ Deploy to:
 - Separate microservice (recommended for scale)
 - Serverless functions (Vercel, AWS Lambda, etc.)
 
-See [Facilitator Guide](https://github.com/yourusername/aptos-x402/blob/main/examples/facilitator) for full setup instructions.
+See [Facilitator Guide](https://github.com/adipundir/aptos-x402/blob/main/examples/facilitator) for full setup instructions.
 
 ## FAQ
 
@@ -627,24 +627,24 @@ Yes! The protocol is designed for production use. However:
 
 ## Contributing
 
-Contributions welcome! Please see [CONTRIBUTING.md](https://github.com/yourusername/aptos-x402/blob/main/CONTRIBUTING.md).
+Contributions welcome! Feel free to open issues or submit pull requests.
 
 ## License
 
-MIT © [Your Name]
+MIT © Aditya Pundir
 
 ## Links
 
-- [GitHub Repository](https://github.com/yourusername/aptos-x402)
-- [Full Documentation](https://github.com/yourusername/aptos-x402/blob/main/docs/SDK_README.md)
+- [GitHub Repository](https://github.com/adipundir/aptos-x402)
+- [NPM Package](https://www.npmjs.com/package/@adipundir/aptos-x402)
 - [x402 Protocol Spec](https://github.com/coinbase/x402)
 - [Aptos Developer Docs](https://aptos.dev)
 
 ## Support
 
-- 🐛 [Report Issues](https://github.com/yourusername/aptos-x402/issues)
-- 💬 [Discussions](https://github.com/yourusername/aptos-x402/discussions)
-- 📧 Email: your.email@example.com
+- 🐛 [Report Issues](https://github.com/adipundir/aptos-x402/issues)
+- 💬 [Discussions](https://github.com/adipundir/aptos-x402/discussions)
+- 🐦 Twitter: [@adipundir](https://x.com/adipundir)
 
 ---
 
