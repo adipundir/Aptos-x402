@@ -15,7 +15,12 @@ export async function GET(request: Request) {
     const fullPath = join(process.cwd(), 'docs', docPath);
     const content = await readFile(fullPath, 'utf-8');
     
-    return NextResponse.json({ content });
+    // Add cache headers to improve performance
+    return NextResponse.json({ content }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    });
   } catch (error) {
     console.error('Error reading doc:', error);
     return NextResponse.json(
