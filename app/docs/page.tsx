@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 interface DocItem {
   title: string;
-  path: string;
+  path?: string;
   children?: DocItem[];
 }
 
@@ -62,9 +64,11 @@ export default function DocsPage() {
   const allDocs = useMemo(() => {
     const docs: Array<{title: string; path: string}> = [];
     docsStructure.forEach(item => {
-      if (item.path) docs.push(item);
+      if (item.path) docs.push({ title: item.title, path: item.path });
       if (item.children) {
-        item.children.forEach(child => docs.push(child));
+        item.children.forEach(child => {
+          if (child.path) docs.push({ title: child.title, path: child.path });
+        });
       }
     });
     return docs;
@@ -137,10 +141,12 @@ export default function DocsPage() {
         </div>
       );
     }
+    if (!item.path) return null;
+    
     return (
       <button
         key={item.path}
-        onClick={() => setSelectedDoc(item.path)}
+        onClick={() => setSelectedDoc(item.path!)}
         className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors text-sm ${
           selectedDoc === item.path ? 'bg-blue-50 text-blue-600 font-medium border-l-2 border-blue-600' : 'text-gray-700'
         } ${level > 0 ? 'ml-4' : ''}`}
