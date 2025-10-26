@@ -197,6 +197,39 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white p-8">
       <div className="max-w-7xl mx-auto">
+        {/* Navbar */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-black">
+              Aptos x402
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/adipundir/aptos-x402"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-black transition-colors"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://www.npmjs.com/package/@adipundir/aptos-x402"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-black transition-colors"
+            >
+              NPM
+            </a>
+            <a
+              href="/docs"
+              className="bg-black text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+            >
+              Docs
+            </a>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-black mb-2">
