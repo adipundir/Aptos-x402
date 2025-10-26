@@ -49,6 +49,33 @@ Add cryptocurrency payments to your Next.js API in just 3 steps:
 npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk
 ```
 
+## 🛒 For Buyers (Consuming Paid APIs)
+
+Access paid APIs with automatic payment handling:
+
+```typescript
+import { x402axios } from '@adipundir/aptos-x402';
+
+// Make a request - payment is handled automatically!
+const response = await x402axios({
+  privateKey: '0x...',  // Your Aptos private key
+  url: 'https://api.example.com/premium/data'
+});
+
+console.log(response.data);              // API response data
+console.log(response.paymentInfo);       // { transactionHash, amount, ... }
+```
+
+**What happens automatically:**
+1. Makes initial request to the protected API
+2. Detects 402 Payment Required response
+3. Extracts payment requirements (amount, recipient, network)
+4. Builds and signs Aptos transaction
+5. Retries request with payment
+6. Returns data + payment info
+
+## 🏪 For Sellers (Creating Paid APIs)
+
 ### Step 2: Create `middleware.ts` in Your Project Root
 
 Create a file called `middleware.ts` in the root of your Next.js project (same level as `app/` or `pages/`):
@@ -554,18 +581,18 @@ const { signTransaction } = usePetraWallet();
 const signedTx = await signTransaction(transaction);
 ```
 
-### AI Agent Integration (Coming Soon)
+### AI Agent Integration
 
 ```typescript
-import { X402Client } from '@adipundir/aptos-x402/client';
-
-const client = new X402Client({
-  privateKey: process.env.AGENT_KEY,
-  network: 'testnet'
-});
+import { x402axios } from '@adipundir/aptos-x402';
 
 // Agent automatically handles payments
-const data = await client.get('https://api.example.com/premium/data');
+const response = await x402axios({
+  privateKey: process.env.AGENT_KEY!,
+  url: 'https://api.example.com/premium/data'
+});
+
+const data = response.data;
 ```
 
 ## Examples
