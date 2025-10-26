@@ -144,6 +144,49 @@ html {
   color-scheme: light !important;
 }
 
+/* Force all text in docs to be dark and visible - EXCEPT code blocks */
+.docs-page .prose > p,
+.docs-page .prose > ul > li,
+.docs-page .prose > ol > li {
+  color: #111827 !important;
+}
+
+.docs-page .prose strong {
+  color: #111827 !important;
+  font-weight: 600 !important;
+}
+
+/* Ensure code blocks don't overflow - AGGRESSIVE */
+.docs-page pre,
+.docs-page .shiki,
+.docs-page code {
+  overflow-x: auto !important;
+  max-width: 100% !important;
+}
+
+.docs-page pre code {
+  display: block !important;
+  white-space: pre !important;
+  overflow-x: auto !important;
+}
+
+/* Force all code block containers to stay within bounds */
+.docs-page > div > div > main > article > div > div {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.docs-page article {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Target the shadcn code block specifically */
+.docs-page [class*="border"] {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
 /* Override dark mode completely to use light theme */
 @media (prefers-color-scheme: dark) {
   .docs-page {

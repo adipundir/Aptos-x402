@@ -242,7 +242,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
     html = html.split('\n\n').map(block => {
       const trimmed = block.trim();
       if (trimmed && !trimmed.startsWith('<') && !trimmed.match(/^#+\s/)) {
-        return `<p class="mb-5 text-gray-900 leading-relaxed text-base">${trimmed}</p>`;
+        return `<p class="mb-5 leading-relaxed text-base" style="color: #111827;">${trimmed}</p>`;
       }
       return trimmed;
     }).join('\n\n');
@@ -289,9 +289,9 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         )}
 
         {/* Main Content */}
-        <main className="flex-1 px-4 py-8 lg:ml-64 lg:mr-72 lg:px-16 lg:py-12">
-          <article className="max-w-4xl mx-auto">
-            <div className="prose prose-lg max-w-none prose-headings:scroll-mt-20 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:p-0 prose-pre:bg-transparent">
+        <main className="flex-1 px-4 py-8 lg:ml-64 lg:mr-72 lg:px-16 lg:py-12 overflow-x-hidden">
+          <article className="max-w-4xl mx-auto w-full">
+            <div className="prose prose-lg max-w-none prose-headings:scroll-mt-20 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:p-0 prose-pre:bg-transparent overflow-x-hidden">
               {parseMarkdownWithCodeBlocks(content).map((part, idx) => {
                 if (part.type === 'code') {
                   const codeData = [{
@@ -301,7 +301,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                   }];
                   
                   return (
-                    <div key={idx} className="my-6">
+                    <div key={idx} className="my-6 overflow-hidden max-w-full">
                       <CodeBlock data={codeData} defaultValue={part.language || 'text'}>
                         <CodeBlockHeader>
                           <CodeBlockFilename value={part.language || 'text'}>
