@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { 
   CodeBlock,
@@ -32,6 +32,8 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['Core Concepts', 'Getting Started'])
   );
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileTocOpen, setIsMobileTocOpen] = useState(false);
   const router = useRouter();
 
   const allDocs = useMemo(() => {
@@ -66,6 +68,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   const navigateToDoc = (docPath: string) => {
     const urlPath = docPath.replace('.md', '');
     router.push(`/docs/${urlPath}`);
+    setIsMobileMenuOpen(false); // Close mobile menu on navigation
   };
 
   const toggleSection = (sectionTitle: string) => {
@@ -249,16 +252,44 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col pt-16 docs-page">
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        className="fixed top-20 left-4 z-50 lg:hidden bg-white p-2 rounded-lg shadow-md border border-gray-200"
+        aria-label="Toggle menu"
+      >
+        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Mobile TOC Button */}
+      <button
+        onClick={() => setIsMobileTocOpen(!isMobileTocOpen)}
+        className="fixed top-20 right-4 z-50 lg:hidden bg-white p-2 rounded-lg shadow-md border border-gray-200 text-xs font-medium"
+        aria-label="Toggle table of contents"
+      >
+        TOC
+      </button>
+
       <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="fixed left-0 top-16 bottom-0 w-64 border-r border-gray-200/80 bg-white/95 backdrop-blur-sm overflow-y-auto shadow-sm">
+        {/* Sidebar - Mobile Overlay */}
+        <aside className={`fixed left-0 top-16 bottom-0 w-64 border-r border-gray-200/80 bg-white backdrop-blur-sm overflow-y-auto shadow-lg z-40 transition-transform duration-300 lg:translate-x-0 lg:shadow-sm lg:bg-white/95 ${
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
           <nav className="py-8 px-3">
             {docsStructure.map((item) => renderSidebarItem(item))}
           </nav>
         </aside>
 
+        {/* Overlay for mobile menu */}
+        {isMobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
         {/* Main Content */}
-        <main className="ml-64 mr-72 flex-1 px-16 py-12">
+        <main className="flex-1 px-4 py-8 lg:ml-64 lg:mr-72 lg:px-16 lg:py-12">
           <article className="max-w-4xl mx-auto">
             <div className="prose prose-lg max-w-none prose-headings:scroll-mt-20 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-pre:p-0 prose-pre:bg-transparent">
               {parseMarkdownWithCodeBlocks(content).map((part, idx) => {
@@ -309,38 +340,40 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
             </div>
             
             {/* Navigation Buttons */}
-            <div className="grid grid-cols-2 gap-4 mt-16 pt-8 border-t border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-16 pt-8 border-t border-gray-200">
               {prevDoc ? (
                 <button
                   onClick={() => navigateToDoc(prevDoc.path)}
-                  className="flex items-center gap-3 p-5 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 group shadow-sm hover:shadow-md"
+                  className="flex items-center gap-3 p-4 lg:p-5 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 group shadow-sm hover:shadow-md"
                 >
-                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
                   <div className="text-left">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Previous</div>
                     <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">{prevDoc.title}</div>
                   </div>
                 </button>
-              ) : <div />}
+              ) : <div className="hidden sm:block" />}
               
               {nextDoc && (
                 <button
                   onClick={() => navigateToDoc(nextDoc.path)}
-                  className="flex items-center justify-end gap-3 p-5 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 group shadow-sm hover:shadow-md"
+                  className="flex items-center justify-end gap-3 p-4 lg:p-5 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-200 group shadow-sm hover:shadow-md"
                 >
                   <div className="text-right">
                     <div className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Next</div>
                     <div className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">{nextDoc.title}</div>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
                 </button>
               )}
             </div>
           </article>
         </main>
 
-        {/* Table of Contents */}
-        <aside className="fixed right-0 top-16 bottom-0 w-72 border-l border-gray-200/80 bg-white/95 backdrop-blur-sm overflow-y-auto p-8 shadow-sm">
+        {/* Table of Contents - Mobile Overlay */}
+        <aside className={`fixed right-0 top-16 bottom-0 w-72 border-l border-gray-200/80 bg-white backdrop-blur-sm overflow-y-auto p-8 shadow-lg z-40 transition-transform duration-300 lg:translate-x-0 lg:shadow-sm lg:bg-white/95 ${
+          isMobileTocOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2 border-b border-gray-200">On This Page</h3>
           {tableOfContents.length > 0 ? (
             <nav className="space-y-1">
@@ -356,6 +389,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                   onClick={(e) => {
                     e.preventDefault();
                     document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setIsMobileTocOpen(false); // Close TOC on mobile after clicking
                   }}
                 >
                   {item.text}
@@ -366,6 +400,14 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
             <p className="text-sm text-gray-400 italic">No headings found</p>
           )}
         </aside>
+
+        {/* Overlay for mobile TOC */}
+        {isMobileTocOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsMobileTocOpen(false)}
+          />
+        )}
       </div>
     </div>
   );
