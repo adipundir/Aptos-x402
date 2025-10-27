@@ -201,6 +201,16 @@ FACILITATOR_URL=https://facilitator.example.com/api/facilitator
 
 None.
 
+### Public test facilitator
+
+For development and quick testing, you can point your middleware to the public demo facilitator:
+
+```
+FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+```
+
+Note: This shared service is for demos only. Don’t use it for production.
+
 ## Error Handling
 
 The middleware handles errors gracefully and returns appropriate status codes:

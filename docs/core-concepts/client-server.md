@@ -59,6 +59,13 @@ What the middleware does:
 	- Else POST to `<FACILITATOR_URL>/settle`
 	- If success → continues to your handler, adds `X-Payment-Response` header
 
+Tip: For testing, you may point `FACILITATOR_URL` to the public demo facilitator:
+
+```
+https://aptos-x402.vercel.app/api/facilitator
+```
+Don’t use this shared service for production.
+
 ## Request/response contract
 
 - 402 body: `{ x402Version: 1, accepts: PaymentRequirements[] }`
