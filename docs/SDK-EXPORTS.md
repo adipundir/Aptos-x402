@@ -111,17 +111,17 @@ export const config = {
 ```typescript
 interface RouteConfig {
   price: string;              // Amount in Octas
-  network: string;            // 'testnet' | 'mainnet' | 'devnet'
+  network?: string;           // e.g. 'testnet' | 'mainnet' | 'devnet' (default: 'testnet')
   config?: {
     description?: string;
-    scheme?: string;
+    mimeType?: string;
+    outputSchema?: Record<string, any>;
+    maxTimeoutSeconds?: number;
   };
 }
 
 interface FacilitatorConfig {
-  url: string;                // Facilitator endpoint URL
-  verifyPath?: string;        // Default: '/verify'
-  settlePath?: string;        // Default: '/settle'
+  url: string;                // Base facilitator URL
 }
 ```
 
@@ -137,26 +137,26 @@ import {
 } from '@adipundir/aptos-x402';
 
 // Verify a payment (checks signature only, no blockchain)
-const verification = await verifyPaymentSimple({
-  signedTransaction: paymentHeader,
-  expectedAmount: '1000000',
-  expectedRecipient: '0x...',
-  network: 'testnet'
-});
+const facilitatorBaseUrl = 'https://your-domain.com/api/facilitator';
+const signedTransaction = paymentHeader; // base64 X-PAYMENT header value
+
+const verification = await verifyPaymentSimple(
+  facilitatorBaseUrl,
+  signedTransaction,
+  '0xEXPECTED_RECIPIENT',
+  '1000000',
+  'testnet'
+);
 
 // Settle a payment (submit to blockchain)
-const settlement = await settlePaymentSimple({
-  signedTransaction: paymentHeader,
-  network: 'testnet'
-});
+const settlement = await settlePaymentSimple(
+  facilitatorBaseUrl,
+  signedTransaction,
+  'testnet'
+);
 
-// Create X-Payment-Response header
-const header = createPaymentResponse({
-  transactionHash: '0x...',
-  amount: '1000000',
-  recipient: '0x...',
-  settled: true
-});
+// Create X-Payment-Response header payload from settlement result
+const header = createPaymentResponse(settlement);
 ```
 
 ---
@@ -226,10 +226,11 @@ const txHash = await signAndSubmitPayment(
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-const data = await x402axios({
+const response = await x402axios({
   privateKey: process.env.PRIVATE_KEY!,
   url: 'https://api.example.com/premium/data'
 });
+console.log(response.data);
 ```
 
 ### **Seller Example**
@@ -238,7 +239,7 @@ import { paymentMiddleware } from '@adipundir/aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.RECIPIENT_ADDRESS!,
-  { '/api/premium/*': { price: '1000000', network: 'testnet' } },
+  { '/api/premium/data': { price: '1000000', network: 'testnet' } },
   { url: process.env.FACILITATOR_URL! }
 );
 ```

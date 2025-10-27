@@ -16,7 +16,7 @@ Both implementations follow the same x402 protocol specification but are adapted
 | **Blockchain** | Ethereum/Base | Aptos |
 | **Payment Token** | USDC | APT |
 | **Language** | TypeScript/Python | TypeScript |
-| **HTTP Client** | axios, fetch, httpx | axios, fetch |
+| **HTTP Client** | axios, fetch, httpx | Single-function helper (x402axios) |
 | **Signature Scheme** | ECDSA (secp256k1) | Ed25519 |
 | **Transaction Format** | EVM call data | BCS serialization |
 | **Wallet** | viem/eth-account | @aptos-labs/ts-sdk |
@@ -84,21 +84,19 @@ console.log(paymentResponse);
 
 **@adipundir/aptos-x402:**
 ```typescript
-import { createX402Axios } from '@adipundir/aptos-x402';
+import { x402axios } from '@adipundir/aptos-x402';
 
-const axios402 = createX402Axios({
+const response = await x402axios({
   privateKey: process.env.PRIVATE_KEY!,
-  network: 'testnet',
-  baseURL: 'https://api.example.com'
+  url: 'https://api.example.com/paid-endpoint'
 });
 
-const response = await axios402.get('/paid-endpoint');
 console.log(response.data);
 
 // Payment info is automatically attached
 if (response.paymentInfo) {
   console.log('TX Hash:', response.paymentInfo.transactionHash);
-  console.log('Amount:', response.paymentInfo.amountAPT, 'APT');
+  console.log('Amount (Octas):', response.paymentInfo.amount);
 }
 ```
 
@@ -115,22 +113,7 @@ const response = await withPaymentHeaders(
 console.log(await response.json());
 ```
 
-**@adipundir/aptos-x402:**
-```typescript
-import { createX402Fetch } from '@adipundir/aptos-x402';
-
-const fetch402 = createX402Fetch({
-  privateKey: process.env.PRIVATE_KEY!,
-  network: 'testnet'
-});
-
-const response = await fetch402('https://api.example.com/paid-endpoint');
-console.log(await response.json());
-
-if (response.paymentInfo) {
-  console.log('TX Hash:', response.paymentInfo.transactionHash);
-}
-```
+<!-- No separate fetch wrapper in @adipundir/aptos-x402; use x402axios as shown above. -->
 
 ## Key Differences
 
@@ -244,16 +227,9 @@ Both implementations share these characteristics:
 
 **Key difference:** Our implementation uses a two-step verification/settlement process via facilitator endpoints, while Coinbase typically uses smart contracts.
 
-## Performance Comparison
+## Performance Considerations
 
-| Metric | Coinbase (Base) | @adipundir/aptos-x402 |
-|--------|-----------------|----------------------|
-| Verification Time | ~100-200ms | ~50-100ms |
-| Settlement Time | ~2-4s | ~2-5s |
-| Total Request Time | ~2-4s | ~2-5s |
-| Gas Cost | ~$0.0001 | ~$0.0001 |
-
-Both implementations offer similar performance characteristics.
+Both implementations follow a similar request → pay → retry pattern. Actual timings depend on network conditions and chain congestion. The Aptos flow verifies off-chain, then settles on-chain before returning the resource.
 
 ## Code Complexity
 
@@ -300,8 +276,8 @@ If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is str
    // From: x402-axios
    import { withPaymentInterceptor } from "x402-axios";
    
-   // To: @adipundir/aptos-x402
-   import { createX402Axios } from "@adipundir/aptos-x402";
+  // To: @adipundir/aptos-x402
+  import { x402axios } from "@adipundir/aptos-x402";
    ```
 
 3. **Adjust configuration:**
@@ -319,7 +295,7 @@ If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is str
    console.log('Paid', amount, 'USDC');
    
    // To: APT
-   console.log('Paid', paymentInfo.amountAPT, 'APT');
+  console.log('Paid (Octas):', paymentInfo.amount);
    ```
 
 ## Future Roadmap

@@ -200,15 +200,14 @@ After running the demo, try:
 
 1. **Use in your own code:**
    ```typescript
-   import { createX402Axios } from '@adipundir/aptos-x402';
-   
-   const axios402 = createX402Axios({
-     privateKey: process.env.PRIVATE_KEY!,
-     network: 'testnet'
-   });
-   
-   const response = await axios402.get('http://localhost:3000/api/protected/weather');
-   console.log(response.data);
+    import { x402axios } from '@adipundir/aptos-x402';
+
+    const response = await x402axios({
+       privateKey: process.env.PRIVATE_KEY!,
+       url: 'http://localhost:3000/api/protected/weather'
+    });
+
+    console.log(response.data);
    ```
 
 2. **Create your own protected endpoints:**

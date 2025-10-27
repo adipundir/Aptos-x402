@@ -34,9 +34,8 @@ I've created a comprehensive GitBook-style documentation structure for the x402 
 - **client-integration.md** - Build payment-enabled clients
 - **testing.md** - Testing strategies and examples
 
-### API Reference (3 references)
+### API Reference (2 references)
 - **server-api.md** - Server middleware API
-- **client-api.md** - Client SDK API (coming soon)
 - **types.md** - TypeScript type definitions
 
 ### Examples (3 complete examples)
@@ -78,7 +77,6 @@ docs/
 │
 ├── api-reference/
 │   ├── server-api.md
-│   ├── client-api.md
 │   └── types.md
 │
 └── examples/

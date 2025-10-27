@@ -151,8 +151,8 @@ Behind the scenes, `x402axios` creates a payment payload with:
   scheme: "exact",
   network: "aptos-testnet",  // or aptos-mainnet
   payload: {
-    transaction: "base64...",  // BCS-encoded transaction
-    signature: "base64..."     // BCS-encoded signature
+    signature: "base64...",     // BCS-encoded signature
+    transaction: "base64..."    // BCS-encoded transaction
   }
 }
 ```

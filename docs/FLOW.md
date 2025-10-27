@@ -570,5 +570,5 @@ The x402 protocol provides a clean, HTTP-native way to monetize APIs using block
 - **Transparency**: Transaction hashes provide proof of payment
 - **Simplicity**: Integrates with standard HTTP/REST patterns
 
-All of this happens automatically when using the provided wrappers (`createX402Fetch`, `createX402Axios`), making micropayments as easy as a regular API call!
+All of this happens automatically when using the provided helper (`x402axios`), making micropayments as easy as a regular API call!
 

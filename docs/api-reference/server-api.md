@@ -59,12 +59,13 @@ Facilitator service configuration.
 
 ```typescript
 interface RouteConfig {
-  price: string;                    // Amount in Octas
-  network?: 'testnet' | 'mainnet';  // Default: 'testnet'
+  price: string;                   // Amount in Octas
+  network?: string;                // e.g. 'testnet' | 'mainnet' | 'devnet' (default: 'testnet')
   config?: {
-    description?: string;            // Human-readable description
-    mimeType?: string;               // Response content type
-    maxTimeoutSeconds?: number;      // Max wait time
+    description?: string;          // Human-readable description
+    mimeType?: string;             // Response content type
+    outputSchema?: Record<string, any>; // Optional JSON schema of response
+    maxTimeoutSeconds?: number;    // Max wait time
   };
 }
 ```
@@ -140,7 +141,7 @@ Returns 402 with payment requirements:
 
 ### With Invalid X-PAYMENT Header
 
-Returns 402 with error details:
+Returns 403 with error details:
 
 ```json
 {
@@ -153,7 +154,7 @@ Returns 402 with error details:
 
 ### X-PAYMENT-RESPONSE
 
-Included in successful responses with payment receipt:
+Included in successful responses with settlement details:
 
 ```
 X-PAYMENT-RESPONSE: eyJzZXR0bGVtZW50Ijp7InR4SGFzaCI6Ij...
@@ -162,10 +163,11 @@ X-PAYMENT-RESPONSE: eyJzZXR0bGVtZW50Ijp7InR4SGFzaCI6Ij...
 Decoded:
 ```json
 {
-  "x402Version": 1,
   "settlement": {
+    "success": true,
     "txHash": "0x5f2e...",
-    "networkId": "aptos-testnet"
+    "networkId": "aptos-testnet",
+    "error": null
   }
 }
 ```
@@ -197,16 +199,14 @@ FACILITATOR_URL=https://facilitator.example.com/api/facilitator
 
 ### Optional
 
-```env
-# Custom timeout for facilitator requests (milliseconds)
-FACILITATOR_TIMEOUT=30000
-```
+None.
 
 ## Error Handling
 
 The middleware handles errors gracefully and returns appropriate status codes:
 
 - **402**: Payment required or payment failed
+- **403**: Payment verification failed
 - **400**: Malformed payment payload
 - **500**: Internal server error (facilitator unreachable, etc.)
 
@@ -225,9 +225,9 @@ import type {
 
 ## Next Steps
 
-- [Client API Reference](client-api.md)
 - [Types Reference](types.md)
 - [Quickstart for Sellers](../getting-started/quickstart-sellers.md)
+- [Quickstart for Buyers](../getting-started/quickstart-buyers.md)
 
 ---
 

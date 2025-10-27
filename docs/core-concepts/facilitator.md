@@ -42,7 +42,12 @@ POST /facilitator/verify
     "scheme": "exact",
     "network": "aptos-testnet",
     "maxAmountRequired": "1000000",
-    "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+    "resource": "https://api.example.com/api/premium/data",
+    "description": "Premium data access",
+    "mimeType": "application/json",
+    "outputSchema": null,
+    "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "maxTimeoutSeconds": 60
   }
 }
 ```

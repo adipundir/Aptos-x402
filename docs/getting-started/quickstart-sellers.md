@@ -63,6 +63,8 @@ export const config = {
 
 This configuration protects all routes under `/api/premium/` and requires 0.01 APT (1,000,000 Octas) for the weather endpoint. The matcher pattern determines which routes the middleware applies to.
 
+Note: The `routes` map uses exact pathnames as keys. The matcher controls which requests reach the middleware, but you must list each exact endpoint you want to charge in the `routes` object (for example, `/api/premium/weather` and `/api/premium/stocks`).
+
 ## Understanding Octas
 
 Aptos uses Octas as the smallest unit, similar to satoshis in Bitcoin or wei in Ethereum. One APT equals 100,000,000 Octas. Common price points:
@@ -128,6 +130,8 @@ You should receive a 402 Payment Required response with payment details:
 ```
 
 This 402 response tells clients how to pay for access. The middleware handles returning this response automatically when no valid payment is present.
+
+To complete a paid request from a client, follow the [Quickstart for Buyers](quickstart-buyers.md) and call your protected endpoint using `x402axios`.
 
 ## How It Works
 

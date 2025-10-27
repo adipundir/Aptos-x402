@@ -73,7 +73,7 @@ The required response format includes:
 ```typescript
 {
   x402Version: number,           // Protocol version (currently 1)
-  accepts: PaymentRequirement[]  // Array of payment options
+  accepts: PaymentRequirements[]  // Array of payment options
 }
 ```
 
@@ -85,11 +85,11 @@ Each payment requirement describes one acceptable payment method:
   network: string,               // Blockchain network identifier  
   maxAmountRequired: string,     // Amount in smallest unit (Octas)
   payTo: string,                 // Recipient address
-  description?: string,          // Human-readable description
+  description: string,           // Human-readable description
   resource: string,              // Full URL being accessed
-  mimeType?: string,             // Expected response content type
-  outputSchema?: object,         // JSON schema of response
-  maxTimeoutSeconds?: number     // Max wait time for response
+  mimeType: string,              // Expected response content type
+  outputSchema?: object | null,  // JSON schema of response
+  maxTimeoutSeconds: number      // Max wait time for response
 }
 ```
 
@@ -105,8 +105,8 @@ Clients include payment information in the X-PAYMENT header as a base64-encoded 
   scheme: string,                // Payment scheme used
   network: string,               // Network used
   payload: {
-    transaction: string,         // Base64-encoded BCS transaction
-    signature: string            // Base64-encoded BCS signature
+    signature: string,           // Base64-encoded BCS signature
+    transaction: string          // Base64-encoded BCS transaction
   }
 }
 ```
@@ -121,12 +121,11 @@ The receipt format:
 
 ```typescript
 {
-  x402Version: number,
   settlement: {
-    txHash: string,              // Blockchain transaction hash
-    networkId: string,           // Network where settled
-    timestamp?: number,          // Settlement timestamp
-    blockHeight?: number         // Block number
+    success: boolean,
+    txHash: string | null,       // Blockchain transaction hash
+    networkId: string | null,    // Network where settled
+    error: string | null
   }
 }
 ```

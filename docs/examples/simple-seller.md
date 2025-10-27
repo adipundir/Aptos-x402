@@ -130,7 +130,7 @@ curl http://localhost:3000/api/premium/weather
 
 ### Test with payment:
 
-See [Client Integration Guide](../guides/client-integration.md) for how to make the payment.
+See [Quickstart for Buyers](../getting-started/quickstart-buyers.md) for how to make the payment.
 
 ## Complete Files
 
@@ -195,6 +195,7 @@ export const middleware = paymentMiddleware(
 - [Deploy to production](../guides/facilitator-setup.md)
 - [Add your own facilitator](../guides/facilitator-setup.md)
 - [Switch to mainnet](../core-concepts/network-token-support.md)
+ - Switch to mainnet when ready
 
 ## Source Code
 
