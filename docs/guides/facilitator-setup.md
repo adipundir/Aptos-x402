@@ -167,7 +167,7 @@ my-app/
 
 Set the facilitator URL to your own domain:
 
-```env
+```
 FACILITATOR_URL=https://your-app.com/api/facilitator
 ```
 
@@ -197,7 +197,7 @@ Configure appropriate timeouts to accommodate blockchain settlement times. Settl
 
 Configure these variables for your facilitator:
 
-```env
+```
 APTOS_NODE_URL=https://api.mainnet.aptoslabs.com/v1
 ```
 
