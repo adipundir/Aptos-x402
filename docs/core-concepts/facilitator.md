@@ -171,13 +171,13 @@ Throughput scales with the number of facilitator instances and the Aptos network
 
 Common errors and their meanings:
 
-**Insufficient Balance**: The client's account lacks sufficient APT for the payment amount plus gas fees. The client needs to fund their account before retrying.
+Insufficient Balance: The client's account lacks sufficient APT for the payment amount plus gas fees. The client needs to fund their account before retrying.
 
-**Sequence Number Errors**: The transaction has already been used or the sequence number is invalid. Clients must create a new transaction with the current sequence number.
+Sequence Number Errors: The transaction has already been used or the sequence number is invalid. Clients must create a new transaction with the current sequence number.
 
-**Invalid Signature**: The signature doesn't match the transaction or was created with the wrong private key. This usually indicates a bug in the client's transaction signing logic.
+Invalid Signature: The signature doesn't match the transaction or was created with the wrong private key. This usually indicates a bug in the client's transaction signing logic.
 
-**Network Errors**: The facilitator couldn't reach the Aptos RPC endpoint. This might be temporary network issues or RPC rate limiting.
+Network Errors: The facilitator couldn't reach the Aptos RPC endpoint. This might be temporary network issues or RPC rate limiting.
 
 ## Security Considerations
 
