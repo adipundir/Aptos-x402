@@ -29,6 +29,22 @@ export default function Navbar() {
             variant="ghost"
             size="sm"
             className="text-zinc-700 hover:text-zinc-900"
+            onClick={() => window.location.href = '/demo'}
+          >
+            Demo
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-zinc-700 hover:text-zinc-900"
+            onClick={() => window.location.href = '/docs'}
+          >
+            Docs
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-zinc-700 hover:text-zinc-900"
             onClick={() => window.open('https://github.com/adipundir/aptos-x402', '_blank')}
           >
             <Github className="w-4 h-4 mr-2" />
@@ -42,13 +58,6 @@ export default function Navbar() {
           >
             <Package className="w-4 h-4 mr-2" />
             NPM
-          </Button>
-          <Button
-            size="sm"
-            className="bg-zinc-900 text-white hover:bg-zinc-800"
-            onClick={() => window.location.href = '/docs'}
-          >
-            Documentation
           </Button>
         </div>
       </div>
