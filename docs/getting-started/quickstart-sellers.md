@@ -31,7 +31,7 @@ PAYMENT_RECIPIENT_ADDRESS=Your_Address
 FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 ```
 
-Replace the address with your actual Aptos wallet address. The facilitator URL above points to the public demo facilitator for testing. For production, deploy and use your own facilitator service.
+Replace the address with your actual Aptos wallet address. The facilitator URL above points to our **free public facilitator** which works on both **testnet and mainnet** and is suitable for production use. You can optionally deploy your own facilitator service if you need guaranteed SLAs or custom configurations.
 
 ## Create the Middleware
 

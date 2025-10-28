@@ -2,11 +2,30 @@
 
 This guide walks through deploying a production-ready facilitator service for x402 payment processing.
 
+## Public Facilitator (Free)
+
+**Before setting up your own facilitator**, note that we provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that works on both **testnet and mainnet**. 
+
+This service is:
+- ✅ **Completely free** (currently and for the foreseeable future)
+- ✅ **Production-ready** for most use cases
+- ✅ **Zero setup required** - just use it in your configuration
+- ✅ **No authentication needed**
+
+**You only need to set up your own facilitator if you require:**
+- Guaranteed uptime SLAs
+- Custom rate limits or higher throughput
+- Private infrastructure
+- Full control over blockchain node selection
+- Custom monitoring and logging
+
+For most users, especially those getting started, the free public facilitator is sufficient even for production use.
+
 ## When to Deploy Your Own
 
-The public demo facilitator serves well for development and testing, but production applications should run dedicated facilitators. Your own deployment provides control over uptime and performance, eliminates dependency on shared infrastructure, allows customization for specific requirements, and enables proper monitoring and alerting.
+Your own deployment provides control over uptime and performance, eliminates dependency on shared infrastructure, allows customization for specific requirements, and enables proper monitoring and alerting.
 
-Plan to deploy your own facilitator before moving to mainnet or handling production traffic.
+Consider self-hosting if you expect very high transaction volumes or need guaranteed service levels for mission-critical applications.
 
 ## Prerequisites
 

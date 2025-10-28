@@ -28,6 +28,17 @@ This implementation provides Next.js middleware that handles all payment logic a
 
 The architecture separates concerns through a facilitator service that handles blockchain interactions. This keeps your main application simple while maintaining security and scalability.
 
+### Free Public Facilitator
+
+We provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that handles blockchain interactions for you. This service:
+
+- ✅ Is completely free for all users
+- ✅ Works on both testnet and mainnet
+- ✅ Requires zero setup or authentication
+- ✅ Is suitable for production use
+
+You can start building immediately without deploying your own infrastructure. For specialized needs like guaranteed SLAs or custom configurations, you can optionally self-host the facilitator.
+
 ## Next Steps
 
 Start building with x402 by following the quickstart guide for your role:

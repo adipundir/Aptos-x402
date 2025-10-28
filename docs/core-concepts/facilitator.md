@@ -94,9 +94,30 @@ Failed settlements include an error message explaining the failure, such as insu
 
 Facilitators can be deployed in several configurations depending on your requirements.
 
-### Public Demo Facilitator
+### Public Facilitator
 
-For development and testing, use the public demo facilitator hosted at `https://aptos-x402.vercel.app/api/facilitator`. This requires no setup and provides immediate functionality for prototyping and learning the protocol. However, it runs on shared infrastructure with no service level guarantees, making it unsuitable for production use.
+We provide a free public facilitator hosted at `https://aptos-x402.vercel.app/api/facilitator` that is available for use on both **testnet and mainnet** networks. This service is currently **completely free** for all users and requires no authentication or setup.
+
+Current Status: The public facilitator is free for production use. We may introduce usage-based pricing in the future based on factors such as:
+- Transaction volume
+- Network usage (testnet vs mainnet)
+- Response time SLAs
+- Dedicated support requirements
+
+However, any future monetization will be introduced with advance notice, and a free tier will remain available for development and testing purposes.
+
+**Features**:
+- Zero configuration required
+- Supports both Aptos testnet and mainnet
+- Immediate availability for prototyping and production
+- Handles verification and settlement operations
+- No API keys or registration needed
+
+**Recommendations**:
+- **Development/Testing**: Feel free to use the public facilitator without restrictions
+- **Production**: The public facilitator is suitable for production use, but consider self-hosting if you need
+
+The public facilitator runs on shared infrastructure, so while we maintain high availability, self-hosting provides additional control and reliability for mission-critical applications.
 
 ### Self-Hosted in Same Application
 
