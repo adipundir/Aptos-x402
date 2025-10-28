@@ -20,11 +20,16 @@ export default function LandingPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-6xl md:text-7xl font-bold tracking-tight text-zinc-900">
-              HTTP 402 for APIs.
+            <h1 className="text-6xl md:text-7xl font-bold tracking-tight leading-tight">
+              <span className="text-zinc-900">Aptos-native</span>
               <br />
-              <span className="text-zinc-600">Pay with blockchain.</span>
+              <span className="text-zinc-900">x402 payment protocol</span>
             </h1>
+
+            {/* Tagline */}
+            <p className="text-xl text-zinc-600 max-w-2xl mx-auto leading-relaxed">
+              Monetize your APIs with blockchain micropayments—zero payment logic required.
+            </p>
 
             {/* CTA Buttons */}
             <div className="flex items-center justify-center gap-4 pt-4">
