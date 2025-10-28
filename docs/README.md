@@ -32,10 +32,10 @@ The architecture separates concerns through a facilitator service that handles b
 
 We provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that handles blockchain interactions for you. This service:
 
-- ✅ Is completely free for all users
-- ✅ Works on both testnet and mainnet
-- ✅ Requires zero setup or authentication
-- ✅ Is suitable for production use
+- Is completely free for all users
+- Works on both testnet and mainnet
+- Requires zero setup or authentication
+- Is suitable for production use
 
 You can start building immediately without deploying your own infrastructure. For specialized needs like guaranteed SLAs or custom configurations, you can optionally self-host the facilitator.
 
