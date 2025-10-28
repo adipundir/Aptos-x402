@@ -240,11 +240,12 @@ export async function GET() {
 import { x402axios } 
   from '@adipundir/aptos-x402';
 
-const result = await x402axios({
-  privateKey: '0x...',
-  url: 'https://api.example.com
-    /premium/weather'
-});
+const result = await x402axios.get(
+  'https://api.example.com/premium/weather',
+  {
+    privateKey: '0x...'
+  }
+);
 
 // Done! Payment handled
 console.log(result.data);`}
