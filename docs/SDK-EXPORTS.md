@@ -6,7 +6,7 @@ The `@adipundir/aptos-x402` SDK provides functions for both **buyers** (consumin
 
 ---
 
-## 🛒 For Buyers (Consuming Paid APIs)
+## For Buyers (Consuming Paid APIs)
 
 ### **Recommended: `x402axios`**
 
@@ -26,11 +26,11 @@ console.log(response.paymentInfo); // { transactionHash, amount, ... }
 ```
 
 **Features:**
-- ✅ Automatically detects 402 responses
-- ✅ Extracts payment requirements from response
-- ✅ Builds and signs transaction
-- ✅ Retries with payment
-- ✅ Returns data + payment info
+- Automatically detects 402 responses
+- Extracts payment requirements from response
+- Builds and signs transaction
+- Retries with payment
+- Returns data + payment info
 
 **Types:**
 ```typescript
@@ -72,7 +72,7 @@ console.log(paymentResponse?.settlement?.txHash);
 
 ---
 
-## 🏪 For Sellers (Creating Paid APIs)
+## For Sellers (Creating Paid APIs)
 
 ### **Recommended: `paymentMiddleware`**
 
@@ -101,11 +101,11 @@ export const config = {
 ```
 
 **Features:**
-- ✅ Automatically returns 402 for unpaid requests
-- ✅ Verifies payment signatures
-- ✅ Settles payments on blockchain
-- ✅ Returns protected resources
-- ✅ Adds transaction hash to response headers
+- Automatically returns 402 for unpaid requests
+- Verifies payment signatures
+- Settles payments on blockchain
+- Returns protected resources
+- Adds transaction hash to response headers
 
 **Types:**
 ```typescript
@@ -161,7 +161,7 @@ const header = createPaymentResponse(settlement);
 
 ---
 
-## 🔧 Utility Functions
+## Utility Functions
 
 For advanced use cases, the SDK also exports Aptos utilities:
 
@@ -193,7 +193,7 @@ const txHash = await signAndSubmitPayment(
 
 ---
 
-## 📦 Complete Export List
+## Complete Export List
 
 ### **Buyer Functions**
 - `x402axios` - Make paid API requests (RECOMMENDED)
@@ -220,7 +220,7 @@ const txHash = await signAndSubmitPayment(
 
 ---
 
-## 🎯 Quick Start Examples
+## Quick Start Examples
 
 ### **Buyer Example**
 ```typescript
@@ -246,13 +246,13 @@ export const middleware = paymentMiddleware(
 
 ---
 
-## ✅ Summary
+## Summary
 
 **Buyers need:**
-- ✅ `x402axios` - One function to rule them all!
+- `x402axios` - One function to rule them all!
 
 **Sellers need:**
-- ✅ `paymentMiddleware` - One middleware to protect all routes!
+- `paymentMiddleware` - One middleware to protect all routes!
 
-That's it! Both sides have simple, one-line solutions. 🎯
+That's it! Both sides have simple, one-line solutions.
 

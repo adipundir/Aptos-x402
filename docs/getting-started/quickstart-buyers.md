@@ -37,12 +37,12 @@ console.log('TX:', response.paymentInfo?.transactionHash);
 ```
 
 That's it! The function automatically:
-- ✅ Detects 402 Payment Required responses
-- ✅ Extracts payment requirements
-- ✅ Determines the correct network (testnet/mainnet)
-- ✅ Builds and signs the payment transaction
-- ✅ Retries with the X-PAYMENT header
-- ✅ Returns your data with payment info
+- Detects 402 Payment Required responses
+- Extracts payment requirements
+- Determines the correct network (testnet/mainnet)
+- Builds and signs the payment transaction
+- Retries with the X-PAYMENT header
+- Returns your data with payment info
 
 ## Creating a Test Wallet
 

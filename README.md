@@ -120,7 +120,7 @@ PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS_HERE
 3. Copy your address (starts with `0x`)
 4. Paste it in `.env.local`
 
-**That's it!** 🎉 Your API routes under `/api/premium/*` now require payment.
+**That's it!** Your API routes under `/api/premium/*` now require payment.
 
 ### Your API Routes Stay Clean
 
@@ -143,11 +143,11 @@ export async function GET() {
 ```
 
 The middleware automatically:
-- ✅ Returns 402 for requests without payment
-- ✅ Verifies payment signatures
-- ✅ Settles payments on Aptos blockchain
-- ✅ Only allows API execution after successful payment
-- ✅ Adds payment receipt headers to responses
+- Returns 402 for requests without payment
+- Verifies payment signatures
+- Settles payments on Aptos blockchain
+- Only allows API execution after successful payment
+- Adds payment receipt headers to responses
 
 ### Next.js Requirements
 
@@ -173,10 +173,10 @@ my-nextjs-app/
 ```
 
 **Key Points:**
-- ✅ `middleware.ts` must be in the project root (not inside `app/`)
-- ✅ Applies to all routes matching `/api/premium/*` (configurable)
-- ✅ Your API routes need **zero** payment code
-- ✅ Works automatically on every request
+- `middleware.ts` must be in the project root (not inside `app/`)
+- Applies to all routes matching `/api/premium/*` (configurable)
+- Your API routes need **zero** payment code
+- Works automatically on every request
 
 ### Testing Your Setup
 
@@ -207,7 +207,7 @@ curl http://localhost:3000/api/premium/weather
 }
 ```
 
-✅ If you see this 402 response, your middleware is working perfectly!
+If you see this 402 response, your middleware is working perfectly!
 
 **3. For full payment testing:**
 - Use our [live demo](https://aptos-x402.vercel.app) to see the complete flow
@@ -219,20 +219,20 @@ curl http://localhost:3000/api/premium/weather
 
 ### Use Cases
 
-- 💰 **Pay-per-API-call** - Monetize your APIs without subscriptions
-- 🤖 **AI Agent Payments** - Let AI agents pay for resources automatically
-- 📊 **Metered Services** - Charge exactly for what's consumed
-- 🔐 **Decentralized Access Control** - No API keys, just payments
-- ⚡ **Micropayments** - Enable sub-cent transactions economically
+- **Pay-per-API-call** - Monetize your APIs without subscriptions
+- **AI Agent Payments** - Let AI agents pay for resources automatically
+- **Metered Services** - Charge exactly for what's consumed
+- **Decentralized Access Control** - No API keys, just payments
+- **Micropayments** - Enable sub-cent transactions economically
 
 ## Features
 
-- ✅ **Zero payment logic in your code** - Middleware handles everything
-- ✅ **Aptos native** - Built on Aptos's fast finality (~1-3s)
-- ✅ **Type-safe** - Full TypeScript support
-- ✅ **x402 compliant** - Follows official Coinbase specification
-- ✅ **Next.js optimized** - Designed for Next.js 15+ (more frameworks coming)
-- ✅ **Production ready** - Comprehensive error handling and logging
+ - **Zero payment logic in your code** - Middleware handles everything
+ - **Aptos native** - Built on Aptos's fast finality (~1-3s)
+ - **Type-safe** - Full TypeScript support
+ - **x402 compliant** - Follows official Coinbase specification
+ - **Next.js optimized** - Designed for Next.js 15+ (more frameworks coming)
+ - **Production ready** - Comprehensive error handling and logging
 
 ## How It Works
 
@@ -630,9 +630,9 @@ FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 ```
 
 Perfect for:
-- ✅ Development and testing
-- ✅ Proof of concepts
-- ✅ Learning x402 protocol
+- Development and testing
+- Proof of concepts
+- Learning x402 protocol
 
 **Note**: For production, deploy your own for better control and reliability.
 
@@ -653,10 +653,10 @@ See [Facilitator Guide](https://github.com/adipundir/aptos-x402/blob/main/exampl
 
 ### Why not just use API keys?
 
-- ✅ **No key management** - No secrets to rotate or leak
-- ✅ **Pay-per-use** - No subscriptions or upfront costs
-- ✅ **Decentralized** - No central auth server
-- ✅ **Monetization built-in** - Get paid automatically
+- **No key management** - No secrets to rotate or leak
+- **Pay-per-use** - No subscriptions or upfront costs
+- **Decentralized** - No central auth server
+- **Monetization built-in** - Get paid automatically
 
 ### How fast are payments?
 

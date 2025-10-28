@@ -37,7 +37,7 @@ Enter your Aptos private key (0x...): 0x21c31d63f7719d3de90b9c14b264229db65609f1
 
 🚀 Making request to protected API endpoint...
 
-✅ Request completed successfully!
+Request completed successfully!
 
 📋 Response Details:
 Status: 200 OK
@@ -110,7 +110,7 @@ Reads from `.env` and verifies:
 ```
 Private Key: 0x21c31d63...
 Address: 0x3dbd1c97...
-✅ Keypair is valid!
+Keypair is valid!
 ```
 
 ## Environment Variables

@@ -92,11 +92,11 @@ sequenceDiagram
 
 The verification step is designed to be **fast and cheap** (no blockchain interaction):
 
-1. ✅ Decode base64 PaymentPayload
-2. ✅ Validate x402Version, scheme, network
-3. ✅ Check signature and transaction are valid base64
-4. ✅ Verify both components have non-zero length
-5. ⏩ Future: Deserialize BCS and verify signature cryptographically
+1. Decode base64 PaymentPayload
+2. Validate x402Version, scheme, network
+3. Check signature and transaction are valid base64
+4. Verify both components have non-zero length
+5. Future: Deserialize BCS and verify signature cryptographically
 
 **Result:** ~10-50ms validation before any blockchain interaction
 
@@ -104,11 +104,11 @@ The verification step is designed to be **fast and cheap** (no blockchain intera
 
 The settlement step interacts with the blockchain:
 
-1. 📦 Decode and deserialize BCS components
-2. 🔄 Reconstruct SDK objects (SimpleTransaction + AccountAuthenticator)
-3. 📤 Submit using `aptos.transaction.submit.simple()`
-4. ⏳ Wait for blockchain confirmation
-5. ✅ Verify transaction succeeded on-chain
+1. Decode and deserialize BCS components
+2. Reconstruct SDK objects (SimpleTransaction + AccountAuthenticator)
+3. Submit using `aptos.transaction.submit.simple()`
+4. Wait for blockchain confirmation
+5. Verify transaction succeeded on-chain
 
 **Result:** ~1-3 seconds (Aptos testnet/mainnet)
 
@@ -145,9 +145,9 @@ Server → Client: 409 Conflict
 
 The x402 protocol ensures atomicity:
 
-1. ✅ **Verify** payment structure (fast)
-2. ✅ **Settle** payment on blockchain (slow)
-3. ✅ **Deliver** resource (only after settlement confirms)
+1. **Verify** payment structure (fast)
+2. **Settle** payment on blockchain (slow)
+3. **Deliver** resource (only after settlement confirms)
 
 If settlement fails at any point, **no resource is delivered**.
 

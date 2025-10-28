@@ -68,11 +68,11 @@ export async function GET(request: Request) {
 ## That's it!
 
 The middleware automatically:
-- ✅ Returns 402 Payment Required for requests without payment
-- ✅ Verifies payment signatures
-- ✅ Settles payments on the blockchain
-- ✅ Only allows access after successful payment
-- ✅ Adds payment receipt headers to the response
+ - Returns 402 Payment Required for requests without payment
+ - Verifies payment signatures
+ - Settles payments on the blockchain
+ - Only allows access after successful payment
+ - Adds payment receipt headers to the response
 
 Your API routes stay clean and focused on business logic!
 

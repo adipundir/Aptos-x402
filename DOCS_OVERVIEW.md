@@ -167,20 +167,20 @@ The docs work great as standalone markdown:
 - "Back to" links
 - Clear hierarchy
 
-## 🎯 Target Audiences
+## Target Audiences
 
 1. **API Providers** - Want to monetize their APIs
 2. **Developers** - Building payment-enabled clients
 3. **AI Agent Builders** - Creating autonomous agents
 4. **Blockchain Developers** - Understanding x402 + Aptos
 
-## 💡 What Makes This Special
+## What Makes This Special
 
 ### Compared to typical API docs:
-- ✅ More conceptual explanations
-- ✅ Multiple complete examples
-- ✅ Progressive learning paths
-- ✅ Real-world use cases
+- More conceptual explanations
+- Multiple complete examples
+- Progressive learning paths
+- Real-world use cases
 
 ### Inspired by best practices from:
 - Stripe's documentation (clarity and examples)

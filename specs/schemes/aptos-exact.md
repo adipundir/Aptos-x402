@@ -249,7 +249,7 @@ if (!txDetails.success) {
 ### Settlement characteristics:
 - 🐢 **Slow**: Requires blockchain confirmation (typically 1-3 seconds on Aptos)
 - 💰 **Gas costs**: Transaction fees are paid by the sender (client), NOT the facilitator or resource server
-- ✅ **Final**: Once settled, the payment is irreversible
+ - **Final**: Once settled, the payment is irreversible
 - 🔒 **Atomic**: Resource delivery should only occur after successful settlement
 
 ### Gas Handling
@@ -267,7 +267,7 @@ This implementation uses **Pattern A** from the Aptos SDK docs:
   - Client signs transaction and pays gas
   - Facilitator broadcasts using `aptos.transaction.submit.simple()`
   - Simple, no facilitator funds needed
-  - ✅ Recommended for most x402 use cases
+  - Recommended for most x402 use cases
 
 - **Pattern B (Alternative)**: "Fee-payer flow"
   - Client signs transaction but facilitator pays gas

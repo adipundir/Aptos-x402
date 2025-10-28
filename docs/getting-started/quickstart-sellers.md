@@ -26,8 +26,8 @@ The wallet address is simply where payment funds will be transferred. You don't 
 
 Create a `.env.local` file in your project root:
 
-```env
-PAYMENT_RECIPIENT_ADDRESS=0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
+```
+PAYMENT_RECIPIENT_ADDRESS=Your_Address
 FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 ```
 

@@ -1,6 +1,6 @@
 # Welcome to x402 for Aptos
 
-x402 is an open payment protocol that enables HTTP APIs to require payment before serving responses. Built on the HTTP 402 Payment Required status code, it allows services to charge for access directly over HTTP using cryptocurrency payments.
+x402 is an open payment protocol that enables APIs to require payment before serving responses. Built on the HTTP 402 Payment Required status code, it allows services to charge for access directly over APIs using cryptocurrency payments.
 
 This implementation brings x402 to the Aptos blockchain, leveraging Aptos's fast finality and low transaction costs to enable practical micropayments for API access.
 
