@@ -30,7 +30,7 @@ npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk next
 
 Create `.env.local`:
 
-```env
+```
 # Your wallet address (receives payments)
 PAYMENT_RECIPIENT_ADDRESS=0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { Github, Package } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
@@ -9,12 +10,18 @@ export default function Navbar() {
       <div className="max-w-full px-6 h-full flex items-center justify-between">
         <a 
           href="/" 
-          className="flex items-center gap-2 text-2xl font-bold text-zinc-900 hover:text-zinc-700 transition-colors"
+          className="flex items-center gap-3 group"
         >
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-white text-sm font-bold">
-            A
-          </div>
-          Aptos x402
+          <Image
+            src="/logo_dark.svg"
+            alt="Aptos x402 Logo"
+            width={32}
+            height={32}
+            priority
+          />
+          <span className="text-2xl font-semibold tracking-tight bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-600 bg-clip-text text-transparent group-hover:from-zinc-700 group-hover:via-zinc-600 group-hover:to-zinc-500 transition-all" style={{ fontFamily: 'Impact, "Arial Black", sans-serif' }}>
+            Aptos x402
+          </span>
         </a>
         
         <div className="flex items-center gap-3">

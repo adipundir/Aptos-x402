@@ -192,7 +192,7 @@ X-Settlement-Time: 1234
 
 ### Required
 
-```env
+```
 PAYMENT_RECIPIENT_ADDRESS=0xYOUR_ADDRESS
 FACILITATOR_URL=https://facilitator.example.com/api/facilitator
 ```

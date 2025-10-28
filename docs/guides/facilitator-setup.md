@@ -7,10 +7,10 @@ This guide walks through deploying a production-ready facilitator service for x4
 **Before setting up your own facilitator**, note that we provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that works on both **testnet and mainnet**. 
 
 This service is:
-- ✅ **Completely free** (currently and for the foreseeable future)
-- ✅ **Production-ready** for most use cases
-- ✅ **Zero setup required** - just use it in your configuration
-- ✅ **No authentication needed**
+- **Completely free** (currently and for the foreseeable future)
+- **Production-ready** for most use cases
+- **Zero setup required** - just use it in your configuration
+- **No authentication needed**
 
 **You only need to set up your own facilitator if you require:**
 - Guaranteed uptime SLAs
