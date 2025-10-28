@@ -13,9 +13,8 @@ npm install @adipundir/aptos-x402
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-const response = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/premium-data'
+const response = await x402axios.get('https://api.example.com/premium-data', {
+  privateKey: process.env.PRIVATE_KEY!
 });
 
 console.log(response.status);
@@ -31,13 +30,13 @@ if (response.paymentInfo) {
 ## POST requests and headers
 
 ```typescript
-const analysis = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/analyze',
-  method: 'POST',
-  body: { text: 'Hello world' },
-  headers: { 'X-Custom': 'value' }
-});
+const analysis = await x402axios.post('https://api.example.com/analyze', 
+  { text: 'Hello world' },
+  { 
+    privateKey: process.env.PRIVATE_KEY!,
+    headers: { 'X-Custom': 'value' }
+  }
+);
 ```
 
 ## Using an Aptos Account
@@ -49,9 +48,8 @@ import { x402axios } from '@adipundir/aptos-x402';
 const privateKey = new Ed25519PrivateKey(process.env.PRIVATE_KEY!);
 const account = Account.fromPrivateKey({ privateKey });
 
-const res = await x402axios({
-  account,
-  url: 'https://api.example.com/premium-data'
+const res = await x402axios.get('https://api.example.com/premium-data', {
+  account
 });
 ```
 

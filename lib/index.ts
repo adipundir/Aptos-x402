@@ -6,13 +6,16 @@
  * 
  * @packageDocumentation
  * 
- * @example Buyer Example - Access paid APIs
+ * @example Buyer Example - Access paid APIs (Axios-compatible)
  * ```typescript
  * import { x402axios } from '@adipundir/aptos-x402';
  * 
- * const response = await x402axios({
- *   privateKey: process.env.PRIVATE_KEY!,
- *   url: 'https://api.example.com/premium/data'
+ * // Works exactly like axios
+ * const response = await x402axios.get('https://api.example.com/data');
+ * 
+ * // With x402 payment support
+ * const response = await x402axios.get('https://api.example.com/premium/data', {
+ *   privateKey: process.env.PRIVATE_KEY!
  * });
  * console.log(response.data);
  * console.log(response.paymentInfo?.transactionHash);
@@ -35,11 +38,13 @@
 // ============================================
 
 /**
- * Main buyer function - Automatically handles x402 payment flow
+ * Main buyer function - Axios-compatible with x402 payment support
  * @recommended Use this for consuming paid APIs
  */
 export { x402axios, decodeXPaymentResponse } from "./x402-axios";
 export type { 
+  AxiosRequestConfig,
+  AxiosResponse,
   WithPaymentInterceptorOptions,
   X402Response, 
   X402PaymentResponse 

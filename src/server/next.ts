@@ -82,7 +82,10 @@ export function paymentMiddleware(
     const paymentHeader = request.headers.get("X-PAYMENT");
     
     // Map simple network names to full Aptos network identifiers
-    const simpleNetwork = routeConfig.network || "testnet";
+    const simpleNetwork = routeConfig.network;
+    if (!simpleNetwork) {
+      throw new Error('Network not specified in route configuration');
+    }
     const network = simpleNetwork === "mainnet" 
       ? APTOS_MAINNET 
       : simpleNetwork === "testnet" 

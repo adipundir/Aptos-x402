@@ -51,19 +51,49 @@ npm install @adipundir/aptos-x402
 
 ## 🛒 For Buyers (Consuming Paid APIs)
 
-Access paid APIs with automatic payment handling:
+Access paid APIs with automatic payment handling using our **axios-compatible** interface:
 
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-// Make a request - payment is handled automatically!
-const response = await x402axios({
-  privateKey: '0x...',  // Your Aptos private key
-  url: 'https://api.example.com/premium/data'
+// Works exactly like axios - payment handled automatically!
+const response = await x402axios.get('https://api.example.com/premium/data', {
+  privateKey: '0x...'  // Your Aptos private key
 });
 
 console.log(response.data);              // API response data
 console.log(response.paymentInfo);       // { transactionHash, amount, ... }
+```
+
+### Full Axios Compatibility
+
+x402axios supports all standard axios methods and features:
+
+```typescript
+// GET request
+const response = await x402axios.get('https://api.example.com/data', {
+  privateKey: '0x...',
+  timeout: 5000,
+  headers: { 'Authorization': 'Bearer token' }
+});
+
+// POST request
+const response = await x402axios.post('https://api.example.com/analyze', 
+  { text: 'Hello world' },
+  { 
+    privateKey: '0x...',
+    headers: { 'Content-Type': 'application/json' }
+  }
+);
+
+// Create instance with defaults
+const api = x402axios.create({
+  baseURL: 'https://api.example.com',
+  timeout: 10000,
+  privateKey: '0x...'  // Default for all requests
+});
+
+const response = await api.get('/premium/data');
 ```
 
 **What happens automatically:**
@@ -227,12 +257,14 @@ If you see this 402 response, your middleware is working perfectly!
 
 ## Features
 
+ - **Axios-compatible** - Drop-in replacement for axios with x402 payment support
  - **Zero payment logic in your code** - Middleware handles everything
  - **Aptos native** - Built on Aptos's fast finality (~1-3s)
- - **Type-safe** - Full TypeScript support
+ - **Type-safe** - Full TypeScript support with proper interfaces
  - **x402 compliant** - Follows official Coinbase specification
  - **Next.js optimized** - Designed for Next.js 15+ (more frameworks coming)
  - **Production ready** - Comprehensive error handling and logging
+ - **Backward compatible** - Old interface still works alongside new axios interface
 
 ## How It Works
 
@@ -425,27 +457,25 @@ interface PaymentRequiredResponse {
 
 ## Client Integration
 
-### How Clients Pay for Protected APIs
+### Simple Approach: Use x402axios
 
-When your API returns 402, clients need to sign an Aptos transaction and retry with the `X-PAYMENT` header.
-
-### Understanding the X-PAYMENT Header
-
-The middleware expects a base64-encoded JSON payload in the `X-PAYMENT` header:
+The easiest way to consume protected APIs is with our **axios-compatible** wrapper:
 
 ```typescript
-{
-  "x402Version": 1,
-  "scheme": "exact",
-  "network": "aptos-testnet",  // or "aptos-mainnet"
-  "payload": {
-    "signature": "<base64-encoded-BCS-signature>",
-    "transaction": "<base64-encoded-BCS-transaction>"
-  }
-}
+import { x402axios } from '@adipundir/aptos-x402';
+
+// Automatic payment handling - works exactly like axios!
+const response = await x402axios.get('https://api.example.com/premium/data', {
+  privateKey: '0x...'  // Your Aptos private key
+});
+
+console.log(response.data);              // API response data
+console.log(response.paymentInfo);       // Payment details
 ```
 
-### Complete Client Example
+### Advanced: Manual Implementation
+
+If you need more control, you can implement the payment flow manually:
 
 ```typescript
 import { Aptos, AptosConfig, Network, Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
@@ -459,66 +489,42 @@ async function callProtectedAPI(url: string, privateKey: string) {
     const paymentReqs = await response.json();
     const requirement = paymentReqs.accepts[0];
     
-    console.log('Payment required:', {
-      amount: requirement.maxAmountRequired,
-      recipient: requirement.payTo,
-      network: requirement.network
-    });
-    
     // Step 3: Initialize Aptos client
     const config = new AptosConfig({ 
       network: requirement.network === 'aptos-testnet' ? Network.TESTNET : Network.MAINNET 
     });
     const aptos = new Aptos(config);
     
-    // Step 4: Create account from private key
+    // Step 4: Create account and build transaction
     const account = Account.fromPrivateKey({
       privateKey: new Ed25519PrivateKey(privateKey)
     });
     
-    // Step 5: Build transaction
     const transaction = await aptos.transaction.build.simple({
       sender: account.accountAddress,
       data: {
         function: '0x1::aptos_account::transfer',
-        functionArguments: [
-          requirement.payTo,
-          requirement.maxAmountRequired
-        ]
+        functionArguments: [requirement.payTo, requirement.maxAmountRequired]
       }
     });
     
-    // Step 6: Sign transaction (offline - no gas yet)
-    const authenticator = aptos.transaction.sign({ 
-      signer: account, 
-      transaction 
-    });
+    // Step 5: Sign and create payment header
+    const authenticator = aptos.transaction.sign({ signer: account, transaction });
     
-    // Step 7: Serialize to BCS and encode to base64
-    const transactionBytes = transaction.bcsToBytes();
-    const signatureBytes = authenticator.bcsToBytes();
-    
-    const transactionBase64 = Buffer.from(transactionBytes).toString('base64');
-    const signatureBase64 = Buffer.from(signatureBytes).toString('base64');
-    
-    // Step 8: Create payment payload
     const paymentPayload = {
       x402Version: 1,
       scheme: requirement.scheme,
       network: requirement.network,
       payload: {
-        signature: signatureBase64,
-        transaction: transactionBase64
+        signature: Buffer.from(authenticator.bcsToBytes()).toString('base64'),
+        transaction: Buffer.from(transaction.bcsToBytes()).toString('base64')
       }
     };
     
-    // Step 9: Encode payload to base64
-    const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
-    
-    // Step 10: Retry with payment
+    // Step 6: Retry with payment
     response = await fetch(url, {
       headers: {
-        'X-PAYMENT': paymentHeader
+        'X-PAYMENT': Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
       }
     });
   }
@@ -587,9 +593,8 @@ const signedTx = await signTransaction(transaction);
 import { x402axios } from '@adipundir/aptos-x402';
 
 // Agent automatically handles payments
-const response = await x402axios({
-  privateKey: process.env.AGENT_KEY!,
-  url: 'https://api.example.com/premium/data'
+const response = await x402axios.get('https://api.example.com/premium/data', {
+  privateKey: process.env.AGENT_KEY!
 });
 
 const data = response.data;

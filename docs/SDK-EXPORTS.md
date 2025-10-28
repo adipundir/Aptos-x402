@@ -10,15 +10,14 @@ The `@adipundir/aptos-x402` SDK provides functions for both **buyers** (consumin
 
 ### **Recommended: `x402axios`**
 
-The simplest way to access x402-protected APIs. Just provide your private key and URL!
+The simplest way to access x402-protected APIs. **Axios-compatible** with automatic payment handling!
 
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-// Make a request - payment handled automatically!
-const response = await x402axios({
-  privateKey: '0x...',
-  url: 'https://api.example.com/protected/data'
+// Works exactly like axios - payment handled automatically!
+const response = await x402axios.get('https://api.example.com/protected/data', {
+  privateKey: '0x...'
 });
 
 console.log(response.data);
@@ -26,34 +25,49 @@ console.log(response.paymentInfo); // { transactionHash, amount, ... }
 ```
 
 **Features:**
+- **Axios-compatible** - Drop-in replacement for axios
 - Automatically detects 402 responses
 - Extracts payment requirements from response
 - Builds and signs transaction
 - Retries with payment
 - Returns data + payment info
+- Supports all axios methods: `.get()`, `.post()`, `.put()`, etc.
+- Full axios configuration support (timeout, headers, etc.)
 
 **Types:**
 ```typescript
-interface WithPaymentInterceptorOptions {
-  privateKey?: string;           // Private key OR
-  account?: Account;             // Aptos account
-  url: string;                   // Required
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  body?: any;
+// Axios-compatible request configuration
+interface AxiosRequestConfig {
+  url?: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
+  baseURL?: string;
   headers?: Record<string, string>;
+  data?: any;
+  params?: Record<string, any>;
+  timeout?: number;
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
+  // ... all standard axios options
+  privateKey?: string;           // x402 payment option
+  account?: Account;             // x402 payment option
 }
 
-interface X402Response<T = any> {
-  status: number;
+// Axios-compatible response
+interface AxiosResponse<T = any> {
   data: T;
+  status: number;
+  statusText: string;
   headers: Record<string, string>;
-  paymentInfo?: {
+  config: AxiosRequestConfig;
+  paymentInfo?: {                // x402 payment info
     transactionHash: string;
     amount: string;
     recipient: string;
     settled: boolean;
   };
 }
+
+// Backward compatibility alias
+type X402Response<T = any> = AxiosResponse<T>;
 ```
 
 ### **Helper: `decodeXPaymentResponse`**

@@ -40,13 +40,15 @@ export function paymentMiddleware(
 
     const paymentHeader = request.headers.get("X-PAYMENT");
     
-    // Map simple network names to full Aptos network identifiers
-    const simpleNetwork = routeConfig.network || "testnet";
-    const network = simpleNetwork === "mainnet" 
+    // Map network names to full Aptos network identifiers
+    const routeNetwork = routeConfig.network!;
+    const network = routeNetwork === "mainnet" 
       ? APTOS_MAINNET 
-      : simpleNetwork === "testnet" 
+      : routeNetwork === "testnet" 
       ? APTOS_TESTNET 
-      : `aptos-${simpleNetwork}`;
+      : routeNetwork.startsWith("aptos-")
+      ? routeNetwork  // Already has aptos- prefix
+      : `aptos-${routeNetwork}`;
     
     const facilitatorUrl = facilitatorConfig.url;
 
@@ -73,11 +75,11 @@ export function paymentMiddleware(
       network: network,
       maxAmountRequired: routeConfig.price,
       resource: request.url,
-      description: routeConfig.config?.description || "Access to protected resource",
-      mimeType: routeConfig.config?.mimeType || "application/json",
-      outputSchema: routeConfig.config?.outputSchema || null,
+      description: routeConfig.config?.description!,
+      mimeType: routeConfig.config?.mimeType!,
+      outputSchema: routeConfig.config?.outputSchema!,
       payTo: recipientAddress,
-      maxTimeoutSeconds: routeConfig.config?.maxTimeoutSeconds || 60,
+      maxTimeoutSeconds: routeConfig.config?.maxTimeoutSeconds!,
       extra: null,
     };
 

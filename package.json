@@ -1,7 +1,7 @@
 {
   "name": "@adipundir/aptos-x402",
-  "version": "0.1.3",
-  "description": "HTTP 402 Payment Protocol SDK for Aptos - Add blockchain payments to your APIs with x402axios (buyers) and paymentMiddleware (sellers)",
+  "version": "0.2.0",
+  "description": "HTTP 402 Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection and zero fallbacks",
   "author": "Adi Pundir",
   "license": "MIT",
   "repository": {
@@ -16,7 +16,14 @@
     "micropayment",
     "http-402",
     "blockchain",
-    "cryptocurrency"
+    "cryptocurrency",
+    "axios",
+    "axios-compatible",
+    "typescript",
+    "nextjs",
+    "middleware",
+    "ai-payments",
+    "machine-to-machine"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

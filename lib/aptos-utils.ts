@@ -32,6 +32,7 @@ export interface X402PaymentResponse {
 /**
  * Initialize Aptos client based on network
  * Supports both x402 format (aptos-testnet) and simple format (testnet)
+ * Uses custom RPC URLs from environment variables when available
  */
 export function getAptosClient(network: string = "testnet"): Aptos {
   // Map x402 network identifiers to Aptos SDK network enum
@@ -50,7 +51,29 @@ export function getAptosClient(network: string = "testnet"): Aptos {
     aptosNetwork = network.toLowerCase() as Network;
   }
   
-  const config = new AptosConfig({ network: aptosNetwork });
+  // Check for custom RPC URLs from environment variables
+  let config: AptosConfig;
+  let rpcUrl: string | undefined;
+  
+  // Map network to corresponding environment variable
+  if (aptosNetwork === Network.MAINNET && process.env.APTOS_MAINNET_NODE_URL) {
+    rpcUrl = process.env.APTOS_MAINNET_NODE_URL;
+  } else if (aptosNetwork === Network.TESTNET && process.env.APTOS_TESTNET_NODE_URL) {
+    rpcUrl = process.env.APTOS_TESTNET_NODE_URL;
+  } else if (aptosNetwork === Network.DEVNET && process.env.APTOS_DEVNET_NODE_URL) {
+    rpcUrl = process.env.APTOS_DEVNET_NODE_URL;
+  }
+  
+  if (rpcUrl) {
+    config = new AptosConfig({ 
+      network: aptosNetwork,
+      fullnode: rpcUrl
+    });
+  } else {
+    // Use default Aptos Labs RPC endpoints
+    config = new AptosConfig({ network: aptosNetwork });
+  }
+  
   return new Aptos(config);
 }
 

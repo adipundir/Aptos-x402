@@ -82,9 +82,9 @@ async function main() {
     const startTime = Date.now();
 
     // Make request - payment is handled automatically!
-    const response = await x402axios({
-      privateKey: privateKey.trim(),
-      url: 'http://localhost:3000/api/protected/weather'
+    // Using new axios-compatible interface
+    const response = await x402axios.get('http://localhost:3000/api/protected/weather', {
+      privateKey: privateKey.trim()
     });
     
     const endTime = Date.now();
@@ -122,7 +122,25 @@ async function main() {
       console.log(`Recipient: ${paymentInfo.recipient}`);
       console.log(`Settled: ${paymentInfo.settled ? '✓' : '✗'}`);
       console.log(`\n🔗 View on Explorer:`);
-      console.log(`   https://explorer.aptoslabs.com/txn/${paymentInfo.transactionHash}?network=testnet`);
+      // Read from .env file since this script runs outside Next.js
+      const envPath = require('path').join(__dirname, '..', '.env');
+      const envContent = require('fs').readFileSync(envPath, 'utf-8');
+      const envVars: Record<string, string> = {};
+      envContent.split('\n').forEach((line: string) => {
+        const [key, value] = line.split('=');
+        if (key && value) {
+          envVars[key.trim()] = value.trim();
+        }
+      });
+      
+      const aptosNetwork = envVars.APTOS_NETWORK;
+      if (!aptosNetwork) {
+        throw new Error('APTOS_NETWORK not found in .env file');
+      }
+      const explorerNetwork = aptosNetwork === 'aptos-mainnet' ? 'mainnet' : 
+                             aptosNetwork === 'aptos-testnet' ? 'testnet' : 
+                             aptosNetwork.replace('aptos-', '');
+      console.log(`   https://explorer.aptoslabs.com/txn/${paymentInfo.transactionHash}?network=${explorerNetwork}`);
     } else {
       // Check X-Payment-Response header
       const paymentResponseHeader = response.headers['x-payment-response'];
@@ -138,7 +156,25 @@ async function main() {
             console.log(`Transaction Hash: ${decoded.settlement.txHash}`);
             console.log(`Network: ${decoded.settlement.networkId}`);
             console.log(`\n🔗 View on Explorer:`);
-            console.log(`   https://explorer.aptoslabs.com/txn/${decoded.settlement.txHash}?network=testnet`);
+            // Read from .env file since this script runs outside Next.js
+            const envPath = require('path').join(__dirname, '..', '.env');
+            const envContent = require('fs').readFileSync(envPath, 'utf-8');
+            const envVars: Record<string, string> = {};
+            envContent.split('\n').forEach((line: string) => {
+              const [key, value] = line.split('=');
+              if (key && value) {
+                envVars[key.trim()] = value.trim();
+              }
+            });
+            
+            const aptosNetwork = envVars.APTOS_NETWORK;
+            if (!aptosNetwork) {
+              throw new Error('APTOS_NETWORK not found in .env file');
+            }
+            const explorerNetwork = aptosNetwork === 'aptos-mainnet' ? 'mainnet' : 
+                                   aptosNetwork === 'aptos-testnet' ? 'testnet' : 
+                                   aptosNetwork.replace('aptos-', '');
+            console.log(`   https://explorer.aptoslabs.com/txn/${decoded.settlement.txHash}?network=${explorerNetwork}`);
           }
         } catch (error) {
           console.log('\n⚠️  Could not parse payment response header');

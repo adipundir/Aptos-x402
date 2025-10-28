@@ -1,7 +1,7 @@
 import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
 
 async function fundAccount() {
-  const address = "0xdcbddd6c678464228dc51e78d19672a5ff09cd4530e1f45e50cf1b941108c374";
+  const address = "0xfab13bbad0d9ed276b08cc5394b7a9e259246221fe67efc6da555757415e1850";
   
   if (!address) {
     console.error("❌ No DEMO_ADDRESS found in .env");

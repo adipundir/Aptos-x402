@@ -13,10 +13,10 @@ export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     "/api/protected/weather": {
-      price: "1000000",
-      network: "testnet",
+      price: "10",   // 0.00000001 APT in Octas
+      network: process.env.APTOS_NETWORK!,
       config: {
-        description: "Access to weather data API",
+        description: "Access to weather data API (0.00000001 APT)",
       },
     },
   },

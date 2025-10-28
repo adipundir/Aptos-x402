@@ -76,7 +76,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    const network = paymentRequirements.network || "testnet";
+    const network = paymentRequirements.network;
+    if (!network) {
+      console.error(`[Facilitator Settle] ❌ Network not specified in payment requirements`);
+      const response: SettleResponse = {
+        success: false,
+        error: "Network not specified in payment requirements",
+        txHash: null,
+        networkId: null,
+      };
+      return NextResponse.json(response, { status: 400 });
+    }
     console.log(`[Facilitator Settle] Network: ${network}`);
     
     const aptos = getAptosClient(network);

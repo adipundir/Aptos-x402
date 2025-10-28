@@ -37,10 +37,9 @@ export default function Home() {
 
       const startTime = performance.now();
       
-      // Simple! Just privateKey and url
-      const result = await x402axios({
+      // Simple! Just privateKey and url (axios-compatible interface)
+      const result = await x402axios.get(API_URL, {
         privateKey: DEMO_PRIVATE_KEY,
-        url: API_URL,
       });
       
       const endTime = performance.now();
@@ -192,7 +191,7 @@ export default function Home() {
                   Access Protected Weather API
                 </h2>
           <p className="text-gray-700 mb-4 text-sm">
-            Click below to access the protected weather API. The x402axios() function will automatically handle the payment if required!
+            Click below to access the protected weather API. The x402axios.get() function will automatically handle the payment if required!
           </p>
           <p className="text-gray-600 mb-4 text-xs italic">
             💡 Open DevTools Network tab to see 2 requests: first without payment (gets 402), then with payment (gets data)
@@ -227,7 +226,13 @@ export default function Home() {
                       {response.transactionHash}
                     </code>
                     <a
-                      href={`https://explorer.aptoslabs.com/txn/${response.transactionHash}?network=testnet`}
+                      href={`https://explorer.aptoslabs.com/txn/${response.transactionHash}?network=${(() => {
+                        const network = process.env.NEXT_PUBLIC_APTOS_NETWORK;
+                        if (!network) {
+                          throw new Error('NEXT_PUBLIC_APTOS_NETWORK environment variable is required');
+                        }
+                        return network.replace('aptos-', '');
+                      })()}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-600 hover:text-blue-800 text-xs underline"

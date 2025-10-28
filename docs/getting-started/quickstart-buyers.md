@@ -22,14 +22,14 @@ npm install @adipundir/aptos-x402
 
 ## Simple Usage with x402axios
 
-The easiest way to consume paid APIs is with the `x402axios` function:
+The easiest way to consume paid APIs is with our **axios-compatible** `x402axios` function:
 
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-const response = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/premium/weather'
+// Works exactly like axios - payment handled automatically!
+const response = await x402axios.get('https://api.example.com/premium/weather', {
+  privateKey: process.env.PRIVATE_KEY!
 });
 
 console.log(response.data);
@@ -67,10 +67,8 @@ import { x402axios } from '@adipundir/aptos-x402';
 
 async function getPremiumWeather() {
   try {
-    const response = await x402axios({
-      privateKey: process.env.PRIVATE_KEY!,
-      url: 'https://api.example.com/premium/weather',
-      method: 'GET'
+    const response = await x402axios.get('https://api.example.com/premium/weather', {
+      privateKey: process.env.PRIVATE_KEY!
     });
 
     console.log('Weather data:', response.data);
@@ -95,29 +93,25 @@ async function getPremiumWeather() {
 ### GET Request
 
 ```typescript
-const weather = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/weather'
+const weather = await x402axios.get('https://api.example.com/weather', {
+  privateKey: process.env.PRIVATE_KEY!
 });
 ```
 
 ### POST Request
 
 ```typescript
-const analysis = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/analyze',
-  method: 'POST',
-  body: { text: 'Analyze this content' }
-});
+const analysis = await x402axios.post('https://api.example.com/analyze', 
+  { text: 'Analyze this content' },
+  { privateKey: process.env.PRIVATE_KEY! }
+);
 ```
 
 ### Custom Headers
 
 ```typescript
-const response = await x402axios({
+const response = await x402axios.get('https://api.example.com/data', {
   privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/data',
   headers: {
     'X-Custom-Header': 'value'
   }
@@ -135,9 +129,8 @@ import { x402axios } from '@adipundir/aptos-x402';
 const privateKey = new Ed25519PrivateKey(process.env.PRIVATE_KEY!);
 const account = Account.fromPrivateKey({ privateKey });
 
-const response = await x402axios({
-  account: account,  // Use account instead of privateKey
-  url: 'https://api.example.com/premium/data'
+const response = await x402axios.get('https://api.example.com/premium/data', {
+  account: account  // Use account instead of privateKey
 });
 ```
 

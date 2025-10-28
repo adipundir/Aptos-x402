@@ -14,9 +14,8 @@ Use the single helper provided by this SDK. It detects 402, builds and signs the
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-const res = await x402axios({
-	privateKey: process.env.PRIVATE_KEY!,
-	url: 'https://api.example.com/premium/weather'
+const res = await x402axios.get('https://api.example.com/premium/weather', {
+	privateKey: process.env.PRIVATE_KEY!
 });
 
 console.log(res.status, res.data);

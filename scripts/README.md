@@ -202,9 +202,8 @@ After running the demo, try:
    ```typescript
     import { x402axios } from '@adipundir/aptos-x402';
 
-    const response = await x402axios({
-       privateKey: process.env.PRIVATE_KEY!,
-       url: 'http://localhost:3000/api/protected/weather'
+    const response = await x402axios.get('http://localhost:3000/api/protected/weather', {
+       privateKey: process.env.PRIVATE_KEY!
     });
 
     console.log(response.data);

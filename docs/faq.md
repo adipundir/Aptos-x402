@@ -2,7 +2,7 @@
 
 ## What is x402?
 
-x402 is an open protocol that enables HTTP APIs to require payment before serving responses. It uses the HTTP 402 Payment Required status code and blockchain payments to enable machine-to-machine micropayments without requiring accounts or API keys.
+x402 is an open protocol that enables Apis to require payment before serving responses. It uses the HTTP 402 Payment Required status code and blockchain payments to enable machine-to-machine micropayments without requiring accounts or API keys.
 
 ## Why use blockchain payments instead of traditional methods?
 

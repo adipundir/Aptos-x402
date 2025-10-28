@@ -16,7 +16,7 @@ Both implementations follow the same x402 protocol specification but are adapted
 | **Blockchain** | Ethereum/Base | Aptos |
 | **Payment Token** | USDC | APT |
 | **Language** | TypeScript/Python | TypeScript |
-| **HTTP Client** | axios, fetch, httpx | Single-function helper (x402axios) |
+| **HTTP Client** | axios, fetch, httpx | Axios-compatible (x402axios) |
 | **Signature Scheme** | ECDSA (secp256k1) | Ed25519 |
 | **Transaction Format** | EVM call data | BCS serialization |
 | **Wallet** | viem/eth-account | @aptos-labs/ts-sdk |
@@ -86,9 +86,8 @@ console.log(paymentResponse);
 ```typescript
 import { x402axios } from '@adipundir/aptos-x402';
 
-const response = await x402axios({
-  privateKey: process.env.PRIVATE_KEY!,
-  url: 'https://api.example.com/paid-endpoint'
+const response = await x402axios.get('https://api.example.com/paid-endpoint', {
+  privateKey: process.env.PRIVATE_KEY!
 });
 
 console.log(response.data);

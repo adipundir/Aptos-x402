@@ -28,7 +28,7 @@ export default function LandingPage() {
 
             {/* Tagline */}
             <p className="text-xl text-zinc-600 max-w-2xl mx-auto leading-relaxed">
-              Monetize your APIs with blockchain micropayments—zero payment logic required.
+              Monetize your APIs with blockchain micropayments.
             </p>
 
             {/* CTA Buttons */}
@@ -110,8 +110,8 @@ export default function LandingPage() {
             </h2>
             <p className="text-zinc-600">
               Three steps to monetize your APIs
-            </p>
-          </div>
+                          </p>
+                        </div>
 
           <div className="grid md:grid-cols-3 gap-4">
             {/* Step 1 */}
@@ -173,23 +173,23 @@ export const middleware =
                   <h3 className="font-semibold text-zinc-900 text-sm">
                     Write your API route
                   </h3>
-                </div>
-              </div>
+                              </div>
+                                </div>
               <div className="p-4">
                 <div className="space-y-2 text-xs text-zinc-600">
                   <div className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-zinc-400 mt-1.5 flex-shrink-0"></div>
                     <span>No payment logic needed</span>
-                  </div>
+                                </div>
                   <div className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-zinc-400 mt-1.5 flex-shrink-0"></div>
                     <span>Payment verified automatically</span>
-                  </div>
+                                </div>
                   <div className="flex items-start gap-2">
                     <div className="w-1 h-1 rounded-full bg-zinc-400 mt-1.5 flex-shrink-0"></div>
                     <span>Focus on your business logic</span>
-                  </div>
-                </div>
+                            </div>
+                          </div>
                 <pre className="mt-4 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto leading-relaxed">
 {`// route.ts
 import { NextResponse } 
@@ -204,8 +204,8 @@ export async function GET() {
     premium: true
   });
 }`}
-                </pre>
-              </div>
+                            </pre>
+                          </div>
             </div>
 
             {/* Step 3 */}
@@ -248,11 +248,11 @@ const result = await x402axios({
 
 // Done! Payment handled
 console.log(result.data);`}
-                </pre>
-              </div>
-            </div>
+                          </pre>
+                        </div>
+                      </div>
           </div>
-        </div>
+          </div>
 
         {/* Footer with Large Branding */}
         <div className="container mx-auto px-6 pb-12 max-w-5xl">
@@ -261,7 +261,7 @@ console.log(result.data);`}
             <div className="text-center mb-12">
               <h2 className="text-[120px] md:text-[160px] lg:text-[200px] font-black leading-none tracking-tighter text-zinc-900" style={{ fontFamily: 'Impact, "Arial Black", sans-serif' }}>
                 aptos-x402
-              </h2>
+                </h2>
             </div>
             
             {/* Footer Links */}
@@ -272,8 +272,8 @@ console.log(result.data);`}
               <div className="flex items-center gap-6">
                 <a
                   href="https://github.com/adipundir/aptos-x402"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                      target="_blank"
+                      rel="noopener noreferrer"
                   className="hover:text-zinc-900 transition-colors"
                 >
                   GitHub
