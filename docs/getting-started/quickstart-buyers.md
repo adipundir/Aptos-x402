@@ -11,7 +11,7 @@ The `x402axios` client provides an axios-compatible interface that automatically
 3. Retries requests with payment headers
 4. Returns data + payment receipts
 
-**Key Feature:** All signing happens client-side - your private keys never leave your machine.
+- Key Feature: All signing happens client-side - your private keys never leave your machine.
 
 ## Prerequisites
 
