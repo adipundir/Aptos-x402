@@ -36,7 +36,7 @@ npx tsx -e "import { Account } from '@aptos-labs/ts-sdk'; const acc = Account.ge
 
 Create `.env.local` in your project root:
 
-```env
+```
 PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS
 FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 ```

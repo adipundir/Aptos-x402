@@ -226,9 +226,11 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
 
   const convertMarkdownToHTML = (md: string) => {
     let html = md;
-    
+
+    // Inline code, links, emphasis (outside of code blocks only)
     html = html.replace(/`([^`]+)`/g, '<code class="bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>');
-    
+
+    // Headings with anchor ids
     html = html.replace(/^#### (.*?)$/gm, (match, text) => {
       const id = text.toLowerCase().replace(/[^\w]+/g, '-');
       return `<h4 id="${id}" class="text-xl font-semibold mb-3 mt-6 text-zinc-900 scroll-mt-20">${text}</h4>`;
@@ -245,42 +247,107 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
       const id = text.toLowerCase().replace(/[^\w]+/g, '-');
       return `<h1 id="${id}" class="text-4xl font-bold mb-6 mt-2 text-zinc-900 scroll-mt-20">${text}</h1>`;
     });
-    
+
+    // Links and emphasis
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-zinc-900 hover:text-zinc-700 underline" target="_blank" rel="noopener noreferrer">$1</a>');
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-zinc-900">$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em class="italic text-zinc-800">$1</em>');
-    
+
+    // Line-by-line block parsing for lists, tables, and blockquotes
     const lines = html.split('\n');
     const processed: string[] = [];
-    let inList = false;
-    let listItems: string[] = [];
-    
+
+    let inUl = false; let ulItems: string[] = [];
+    let inOl = false; let olItems: string[] = [];
+
+    const flushUl = () => {
+      if (inUl) {
+        processed.push(`<ul class="list-disc pl-6 mb-6 space-y-2">${ulItems.join('\n')}</ul>`);
+        inUl = false; ulItems = [];
+      }
+    };
+    const flushOl = () => {
+      if (inOl) {
+        processed.push(`<ol class="list-decimal pl-6 mb-6 space-y-2">${olItems.join('\n')}</ol>`);
+        inOl = false; olItems = [];
+      }
+    };
+
+    const isTableSep = (line: string) => /^(\s*\|\s*)?:?-{3,}:?(\s*\|\s*:?-{3,}:?)*(\s*\|\s*)?$/.test(line.trim());
+    const splitTableRow = (line: string) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      const listMatch = line.match(/^[-*]\s+(.+)$/);
-      
-      if (listMatch) {
-        if (!inList) {
-          inList = true;
-          listItems = [];
+
+      // Handle tables: header | sep | rows
+      const next = lines[i + 1] ?? '';
+      if (line.includes('|') && isTableSep(next)) {
+        flushUl(); flushOl();
+        const headers = splitTableRow(line);
+        const alignTokens = splitTableRow(next).map(t => t.replace(/\s+/g, ''));
+        const aligns = alignTokens.map(t => (t.startsWith(':-') && t.endsWith('-:')) ? 'center' : (t.endsWith('-:') ? 'right' : 'left'));
+        i += 2;
+        const rows: string[][] = [];
+        while (i < lines.length && lines[i].includes('|') && !/^\s*$/.test(lines[i])) {
+          rows.push(splitTableRow(lines[i]));
+          i++;
         }
-        listItems.push(`<li class="mb-2 text-zinc-900">${listMatch[1]}</li>`);
+        // Step back one because the for-loop will i++
+        i--;
+        const thead = `<thead class="border-b border-zinc-200"><tr>${headers.map((h, idx) => `<th class="px-3 py-2 text-sm font-semibold text-zinc-900 text-${aligns[idx] || 'left'}">${h}</th>`).join('')}</tr></thead>`;
+        const tbody = `<tbody>${rows.map(r => `<tr class="border-b last:border-0 border-zinc-100">${r.map((c, idx) => `<td class="px-3 py-2 text-zinc-800 align-top text-${aligns[idx] || 'left'}">${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        processed.push(`<div class="overflow-x-auto my-6"><table class="w-full text-sm border-collapse">${thead}${tbody}</table></div>`);
+        continue;
+      }
+
+      // Unordered list
+      const ulMatch = line.match(/^[-*]\s+(.+)$/);
+      if (ulMatch) {
+        flushOl();
+        if (!inUl) { inUl = true; ulItems = []; }
+        ulItems.push(`<li class="text-zinc-900">${ulMatch[1]}</li>`);
+        continue;
+      }
+
+      // Ordered list
+      const olMatch = line.match(/^(\d+)\.\s+(.+)$/);
+      if (olMatch) {
+        flushUl();
+        if (!inOl) { inOl = true; olItems = []; }
+        olItems.push(`<li class="text-zinc-900">${olMatch[2]}</li>`);
+        continue;
+      }
+
+      // Blockquotes
+      const bqMatch = line.match(/^>\s?(.*)$/);
+      if (bqMatch) {
+        flushUl(); flushOl();
+        const quote: string[] = [bqMatch[1]];
+        let j = i + 1;
+        while (j < lines.length) {
+          const m = lines[j].match(/^>\s?(.*)$/);
+          if (m) { quote.push(m[1]); j++; } else { break; }
+        }
+        i = j - 1;
+        processed.push(`<blockquote class="border-l-4 border-zinc-200 pl-4 my-4 text-zinc-700"><p>${quote.join(' ')}</p></blockquote>`);
+        continue;
+      }
+
+      // Flush any open lists before pushing a normal line
+      if (line.trim() === '') {
+        flushUl(); flushOl();
+        processed.push('');
       } else {
-        if (inList) {
-          processed.push(`<ul class="list-disc pl-6 mb-6 space-y-2">${listItems.join('\n')}</ul>`);
-          inList = false;
-          listItems = [];
-        }
         processed.push(line);
       }
     }
-    
-    if (inList && listItems.length > 0) {
-      processed.push(`<ul class="list-disc pl-6 mb-6 space-y-2">${listItems.join('\n')}</ul>`);
-    }
-    
+
+    // Flush at end
+    flushUl(); flushOl();
+
     html = processed.join('\n');
-    
+
+    // Wrap plain text blocks in paragraphs
     html = html.split('\n\n').map(block => {
       const trimmed = block.trim();
       if (trimmed && !trimmed.startsWith('<') && !trimmed.match(/^#+\s/)) {
@@ -288,7 +355,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
       }
       return trimmed;
     }).join('\n\n');
-    
+
     return html;
   };
 
