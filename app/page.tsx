@@ -1,9 +1,26 @@
 "use client";
 
-import { ArrowRight, Code2, Zap, Shield, Package } from "lucide-react";
+import { ArrowRight, Code2, Zap, Shield, Package, Download, GitBranch } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function LandingPage() {
+  const [npmStats, setNpmStats] = useState<{
+    downloads: number;
+    version: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/npm-stats')
+      .then(res => res.json())
+      .then(data => setNpmStats(data))
+      .catch(err => console.error('Failed to fetch NPM stats:', err));
+  }, []);
+
+  const displayDownloads = npmStats 
+    ? (npmStats.downloads < 200 ? '200+' : npmStats.downloads.toLocaleString())
+    : '200+';
+
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Grid Background */}
@@ -53,6 +70,22 @@ export default function LandingPage() {
               <p className="text-sm text-zinc-500 mb-3">Install via npm</p>
               <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-900 rounded-lg font-mono text-sm text-zinc-100">
                 <span>npm install aptos-x402</span>
+              </div>
+              
+              {/* NPM Stats */}
+              <div className="flex items-center justify-center gap-8 mt-8">
+                <div className="flex items-center gap-2.5 text-base text-zinc-600">
+                  <Download className="w-5 h-5" />
+                  <span className="font-bold text-xl text-zinc-900">{displayDownloads}</span>
+                  <span>weekly downloads</span>
+                </div>
+                {npmStats && (
+                  <div className="flex items-center gap-2.5 text-base text-zinc-600">
+                    <GitBranch className="w-5 h-5" />
+                    <span className="font-bold text-xl text-zinc-900">v{npmStats.version}</span>
+                    <span>latest</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
