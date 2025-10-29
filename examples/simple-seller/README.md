@@ -1,11 +1,11 @@
 # Simple Seller Integration Example
 
-This example shows how to integrate `@adipundir/aptos-x402` into your Next.js application to protect API routes with payments.
+This example shows how to integrate `aptos-x402` into your Next.js application to protect API routes with payments.
 
 ## Installation
 
 ```bash
-npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk
+npm install aptos-x402 @aptos-labs/ts-sdk
 ```
 
 ## Configuration
@@ -25,7 +25,7 @@ FACILITATOR_URL=https://your-app.com/api/facilitator
 ### 2. Create middleware.ts
 
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,

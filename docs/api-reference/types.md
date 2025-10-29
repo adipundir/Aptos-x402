@@ -1,6 +1,6 @@
 # Types Reference
 
-Complete, accurate TypeScript types exported by @adipundir/aptos-x402.
+Complete, accurate TypeScript types exported by aptos-x402.
 
 ## Importing types
 
@@ -21,7 +21,7 @@ import type {
   SettleRequest,
   SettleResponse,
   PaymentResponseHeader,
-} from '@adipundir/aptos-x402/types';
+} from 'aptos-x402/types';
 
 // Protocol constants (values)
 import {
@@ -30,14 +30,14 @@ import {
   APTOS_MAINNET,
   APTOS_TESTNET,
   APTOS_DEVNET,
-} from '@adipundir/aptos-x402/types';
+} from 'aptos-x402/types';
 
 // Client types
 import type {
   WithPaymentInterceptorOptions,
   X402Response,
   X402PaymentResponse,
-} from '@adipundir/aptos-x402';
+} from 'aptos-x402';
 ```
 
 ## Server types
@@ -193,7 +193,7 @@ interface X402PaymentResponse {
 ### Server configuration
 
 ```typescript
-import type { RouteConfig, FacilitatorConfig } from '@adipundir/aptos-x402/types';
+import type { RouteConfig, FacilitatorConfig } from 'aptos-x402/types';
 
 const routes: Record<string, RouteConfig> = {
   '/api/premium/weather': {
@@ -213,8 +213,8 @@ const facilitator: FacilitatorConfig = {
 ### Decoding a payment response header
 
 ```typescript
-import { decodeXPaymentResponse } from '@adipundir/aptos-x402';
-import type { X402PaymentResponse } from '@adipundir/aptos-x402';
+import { decodeXPaymentResponse } from 'aptos-x402';
+import type { X402PaymentResponse } from 'aptos-x402';
 
 const header = response.headers.get('x-payment-response');
 const parsed: X402PaymentResponse | null = decodeXPaymentResponse(header);

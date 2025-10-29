@@ -12,7 +12,7 @@ This page focuses only on what you implement on the client and the server when u
 Use the single helper provided by this SDK. It detects 402, builds and signs the transaction, retries with X-PAYMENT, and returns the final response plus payment info.
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const res = await x402axios.get('https://api.example.com/premium/weather', {
 	privateKey: process.env.PRIVATE_KEY!
@@ -33,7 +33,7 @@ Add the middleware and declare which paths are paid. No payment logic inside you
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
 	process.env.PAYMENT_RECIPIENT_ADDRESS!,

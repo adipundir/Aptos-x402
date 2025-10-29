@@ -5,7 +5,7 @@
  * 
  * Usage:
  * ```typescript
- * import { x402axios } from '@adipundir/aptos-x402';
+ * import { x402axios } from 'aptos-x402';
  * 
  * // Works exactly like axios
  * const response = await x402axios.get('https://api.example.com/data');

@@ -5,13 +5,13 @@ The easiest way to use x402 for Aptos is the x402axios helper. It handles the fu
 ## Installation
 
 ```bash
-npm install @adipundir/aptos-x402
+npm install aptos-x402
 ```
 
 ## Basic usage
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const response = await x402axios.get('https://api.example.com/premium-data', {
   privateKey: process.env.PRIVATE_KEY!
@@ -43,7 +43,7 @@ const analysis = await x402axios.post('https://api.example.com/analyze',
 
 ```typescript
 import { Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const privateKey = new Ed25519PrivateKey(process.env.PRIVATE_KEY!);
 const account = Account.fromPrivateKey({ privateKey });

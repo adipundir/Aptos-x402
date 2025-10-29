@@ -6,11 +6,11 @@
  * 
  * Installation:
  * ```bash
- * npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk
+ * npm install aptos-x402 @aptos-labs/ts-sdk
  * ```
  */
 
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 // Configure your protected routes
 export const middleware = paymentMiddleware(

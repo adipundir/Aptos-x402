@@ -17,7 +17,7 @@ You need Node.js 20 or higher and an Aptos wallet with testnet APT. If you don't
 Install the x402 SDK:
 
 ```bash
-npm install @adipundir/aptos-x402
+npm install aptos-x402
 ```
 
 ## Simple Usage with x402axios
@@ -25,7 +25,7 @@ npm install @adipundir/aptos-x402
 The easiest way to consume paid APIs is with our **axios-compatible** `x402axios` function:
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 // Works exactly like axios - payment handled automatically!
 const response = await x402axios.get('https://api.example.com/premium/weather', {
@@ -63,7 +63,7 @@ Save the private key securely. You'll need it to sign transactions. Fund this ad
 Here's a complete example with error handling:
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 async function getPremiumWeather() {
   try {
@@ -124,7 +124,7 @@ Instead of a private key string, you can pass an Aptos Account object:
 
 ```typescript
 import { Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const privateKey = new Ed25519PrivateKey(process.env.PRIVATE_KEY!);
 const account = Account.fromPrivateKey({ privateKey });

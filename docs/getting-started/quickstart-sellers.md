@@ -11,7 +11,7 @@ You'll need a Next.js 15+ application with the App Router, Node.js 20 or higher,
 Install the x402 SDK:
 
 ```bash
-npm install @adipundir/aptos-x402
+npm install aptos-x402
 ```
 
 The Aptos SDK is included as a dependency, so you don't need to install it separately.
@@ -38,7 +38,7 @@ Replace the address with your actual Aptos wallet address. The facilitator URL a
 Create a file named `middleware.ts` in your project root (at the same level as your `app` directory, not inside it):
 
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,

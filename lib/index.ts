@@ -1,5 +1,5 @@
 /**
- * @adipundir/aptos-x402 - Official x402 Payment Protocol SDK for Aptos
+ * aptos-x402 - Official x402 Payment Protocol SDK for Aptos
  * 
  * Implementation of HTTP 402 Payment Required for Aptos blockchain.
  * Based on Coinbase x402 protocol: https://github.com/coinbase/x402
@@ -8,7 +8,7 @@
  * 
  * @example Buyer Example - Access paid APIs (Axios-compatible)
  * ```typescript
- * import { x402axios } from '@adipundir/aptos-x402';
+ * import { x402axios } from 'aptos-x402';
  * 
  * // Works exactly like axios
  * const response = await x402axios.get('https://api.example.com/data');
@@ -23,7 +23,7 @@
  * 
  * @example Seller Example - Create paid APIs
  * ```typescript
- * import { paymentMiddleware } from '@adipundir/aptos-x402';
+ * import { paymentMiddleware } from 'aptos-x402';
  * 
  * export const middleware = paymentMiddleware(
  *   process.env.RECIPIENT_ADDRESS!,

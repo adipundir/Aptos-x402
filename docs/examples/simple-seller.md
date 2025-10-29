@@ -23,7 +23,7 @@ simple-seller/
 ## Step 1: Install Dependencies
 
 ```bash
-npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk next
+npm install aptos-x402 @aptos-labs/ts-sdk next
 ```
 
 ## Step 2: Environment Variables
@@ -42,7 +42,7 @@ FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
@@ -146,7 +146,7 @@ See [Quickstart for Buyers](../getting-started/quickstart-buyers.md) for how to 
     "start": "next start"
   },
   "dependencies": {
-    "@adipundir/aptos-x402": "^0.1.3",
+    "aptos-x402": "^0.1.3",
     "@aptos-labs/ts-sdk": "^1.26.0",
     "next": "^15.0.0",
     "react": "^19.0.0",

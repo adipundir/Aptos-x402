@@ -54,7 +54,7 @@ export default function Navbar() {
             variant="ghost"
             size="sm"
             className="text-zinc-700 hover:text-zinc-900"
-            onClick={() => window.open('https://www.npmjs.com/package/@adipundir/aptos-x402', '_blank')}
+            onClick={() => window.open('https://www.npmjs.com/package/aptos-x402', '_blank')}
           >
             <Package className="w-4 h-4 mr-2" />
             NPM

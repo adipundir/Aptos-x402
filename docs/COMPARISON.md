@@ -1,4 +1,4 @@
-# Comparison: @adipundir/aptos-x402 vs Coinbase x402
+# Comparison: aptos-x402 vs Coinbase x402
 
 This document compares our Aptos implementation with the official Coinbase x402 implementation for Ethereum/Base.
 
@@ -7,11 +7,11 @@ This document compares our Aptos implementation with the official Coinbase x402 
 Both implementations follow the same x402 protocol specification but are adapted for different blockchain ecosystems:
 
 - **Coinbase x402**: Ethereum/Base (EVM) with USDC payments
-- **@adipundir/aptos-x402**: Aptos blockchain with APT payments
+- **aptos-x402**: Aptos blockchain with APT payments
 
 ## Quick Comparison
 
-| Feature | Coinbase x402 | @adipundir/aptos-x402 |
+| Feature | Coinbase x402 | aptos-x402 |
 |---------|---------------|----------------------|
 | **Blockchain** | Ethereum/Base | Aptos |
 | **Payment Token** | USDC | APT |
@@ -32,9 +32,9 @@ npm install x402-axios
 npm install x402-fetch
 ```
 
-**@adipundir/aptos-x402:**
+**aptos-x402:**
 ```bash
-npm install @adipundir/aptos-x402
+npm install aptos-x402
 ```
 
 ### Create Wallet Client
@@ -53,7 +53,7 @@ const client = createWalletClient({
 });
 ```
 
-**@adipundir/aptos-x402:**
+**aptos-x402:**
 ```typescript
 import { Ed25519PrivateKey, Account } from "@aptos-labs/ts-sdk";
 
@@ -82,9 +82,9 @@ const paymentResponse = decodeXPaymentResponse(
 console.log(paymentResponse);
 ```
 
-**@adipundir/aptos-x402:**
+**aptos-x402:**
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const response = await x402axios.get('https://api.example.com/paid-endpoint', {
   privateKey: process.env.PRIVATE_KEY!
@@ -112,7 +112,7 @@ const response = await withPaymentHeaders(
 console.log(await response.json());
 ```
 
-<!-- No separate fetch wrapper in @adipundir/aptos-x402; use x402axios as shown above. -->
+<!-- No separate fetch wrapper in aptos-x402; use x402axios as shown above. -->
 
 ## Key Differences
 
@@ -208,7 +208,7 @@ Both implementations share these characteristics:
 9. API → Client: Resource + tx hash
 ```
 
-### @adipundir/aptos-x402 Flow
+### aptos-x402 Flow
 
 ```
 1. Client → API: GET /resource
@@ -237,7 +237,7 @@ Both implementations follow a similar request → pay → retry pattern. Actual 
 - Well-documented EVM standards
 - Many examples available
 
-**@adipundir/aptos-x402:** ⭐⭐⭐⭐
+**aptos-x402:** ⭐⭐⭐⭐
 - Clean API design
 - Comprehensive documentation
 - Interactive demos included
@@ -250,7 +250,7 @@ Both implementations follow a similar request → pay → retry pattern. Actual 
 - You want maximum ecosystem support
 - Dollar-denominated pricing is important
 
-### Use @adipundir/aptos-x402 when:
+### Use aptos-x402 when:
 - You're building on Aptos
 - You want Move-based smart contracts
 - You prefer Ed25519 cryptography
@@ -259,7 +259,7 @@ Both implementations follow a similar request → pay → retry pattern. Actual 
 
 ## Migration Path
 
-If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is straightforward:
+If you're familiar with Coinbase x402, migrating to aptos-x402 is straightforward:
 
 1. **Change blockchain SDK:**
    ```typescript
@@ -275,8 +275,8 @@ If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is str
    // From: x402-axios
    import { withPaymentInterceptor } from "x402-axios";
    
-  // To: @adipundir/aptos-x402
-  import { x402axios } from "@adipundir/aptos-x402";
+  // To: aptos-x402
+  import { x402axios } from "aptos-x402";
    ```
 
 3. **Adjust configuration:**
@@ -306,7 +306,7 @@ If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is str
 - 🚧 More chains (in progress)
 - 🚧 MCP integration (in progress)
 
-### @adipundir/aptos-x402
+### aptos-x402
 - ✓ Basic implementation (complete)
 - ✓ HTTP wrappers (complete)
 - ✓ Facilitator service (complete)
@@ -319,7 +319,7 @@ If you're familiar with Coinbase x402, migrating to @adipundir/aptos-x402 is str
 Both implementations are production-ready and follow the x402 protocol specification. Choose based on your blockchain ecosystem:
 
 - **Ethereum/Base ecosystem** → Use Coinbase x402
-- **Aptos ecosystem** → Use @adipundir/aptos-x402
+- **Aptos ecosystem** → Use aptos-x402
 
 The core concepts and developer experience are nearly identical, making it easy to work with either implementation.
 
@@ -330,8 +330,8 @@ The core concepts and developer experience are nearly identical, making it easy 
 - GitHub: https://github.com/coinbase/x402
 - Discord: https://discord.gg/x402
 
-### @adipundir/aptos-x402
+### aptos-x402
 - GitHub: https://github.com/adipundir/aptos-x402
 - Demo: https://aptos-x402.vercel.app
-- NPM: https://www.npmjs.com/package/@adipundir/aptos-x402
+- NPM: https://www.npmjs.com/package/aptos-x402
 

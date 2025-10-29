@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@adipundir/aptos-x402` SDK provides functions for both **buyers** (consuming paid APIs) and **sellers** (creating paid APIs).
+The `aptos-x402` SDK provides functions for both **buyers** (consuming paid APIs) and **sellers** (creating paid APIs).
 
 ---
 
@@ -13,7 +13,7 @@ The `@adipundir/aptos-x402` SDK provides functions for both **buyers** (consumin
 The simplest way to access x402-protected APIs. **Axios-compatible** with automatic payment handling!
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 // Works exactly like axios - payment handled automatically!
 const response = await x402axios.get('https://api.example.com/protected/data', {
@@ -75,7 +75,7 @@ type X402Response<T = any> = AxiosResponse<T>;
 Decode the X-Payment-Response header to get payment settlement details.
 
 ```typescript
-import { decodeXPaymentResponse } from '@adipundir/aptos-x402';
+import { decodeXPaymentResponse } from 'aptos-x402';
 
 const paymentResponse = decodeXPaymentResponse(
   response.headers['x-payment-response']
@@ -93,7 +93,7 @@ console.log(paymentResponse?.settlement?.txHash);
 Create payment-protected API routes in Next.js with simple configuration.
 
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
@@ -148,7 +148,7 @@ import {
   verifyPaymentSimple, 
   settlePaymentSimple,
   createPaymentResponse 
-} from '@adipundir/aptos-x402';
+} from 'aptos-x402';
 
 // Verify a payment (checks signature only, no blockchain)
 const facilitatorBaseUrl = 'https://your-domain.com/api/facilitator';
@@ -185,7 +185,7 @@ import {
   getAccountFromPrivateKey,
   signAndSubmitPayment,
   getAccountBalance,
-} from '@adipundir/aptos-x402';
+} from 'aptos-x402';
 
 // Get Aptos client
 const aptos = getAptosClient('testnet');
@@ -238,7 +238,7 @@ const txHash = await signAndSubmitPayment(
 
 ### **Buyer Example**
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 const response = await x402axios({
   privateKey: process.env.PRIVATE_KEY!,
@@ -249,7 +249,7 @@ console.log(response.data);
 
 ### **Seller Example**
 ```typescript
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.RECIPIENT_ADDRESS!,
