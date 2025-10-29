@@ -642,10 +642,6 @@ No human intervention required.
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
-## License
-
-MIT © Aditya Pundir
-
 ---
 
 <div align="center">

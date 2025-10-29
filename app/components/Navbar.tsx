@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Package } from 'lucide-react';
+import { Github, Package, PlayCircle, BookOpen } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 
@@ -31,6 +31,7 @@ export default function Navbar() {
             className="text-zinc-700 hover:text-zinc-900"
             onClick={() => window.location.href = '/demo'}
           >
+            <PlayCircle className="w-4 h-4 mr-2" />
             Demo
           </Button>
           <Button
@@ -39,6 +40,7 @@ export default function Navbar() {
             className="text-zinc-700 hover:text-zinc-900"
             onClick={() => window.location.href = '/docs'}
           >
+            <BookOpen className="w-4 h-4 mr-2" />
             Docs
           </Button>
           <Button

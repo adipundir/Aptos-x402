@@ -100,57 +100,57 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-24 px-8 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white pt-24 px-8 pb-16">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-black mb-2">
+        <div className="text-center mb-12">
+          <h1 className="text-5xl text-gray-900 mb-3 tracking-tight" style={{ fontFamily: 'Impact, "Arial Black", sans-serif' }}>
             x402 Payment Protocol Demo
           </h1>
-          <p className="text-gray-700">HTTP 402 on Aptos Blockchain</p>
+          <p className="text-gray-500 text-sm font-light tracking-wide">HTTP 402 on Aptos Blockchain</p>
         </div>
 
         {/* Two Column Layout */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-8">
           {/* Left: Response Display */}
-          <div className="bg-gray-50 border border-black rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">
+          <div className="bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl p-8 border border-gray-100">
+            <h2 className="text-lg font-medium mb-6 text-gray-900 tracking-tight">
               API Response
             </h2>
             
                     {response ? (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div>
-                          <p className="text-sm text-gray-700 mb-1">Status:</p>
-                          <p className="font-mono text-black font-semibold">
+                          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Status</p>
+                          <p className="font-mono text-gray-900 font-medium text-lg">
                             {response.status} {response.statusText}
                           </p>
                         </div>
 
                         {timing && (
                           <div>
-                            <p className="text-sm text-gray-700 mb-1">Response Time:</p>
-                            <div className="bg-white border border-gray-300 p-3 rounded text-sm space-y-1">
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Total:</span>
-                                <span className="font-mono font-semibold text-black">{timing.total}ms</span>
+                            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Response Time</p>
+                            <div className="bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-4 rounded-xl text-sm space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600 font-light">Total</span>
+                                <span className="font-mono font-semibold text-gray-900">{timing.total}ms</span>
                               </div>
                               {timing.verification && (
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-gray-600">↳ Verification:</span>
-                                  <span className="font-mono text-gray-700">{timing.verification}ms</span>
+                                <div className="flex justify-between items-center text-xs pl-3 border-l-2 border-gray-200">
+                                  <span className="text-gray-500">Verification</span>
+                                  <span className="font-mono text-gray-600">{timing.verification}ms</span>
                                 </div>
                               )}
                               {timing.settlement && (
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-gray-600">↳ Settlement:</span>
-                                  <span className="font-mono text-gray-700">{timing.settlement}ms</span>
+                                <div className="flex justify-between items-center text-xs pl-3 border-l-2 border-gray-200">
+                                  <span className="text-gray-500">Settlement</span>
+                                  <span className="font-mono text-gray-600">{timing.settlement}ms</span>
                                 </div>
                               )}
                               {timing.verification && timing.settlement && (
-                                <div className="flex justify-between text-xs">
-                                  <span className="text-gray-600">↳ API Processing:</span>
-                                  <span className="font-mono text-gray-700">
+                                <div className="flex justify-between items-center text-xs pl-3 border-l-2 border-gray-200">
+                                  <span className="text-gray-500">API Processing</span>
+                                  <span className="font-mono text-gray-600">
                                     {timing.total - timing.verification - timing.settlement}ms
                                   </span>
                                 </div>
@@ -161,24 +161,26 @@ export default function Home() {
 
                         {response.responseHeaders && (
                           <div>
-                            <p className="text-sm text-gray-700 mb-1">Response Headers:</p>
-                            <pre className="bg-black text-white p-3 rounded text-xs overflow-x-auto">
+                            <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Response Headers</p>
+                            <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-xs overflow-x-auto shadow-inner font-mono leading-relaxed">
                               {JSON.stringify(response.responseHeaders, null, 2)}
                             </pre>
                           </div>
                         )}
 
                         <div>
-                          <p className="text-sm text-gray-700 mb-1">Response Body:</p>
-                          <pre className="bg-black text-white p-3 rounded text-xs overflow-x-auto">
+                          <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Response Body</p>
+                          <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-xs overflow-x-auto shadow-inner font-mono leading-relaxed">
                             {JSON.stringify(response.body || response.error, null, 2)}
                           </pre>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-gray-500 text-center py-12">
-                        No response yet. Make a request to see the response here.
-                      </p>
+                      <div className="flex items-center justify-center py-20">
+                        <p className="text-gray-400 text-center font-light">
+                          No response yet. Make a request to see the response here.
+                        </p>
+                      </div>
                     )}
           </div>
 
@@ -186,20 +188,20 @@ export default function Home() {
           <div className="space-y-6">
             {/* Single button - does everything */}
             {step === "initial" && (
-              <div className="bg-gray-50 border border-black rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3 text-black">
+              <div className="bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl p-8 border border-gray-100">
+                <h2 className="text-lg font-medium mb-4 text-gray-900 tracking-tight">
                   Access Protected Weather API
                 </h2>
-          <p className="text-gray-700 mb-4 text-sm">
+          <p className="text-gray-600 mb-4 text-sm leading-relaxed font-light">
             Click below to access the protected weather API. The x402axios.get() function will automatically handle the payment if required!
           </p>
-          <p className="text-gray-600 mb-4 text-xs italic">
+          <p className="text-gray-500 mb-6 text-xs font-light bg-gray-50 p-3 rounded-lg border border-gray-100">
             💡 Open DevTools Network tab to see 2 requests: first without payment (gets 402), then with payment (gets data)
           </p>
                 <button
                   onClick={makeRequest}
                   disabled={loading}
-                  className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gray-900 text-white px-6 py-3.5 rounded-xl font-medium hover:bg-gray-800 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
                 >
                   {loading ? "Processing (x402Axios)..." : "Request Weather API →"}
                 </button>
@@ -208,21 +210,21 @@ export default function Home() {
 
             {/* Success */}
             {step === "success" && (
-              <div className="bg-gray-50 border border-black rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-3 text-black flex items-center gap-2">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="bg-white/70 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl p-8 border border-gray-100">
+                <h2 className="text-lg font-medium mb-4 text-gray-900 flex items-center gap-2.5 tracking-tight">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
                   Payment Successful
                 </h2>
-                <p className="text-gray-700 mb-4 text-sm">
+                <p className="text-gray-600 mb-6 text-sm font-light leading-relaxed">
                   Payment verified and settled. The protected resource has been delivered.
                 </p>
                 
                 {response?.transactionHash && (
-                  <div className="mb-4 p-3 bg-white border border-gray-300 rounded text-sm">
-                    <p className="text-gray-700 mb-2">
-                      <strong>Transaction Hash:</strong>
+                  <div className="mb-6 p-4 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-xl text-sm">
+                    <p className="text-gray-600 mb-3 text-xs font-medium uppercase tracking-wider">
+                      Transaction Hash
                     </p>
-                    <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono text-black break-all block mb-2">
+                    <code className="bg-gray-100 px-3 py-2 rounded-lg text-xs font-mono text-gray-900 break-all block mb-3 border border-gray-200">
                       {response.transactionHash}
                     </code>
                     <a
@@ -235,7 +237,7 @@ export default function Home() {
                       })()}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-xs underline"
+                      className="text-blue-600 hover:text-blue-700 text-xs font-medium inline-flex items-center gap-1 transition-colors"
                     >
                       View on Explorer →
                     </a>
@@ -244,7 +246,7 @@ export default function Home() {
                 
                 <button
                   onClick={reset}
-                  className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800"
+                  className="w-full bg-gray-900 text-white px-6 py-3.5 rounded-xl font-medium hover:bg-gray-800 active:scale-[0.98] transition-all duration-200 shadow-sm hover:shadow"
                 >
                   Start Over →
                 </button>
@@ -253,32 +255,56 @@ export default function Home() {
 
             {/* Request Headers Box */}
             {response && response.requestHeaders && Object.keys(response.requestHeaders).length > 0 && (
-              <div className="bg-gray-50 border border-black rounded-lg p-6">
-                <h3 className="font-semibold mb-2 text-black text-sm">
-                  Request Headers:
+              <div className="bg-white/70 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-gray-100">
+                <h3 className="font-medium mb-3 text-gray-900 text-sm tracking-tight">
+                  Request Headers
                 </h3>
-                <pre className="bg-black text-white p-3 rounded text-xs overflow-x-auto">
+                <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl text-xs overflow-x-auto shadow-inner font-mono leading-relaxed">
                   {JSON.stringify(response.requestHeaders, null, 2)}
                 </pre>
               </div>
             )}
 
             {/* Info Box */}
-            <div className="bg-gray-50 border border-black rounded-lg p-6">
-              <h3 className="font-semibold mb-2 text-black text-sm">
-                How x402Axios works:
+            <div className="bg-white/70 backdrop-blur-sm shadow-sm rounded-2xl p-6 border border-gray-100">
+              <h3 className="font-medium mb-4 text-gray-900 text-sm tracking-tight">
+                How x402Axios works
               </h3>
-              <ol className="list-decimal list-inside space-y-1 text-xs text-gray-700">
-                <li><strong>Initial Request:</strong> Tries to access resource (no payment)</li>
-                <li><strong>402 Detection:</strong> Server returns 402 with payment spec</li>
-                <li><strong>Extract Requirements:</strong> Gets network, amount, recipient from 402</li>
-                <li><strong>Build & Sign:</strong> Creates and signs transaction automatically</li>
-                <li><strong>Retry with Payment:</strong> Resends request with X-PAYMENT header</li>
-                <li><strong>Verification:</strong> Middleware calls facilitator to verify</li>
-                <li><strong>Settlement:</strong> Facilitator submits to Aptos blockchain</li>
-                <li><strong>Success:</strong> Returns resource + transaction hash</li>
+              <ol className="space-y-2.5 text-xs text-gray-600 leading-relaxed">
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">1.</span>
+                  <span><strong className="text-gray-900 font-medium">Initial Request:</strong> Tries to access resource (no payment)</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">2.</span>
+                  <span><strong className="text-gray-900 font-medium">402 Detection:</strong> Server returns 402 with payment spec</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">3.</span>
+                  <span><strong className="text-gray-900 font-medium">Extract Requirements:</strong> Gets network, amount, recipient from 402</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">4.</span>
+                  <span><strong className="text-gray-900 font-medium">Build & Sign:</strong> Creates and signs transaction automatically</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">5.</span>
+                  <span><strong className="text-gray-900 font-medium">Retry with Payment:</strong> Resends request with X-PAYMENT header</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">6.</span>
+                  <span><strong className="text-gray-900 font-medium">Verification:</strong> Middleware calls facilitator to verify</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">7.</span>
+                  <span><strong className="text-gray-900 font-medium">Settlement:</strong> Facilitator submits to Aptos blockchain</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="font-semibold text-gray-900 min-w-[1.25rem]">8.</span>
+                  <span><strong className="text-gray-900 font-medium">Success:</strong> Returns resource + transaction hash</span>
+                </li>
               </ol>
-              <p className="text-xs text-gray-600 mt-3 italic">
+              <p className="text-xs text-gray-500 mt-4 font-light bg-gray-50 p-3 rounded-lg border border-gray-100">
                 ✨ Just call x402Axios(&#123; privateKey, url &#125;) - that&apos;s it!
               </p>
             </div>
