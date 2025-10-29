@@ -1,126 +1,127 @@
-# Aptos x402 Documentation
+# Welcome to Aptos x402
 
-## Introduction
+## What is Aptos x402?
 
-**Aptos x402** is a production-ready TypeScript SDK that implements the [x402 payment protocol](https://github.com/coinbase/x402) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
+Aptos x402 is a production-ready payment protocol implementation that enables APIs to require cryptocurrency payments on a per-request basis. Built on the Aptos blockchain, it brings the HTTP 402 "Payment Required" status code to life—allowing you to monetize APIs with seamless, automatic micropayments.
 
-### What is x402?
+Think of it as a toll booth for your APIs: users pay as they go, with each request requiring a small blockchain payment. The entire payment flow is handled automatically, requiring no changes to your business logic.
 
-x402 is an open protocol specification by Coinbase that standardizes payment-required HTTP responses. When a client requests a protected resource, the server responds with **402 Payment Required** and includes payment instructions. The client signs a blockchain transaction and retries with payment, receiving the resource after successful settlement.
+## The Problem We Solve
 
-### Why Aptos?
+### Traditional API Monetization is Broken
 
-Aptos provides an optimal foundation for micropayment APIs:
+Current API monetization models have significant limitations:
 
-| Feature | Benefit |
-|---------|---------|
-| **Fast Finality** | 1-3 second transaction confirmation |
-| **Low Costs** | ~$0.0001 per transaction |
-| **High Throughput** | Thousands of TPS |
-| **Developer Experience** | Modern SDK with TypeScript support |
+1) Subscription Fatigue - Users pay monthly fees even when they barely use the service. Small developers can't afford dozens of subscriptions for APIs they need occasionally.
 
-These characteristics make Aptos practical for per-API-call charging, unlike blockchains where fees or settlement times make micropayments economically infeasible.
+2) Usage Tiers - Rigid pricing tiers force users to overpay or underpay. You either commit to thousands of calls per month or get nothing.
 
-## Key Capabilities
+3) Payment Integration Complexity - Setting up Stripe, managing subscriptions, handling billing cycles, dealing with chargebacks, currency conversions, and international payments adds weeks of development time.
 
-### For API Providers (Sellers)
+4) No Microtransactions - Traditional payment processors charge 30¢ + 2.9% per transaction. This makes charging $0.001 per API call impossible.
 
-- **Zero-Code Protection** - Middleware handles all payment logic
-- **Flexible Pricing** - Configure different prices per endpoint
-- **Automatic Settlement** - Payments verified and settled before API execution
-- **Production Ready** - Comprehensive error handling and monitoring
+5) Trust & Privacy - Users must share credit card information, personal data, and trust you with recurring charges. Developers must handle sensitive payment data and PCI compliance.
 
-### For API Consumers (Buyers)
+### Enter Blockchain Micropayments
 
-- **Axios-Compatible** - Drop-in replacement with automatic payment handling
-- **Client-Side Signing** - Private keys never leave your machine
-- **Auto Network Detection** - Automatically uses correct network (testnet/mainnet)
-- **AI Agent Ready** - Perfect for autonomous agent-to-agent payments
+Blockchain technology enables something revolutionary: **true pay-per-use** at scale. Charge $0.0001 per API call with near-instant settlement and no intermediaries. Users pay only for what they use, and you get paid for every request.
 
-## Architecture
+But implementing blockchain payments is complex—managing wallets, signing transactions, verifying payments, handling network latency, ensuring security. **This is what Aptos x402 solves.**
 
-The x402 implementation uses a clean three-tier architecture:
+## Why x402 Protocol?
 
-1. **Client** - Signs transactions locally, never exposing private keys
-2. **API Server** - Enforces payment via middleware, executes business logic
-3. **Facilitator** - Handles blockchain verification and settlement
-4. **Aptos Network** - Provides final settlement and immutable audit trail
+The [x402 protocol](https://github.com/coinbase/x402), created by Coinbase, standardizes how APIs request payments using the HTTP 402 status code. When a client requests a protected resource:
 
-This separation ensures security, scalability, and maintainability.
+1. **Server responds with 402** - Includes payment instructions (amount, recipient, blockchain network)
+2. **Client signs transaction** - Automatically creates and signs the payment
+3. **Client retries with proof** - Resends request with payment proof header
+4. **Server validates and responds** - Verifies payment on-chain and returns the resource
 
-## Quick Start
+This standardized approach means any x402-compatible client can interact with any x402-compatible API, creating an open ecosystem for machine-to-machine payments.
 
-Choose your role to get started:
+## Why Build on Aptos?
 
-### 🏪 API Providers
+Not all blockchains are suitable for API micropayments. We chose Aptos for fundamental technical reasons:
 
-Protect your Next.js API routes with x402 middleware in 3 steps:
+### Lightning-Fast Finality
 
-1. Configure environment variables
-2. Create middleware file
-3. Build your API routes (no payment code needed)
+- 1-3 second transaction confirmation means your API responses don't keep users waiting. Compare this to Ethereum (15+ seconds) or Bitcoin (10+ minutes). Fast finality enables real-time API interactions.
 
-→ **[Quickstart for Sellers](getting-started/quickstart-sellers.md)**
+### Negligible Transaction Costs
 
-### 🛒 API Consumers
+- ~$0.0001 per transaction makes true micropayments economically viable. On Ethereum, gas fees often exceed $5-50, making small payments impractical. On Aptos, you can charge pennies per API call and still profit.
 
-Access x402-protected APIs with automatic payment handling:
+### Massive Throughput
 
-1. Install the SDK
-2. Use `x402axios` like regular axios
-3. Payments handled automatically
+- Thousands of transactions per second means your API can scale without blockchain bottlenecks. Aptos's parallel execution engine processes transactions concurrently, unlike sequential blockchains.
 
-→ **[Quickstart for Buyers](getting-started/quickstart-buyers.md)**
+### Developer-First Design
 
-## Free Public Facilitator
+- Modern TypeScript SDK with excellent tooling, comprehensive documentation, and intuitive APIs. Aptos was built for developers in the modern era, not retrofitted from older blockchain architectures.
 
-Start building immediately with our **free public facilitator**:
+### Account Abstraction
 
-```
-https://aptos-x402.vercel.app/api/facilitator
-```
+- Native account features enable sophisticated payment flows, sponsored transactions, and flexible fee structures without complex smart contracts.
 
-**Features:**
-- Free for all users
-- Testnet and mainnet support
-- Zero configuration
-- Production-suitable
+## How Aptos x402 Makes It Simple
 
-For custom requirements (SLAs, private infrastructure), you can self-host the facilitator service.
+We've abstracted away all blockchain complexity:
 
-## Documentation Structure
+### For API Providers
 
-### Getting Started
-- **[Quickstart for Sellers](getting-started/quickstart-sellers.md)** - Protect your APIs with x402 middleware
-- **[Quickstart for Buyers](getting-started/quickstart-buyers.md)** - Consume x402-protected APIs
+- Add one middleware file to your Next.js application and your APIs are protected. No payment logic, no blockchain code, no wallet management. Configure which endpoints require payment and how much to charge. The middleware handles everything—detecting requests, validating payments, settling transactions.
 
-### Core Concepts
-- **[HTTP 402 Protocol](core-concepts/http-402.md)** - Understanding the x402 specification
-- **[Client/Server Architecture](core-concepts/client-server.md)** - How components interact
-- **[Facilitator](core-concepts/facilitator.md)** - Blockchain interaction service
+### For API Consumers
 
-### Guides
-- **[Facilitator Setup](guides/facilitator-setup.md)** - Deploy your own facilitator service
+- Use our drop-in axios replacement and blockchain payments happen automatically. Request a protected API, get a 402 response, and the library handles signing the transaction and retrying. From your perspective, it feels like a regular API call with a slight delay.
 
-### API Reference
-- **[Server API](api-reference/server-api.md)** - Middleware and server-side functions
-- **[Types](api-reference/types.md)** - TypeScript type definitions
+### For Everyone
 
-### Examples
-- **[Simple Seller](examples/simple-seller.md)** - Basic implementation example
+- Free hosted facilitator service handles blockchain interactions. No infrastructure to run, no blockchain nodes to sync, no transaction broadcasting to manage. Just point to our facilitator and start building.
 
-## Additional Resources
+## The Architecture
 
-| Resource | Link |
-|----------|------|
-| **Live Demo** | [aptos-x402.vercel.app](https://aptos-x402.vercel.app) |
-| **GitHub Repository** | [github.com/adipundir/aptos-x402](https://github.com/adipundir/aptos-x402) |
-| **NPM Package** | [npmjs.com/package/aptos-x402](https://www.npmjs.com/package/aptos-x402) |
-| **x402 Protocol Spec** | [github.com/coinbase/x402](https://github.com/coinbase/x402) |
-| **Aptos Docs** | [aptos.dev](https://aptos.dev) |
+Our three-tier architecture ensures security, scalability, and simplicity:
 
-## Support
+1) Client Layer - Signs transactions locally using private keys that never leave the user's machine. Handles retry logic and payment proof generation.
 
-- 🐛 **Issues:** [github.com/adipundir/aptos-x402/issues](https://github.com/adipundir/aptos-x402/issues)
-- 💬 **Discussions:** [github.com/adipundir/aptos-x402/discussions](https://github.com/adipundir/aptos-x402/discussions)
-- 🐦 **Twitter:** [@aptos-x402](https://x.com/aptosx402)
+2) API Server Layer - Your business logic remains pure and payment-agnostic. Middleware intercepts requests, validates payments, and gates access automatically.
+
+3) Facilitator Layer - Our hosted service verifies payment signatures, broadcasts to the blockchain, confirms settlement, and provides instant feedback. This is the bridge between HTTP and blockchain.
+
+4) Blockchain Layer - Aptos provides immutable settlement, ensuring payments can't be reversed or disputed. Every transaction is permanently recorded.
+
+## Real-World Use Cases
+
+### AI Agent Marketplaces
+
+Autonomous AI agents need to pay for API access without human intervention. x402 enables agents to trade services, share data, and collaborate economically.
+
+### Pay-Per-Query Data APIs
+
+Weather data, financial feeds, geolocation services, ML model inference—charge per request rather than monthly subscriptions. Users pay only for data they actually use.
+
+### Microservices Economy
+
+Internal company APIs can be monetized between departments. Track usage accurately, allocate costs fairly, and incentivize efficient API design.
+
+### Developer Tools
+
+Rate limiters, API analytics, monitoring services—charge pennies per call instead of $99/month. Make professional tools accessible to hobbyists and bootstrapped startups.
+
+### Content Delivery
+
+Serve premium content, articles, images, videos—charge micropayments per access. No paywalls, no subscriptions, just pay-per-view.
+
+## What Makes This Production-Ready?
+
+- Comprehensive Error Handling - Network failures, insufficient balances, timeout scenarios, blockchain congestion—all handled gracefully with helpful error messages.
+
+- Extensive Testing - Battle-tested in production environments with real money. Test suite covers edge cases, race conditions, and failure modes.
+
+- Security First - Private keys never leave the client. Middleware validates all payments cryptographically. No trusted third parties except the blockchain itself.
+
+- Monitoring & Observability - Built-in timing headers, transaction tracking, and audit trails. Know exactly where delays occur and how your system performs.
+
+- TypeScript Throughout - Full type safety from client to server. Catch errors at compile time, not runtime. Excellent IDE autocomplete and inline documentation.
+

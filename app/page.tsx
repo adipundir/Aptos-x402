@@ -20,7 +20,7 @@ export default function LandingPage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-6xl md:text-7xl font-bold tracking-tight leading-tight">
+            <h1 className="text-5xl md:text-6xl tracking-tight leading-tight" style={{ fontFamily: 'Impact, "Arial Black", sans-serif' }}>
               <span className="text-zinc-900">Aptos-native</span>
               <br />
               <span className="text-zinc-900">x402 payment protocol</span>
@@ -142,12 +142,12 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
-                  <pre className="text-zinc-100 p-4 text-[11px] leading-relaxed whitespace-pre">
+                  <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
 {`// middleware.ts
-import { paymentMiddleware } 
+import { paymentMiddleware }
   from 'aptos-x402';
 
-export const middleware = 
+export const middleware =
   paymentMiddleware(
     process.env
       .PAYMENT_RECIPIENT_ADDRESS!,
@@ -193,14 +193,14 @@ export const middleware =
                   </div>
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
-                  <pre className="text-zinc-100 p-4 text-[11px] leading-relaxed whitespace-pre">
+                  <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
 {`// route.ts
-import { NextResponse } 
+import { NextResponse }
   from 'next/server';
 
 export async function GET() {
   // Payment already verified!
-  
+
   return NextResponse.json({
     temperature: 72,
     condition: 'Sunny',
@@ -240,9 +240,9 @@ export async function GET() {
                   </div>
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
-                  <pre className="text-zinc-100 p-4 text-[11px] leading-relaxed whitespace-pre">
+                  <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
 {`// client.ts
-import { x402axios } 
+import { x402axios }
   from 'aptos-x402';
 
 const result = await x402axios.get(
