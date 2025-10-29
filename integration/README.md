@@ -8,18 +8,31 @@ The `aptos-x402.mdc` file contains comprehensive rules and examples that help AI
 
 ## How to Use
 
-### For Users of aptos-x402:
+### Quick Setup:
 
-1. **Copy the MDC file** to your project:
+1. **Download the MDC file** from this repository
+2. **Copy it to your project**:
    ```bash
    # Create .cursor/rules directory in your project
    mkdir -p .cursor/rules
    
    # Copy the MDC file
-   cp aptos-x402/integration/aptos-x402.mdc .cursor/rules/
+   cp aptos-x402.mdc .cursor/rules/
    ```
 
-2. **Start using Cursor** - The AI will now understand how to integrate aptos-x402 into your project with proper examples and best practices.
+3. **Restart Cursor IDE** to load the new rules
+
+4. **Start asking Cursor for help**:
+   - "Add x402 payment protection to my API routes"
+   - "Set up aptos-x402 middleware for Next.js"
+   - "Create a client component that pays for API calls"
+
+### What This Enables:
+
+- 🤖 **AI-powered setup** - Cursor understands aptos-x402 integration
+- 📝 **Code generation** - Automatic code suggestions and examples
+- 🛡️ **Best practices** - Built-in security and configuration guidance
+- ⚡ **Zero configuration** - Works immediately after copying the file
 
 ### For Contributors:
 

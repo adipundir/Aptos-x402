@@ -1,10 +1,17 @@
 ---
-description: 
-globs: 
+description: Aptos x402 SDK integration guide for AI-powered IDEs
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/middleware.ts", "**/route.ts"]
 alwaysApply: false
 ---
 MDC
 # :zap: Aptos x402: HTTP 402 Payment Protocol for Aptos
+
+> **How to use this MDC file:**
+> 1. Copy this file to your project's `.cursor/rules/` directory
+> 2. Restart Cursor IDE
+> 3. Ask Cursor to help you integrate aptos-x402 payments
+> 
+> Example: "Help me add x402 payment protection to my API routes"
 
 **Aptos x402** is an open-source SDK that implements the HTTP 402 Payment Required protocol for Aptos blockchain, enabling machine-to-machine micropayments for APIs. It provides:
 
@@ -372,3 +379,35 @@ app.listen(3000)
 - [ ] Create facilitator endpoints (Next.js)
 - [ ] Implement client-side payment handling
 - [ ] Test with both testnet and mainnet
+
+---
+
+## :bulb: Using This MDC File
+
+### Setup Instructions:
+1. **Copy this file** to your project:
+   ```bash
+   mkdir -p .cursor/rules
+   cp aptos-x402.mdc .cursor/rules/
+   ```
+
+2. **Restart Cursor IDE** to load the new rules
+
+3. **Start asking Cursor** for help:
+   - "Add x402 payment protection to my API routes"
+   - "Set up aptos-x402 middleware for Next.js"
+   - "Create a client component that pays for API calls"
+   - "Configure environment variables for aptos-x402"
+
+### What Cursor Can Help With:
+- ✅ Complete setup and configuration
+- ✅ Code generation for all frameworks
+- ✅ Environment variable setup
+- ✅ TypeScript type definitions
+- ✅ Error handling and best practices
+- ✅ Testing and debugging
+
+### Need More Help?
+- 📚 [Full Documentation](https://aptos-x402.vercel.app/docs)
+- 📦 [NPM Package](https://www.npmjs.com/package/aptos-x402)
+- 🐛 [GitHub Issues](https://github.com/adipundir/aptos-x402/issues)
