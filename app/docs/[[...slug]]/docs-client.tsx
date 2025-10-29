@@ -487,7 +487,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                         </CodeBlockHeader>
                         <CodeBlockBody>
                           {(item) => (
-                            <CodeBlockItem value={item.language}>
+                            <CodeBlockItem key={item.language} value={item.language}>
                               <CodeBlockContent
                                 language={item.language as any}
                                 themes={{
