@@ -52,7 +52,7 @@ export default function LandingPage() {
             <div className="pt-8">
               <p className="text-sm text-zinc-500 mb-3">Install via npm</p>
               <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-900 rounded-lg font-mono text-sm text-zinc-100">
-                <span>npm install @adipundir/aptos-x402</span>
+                <span>npm install aptos-x402</span>
               </div>
             </div>
           </div>
@@ -144,7 +144,7 @@ export default function LandingPage() {
                 <pre className="mt-4 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto leading-relaxed">
 {`// middleware.ts
 import { paymentMiddleware } 
-  from '@adipundir/aptos-x402';
+  from 'aptos-x402';
 
 export const middleware = 
   paymentMiddleware(
@@ -238,7 +238,7 @@ export async function GET() {
                 <pre className="mt-4 bg-zinc-900 text-zinc-100 p-3 rounded text-xs overflow-x-auto leading-relaxed">
 {`// client.ts
 import { x402axios } 
-  from '@adipundir/aptos-x402';
+  from 'aptos-x402';
 
 const result = await x402axios.get(
   'https://api.example.com/premium/weather',
@@ -280,7 +280,7 @@ console.log(result.data);`}
                   GitHub
                 </a>
                 <a
-                  href="https://www.npmjs.com/package/@adipundir/aptos-x402"
+                  href="https://www.npmjs.com/package/aptos-x402"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-zinc-900 transition-colors"

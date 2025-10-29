@@ -1,10 +1,10 @@
-# @adipundir/aptos-x402
+# aptos-x402
 
 > x402 Payment Protocol SDK for Aptos blockchain
 
 HTTP 402 Payment Required for machine-to-machine micropayments on Aptos.
 
-[![npm version](https://img.shields.io/npm/v/@adipundir/aptos-x402.svg)](https://www.npmjs.com/package/@adipundir/aptos-x402)
+[![npm version](https://img.shields.io/npm/v/aptos-x402.svg)](https://www.npmjs.com/package/aptos-x402)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎮 Try the Interactive Demo
@@ -46,7 +46,7 @@ Add cryptocurrency payments to your Next.js API in just 3 steps:
 ### Step 1: Install the Package
 
 ```bash
-npm install @adipundir/aptos-x402
+npm install aptos-x402
 ```
 
 ## 🛒 For Buyers (Consuming Paid APIs)
@@ -54,7 +54,7 @@ npm install @adipundir/aptos-x402
 Access paid APIs with automatic payment handling using our **axios-compatible** interface:
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 // Works exactly like axios - payment handled automatically!
 const response = await x402axios.get('https://api.example.com/premium/data', {
@@ -112,7 +112,7 @@ Create a file called `middleware.ts` in the root of your Next.js project (same l
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
@@ -308,7 +308,7 @@ If you see this 402 response, your middleware is working perfectly!
 ### 1. Install Dependencies
 
 ```bash
-npm install @adipundir/aptos-x402 @aptos-labs/ts-sdk next
+npm install aptos-x402 @aptos-labs/ts-sdk next
 ```
 
 ### 2. Environment Variables
@@ -329,7 +329,7 @@ FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 
 ```typescript
 // middleware.ts
-import { paymentMiddleware } from '@adipundir/aptos-x402';
+import { paymentMiddleware } from 'aptos-x402';
 
 export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
@@ -427,7 +427,7 @@ import type {
   PaymentPayload,
   RouteConfig,
   FacilitatorConfig,
-} from '@adipundir/aptos-x402/types';
+} from 'aptos-x402/types';
 ```
 
 ### Core Types
@@ -462,7 +462,7 @@ interface PaymentRequiredResponse {
 The easiest way to consume protected APIs is with our **axios-compatible** wrapper:
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 // Automatic payment handling - works exactly like axios!
 const response = await x402axios.get('https://api.example.com/premium/data', {
@@ -590,7 +590,7 @@ const signedTx = await signTransaction(transaction);
 ### AI Agent Integration
 
 ```typescript
-import { x402axios } from '@adipundir/aptos-x402';
+import { x402axios } from 'aptos-x402';
 
 // Agent automatically handles payments
 const response = await x402axios.get('https://api.example.com/premium/data', {
@@ -700,7 +700,7 @@ MIT © Aditya Pundir
 ## Links
 
 - [GitHub Repository](https://github.com/adipundir/aptos-x402)
-- [NPM Package](https://www.npmjs.com/package/@adipundir/aptos-x402)
+- [NPM Package](https://www.npmjs.com/package/aptos-x402)
 - [x402 Protocol Spec](https://github.com/coinbase/x402)
 - [Aptos Developer Docs](https://aptos.dev)
 
