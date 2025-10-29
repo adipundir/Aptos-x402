@@ -29,6 +29,7 @@ const docsStructure: DocItem[] = [
   {
     title: 'Guides',
     children: [
+      { title: 'AI IDE Integration', path: 'guides/ai-ide-integration.md' },
       { title: 'Facilitator Setup', path: 'guides/facilitator-setup.md' },
     ],
   },

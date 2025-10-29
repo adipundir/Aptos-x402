@@ -124,4 +124,3 @@ Serve premium content, articles, images, videos—charge micropayments per acces
 - Monitoring & Observability - Built-in timing headers, transaction tracking, and audit trails. Know exactly where delays occur and how your system performs.
 
 - TypeScript Throughout - Full type safety from client to server. Catch errors at compile time, not runtime. Excellent IDE autocomplete and inline documentation.
-

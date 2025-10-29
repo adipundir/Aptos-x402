@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Menu, X, BookOpen, Code2, Rocket, Zap, ArrowUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X, BookOpen, Code2, Rocket, Zap, ArrowUp, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { 
   CodeBlock,
@@ -406,7 +406,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                 </Card>
 
                 {/* Quick Links */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                   <Card className="hover:shadow-md transition-all duration-200 cursor-pointer border border-zinc-200" onClick={() => navigateToDoc('getting-started/quickstart-sellers.md')}>
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3 mb-3">
@@ -416,6 +416,17 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                         <h3 className="font-semibold text-zinc-900">Quick Start</h3>
                       </div>
                       <p className="text-sm text-zinc-600">Get up and running in minutes with our quickstart guides</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="hover:shadow-md transition-all duration-200 cursor-pointer border border-zinc-200" onClick={() => navigateToDoc('guides/ai-ide-integration.md')}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-lg bg-zinc-100">
+                          <Sparkles className="w-5 h-5 text-zinc-900" />
+                        </div>
+                        <h3 className="font-semibold text-zinc-900">AI Setup</h3>
+                      </div>
+                      <p className="text-sm text-zinc-600">One prompt = complete setup with Cursor or GitHub Copilot</p>
                     </CardContent>
                   </Card>
                   <Card className="hover:shadow-md transition-all duration-200 cursor-pointer border border-zinc-200" onClick={() => navigateToDoc('api-reference/server-api.md')}>

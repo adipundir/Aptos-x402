@@ -15,6 +15,7 @@
 
 ## Guides
 
+* [AI IDE Integration](guides/ai-ide-integration.md)
 * [Setting Up Your Own Facilitator](guides/facilitator-setup.md)
 
 ## API Reference
