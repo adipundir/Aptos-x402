@@ -1,57 +1,126 @@
-# Welcome to x402 for Aptos
+# Aptos x402 Documentation
 
-x402 is an open payment protocol that enables APIs to require payment before serving responses. Built on the HTTP 402 Payment Required status code, it allows services to charge for access directly over APIs using cryptocurrency payments.
+## Introduction
 
-This implementation brings x402 to the Aptos blockchain, leveraging Aptos's fast finality and low transaction costs to enable practical micropayments for API access.
+**Aptos x402** is a production-ready TypeScript SDK that implements the [x402 payment protocol](https://github.com/coinbase/x402) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
 
-## What is x402?
+### What is x402?
 
-The x402 protocol standardizes how web services can require payment for resources. When a client requests a protected resource, the server responds with payment requirements. The client signs a blockchain transaction, includes it in a retry request, and receives the resource once payment is verified and settled.
+x402 is an open protocol specification by Coinbase that standardizes payment-required HTTP responses. When a client requests a protected resource, the server responds with **402 Payment Required** and includes payment instructions. The client signs a blockchain transaction and retries with payment, receiving the resource after successful settlement.
 
-This approach enables machine-to-machine payments without requiring accounts, API keys, or subscription management. It's particularly powerful for AI agents, pay-per-call APIs, and usage-based services where traditional payment systems are too heavyweight or expensive.
+### Why Aptos?
 
-## Why Aptos?
+Aptos provides an optimal foundation for micropayment APIs:
 
-Aptos provides an ideal foundation for x402 payments with transaction finality in 1-3 seconds and transaction costs around $0.0001. This makes it practical to charge for individual API calls, unlike blockchains where settlement times or fees make micropayments impractical.
+| Feature | Benefit |
+|---------|---------|
+| **Fast Finality** | 1-3 second transaction confirmation |
+| **Low Costs** | ~$0.0001 per transaction |
+| **High Throughput** | Thousands of TPS |
+| **Developer Experience** | Modern SDK with TypeScript support |
 
-The Aptos Move VM's strong safety guarantees and the platform's focus on developer experience make it straightforward to build reliable payment-enabled services.
+These characteristics make Aptos practical for per-API-call charging, unlike blockchains where fees or settlement times make micropayments economically infeasible.
 
-## The Protocol Flow
+## Key Capabilities
 
-The x402 protocol follows a simple request-response pattern. A client requests a resource without payment and receives a 402 response containing payment instructions. The client creates and signs an Aptos transaction offline, then retries the request with the signed transaction in an X-PAYMENT header.
+### For API Providers (Sellers)
 
-The server verifies the payment structure quickly, settles it on the Aptos blockchain, and delivers the resource only after successful settlement. The entire process typically completes in 1-3 seconds.
+- **Zero-Code Protection** - Middleware handles all payment logic
+- **Flexible Pricing** - Configure different prices per endpoint
+- **Automatic Settlement** - Payments verified and settled before API execution
+- **Production Ready** - Comprehensive error handling and monitoring
 
-## Getting Started
+### For API Consumers (Buyers)
 
-This implementation provides Next.js middleware that handles all payment logic automatically. Your API routes require no payment code - the middleware intercepts requests, manages the payment flow, and only allows your code to execute after successful payment.
+- **Axios-Compatible** - Drop-in replacement with automatic payment handling
+- **Client-Side Signing** - Private keys never leave your machine
+- **Auto Network Detection** - Automatically uses correct network (testnet/mainnet)
+- **AI Agent Ready** - Perfect for autonomous agent-to-agent payments
 
-The architecture separates concerns through a facilitator service that handles blockchain interactions. This keeps your main application simple while maintaining security and scalability.
+## Architecture
 
-### Free Public Facilitator
+The x402 implementation uses a clean three-tier architecture:
 
-We provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that handles blockchain interactions for you. This service:
+1. **Client** - Signs transactions locally, never exposing private keys
+2. **API Server** - Enforces payment via middleware, executes business logic
+3. **Facilitator** - Handles blockchain verification and settlement
+4. **Aptos Network** - Provides final settlement and immutable audit trail
 
-- Is completely free for all users
-- Works on both testnet and mainnet
-- Requires zero setup or authentication
-- Is suitable for production use
+This separation ensures security, scalability, and maintainability.
 
-You can start building immediately without deploying your own infrastructure. For specialized needs like guaranteed SLAs or custom configurations, you can optionally self-host the facilitator.
+## Quick Start
 
-## Next Steps
+Choose your role to get started:
 
-Start building with x402 by following the quickstart guide for your role:
+### 🏪 API Providers
 
-**For API Providers:** [Quickstart for Sellers](getting-started/quickstart-sellers.md)
+Protect your Next.js API routes with x402 middleware in 3 steps:
 
-**For API Consumers:** [Quickstart for Buyers](getting-started/quickstart-buyers.md)
+1. Configure environment variables
+2. Create middleware file
+3. Build your API routes (no payment code needed)
 
-**Learn the Protocol:** [HTTP 402](core-concepts/http-402.md)
+→ **[Quickstart for Sellers](getting-started/quickstart-sellers.md)**
 
-## Resources
+### 🛒 API Consumers
 
-- [GitHub Repository](https://github.com/adipundir/aptos-x402)
-- [NPM Package](https://www.npmjs.com/package/@adipundir/aptos-x402)
-- [Live Demo](https://aptos-x402.vercel.app)
-- [x402 Protocol Specification](https://github.com/coinbase/x402)
+Access x402-protected APIs with automatic payment handling:
+
+1. Install the SDK
+2. Use `x402axios` like regular axios
+3. Payments handled automatically
+
+→ **[Quickstart for Buyers](getting-started/quickstart-buyers.md)**
+
+## Free Public Facilitator
+
+Start building immediately with our **free public facilitator**:
+
+```
+https://aptos-x402.vercel.app/api/facilitator
+```
+
+**Features:**
+- Free for all users
+- Testnet and mainnet support
+- Zero configuration
+- Production-suitable
+
+For custom requirements (SLAs, private infrastructure), you can self-host the facilitator service.
+
+## Documentation Structure
+
+### Getting Started
+- **[Quickstart for Sellers](getting-started/quickstart-sellers.md)** - Protect your APIs with x402 middleware
+- **[Quickstart for Buyers](getting-started/quickstart-buyers.md)** - Consume x402-protected APIs
+
+### Core Concepts
+- **[HTTP 402 Protocol](core-concepts/http-402.md)** - Understanding the x402 specification
+- **[Client/Server Architecture](core-concepts/client-server.md)** - How components interact
+- **[Facilitator](core-concepts/facilitator.md)** - Blockchain interaction service
+
+### Guides
+- **[Facilitator Setup](guides/facilitator-setup.md)** - Deploy your own facilitator service
+
+### API Reference
+- **[Server API](api-reference/server-api.md)** - Middleware and server-side functions
+- **[Types](api-reference/types.md)** - TypeScript type definitions
+
+### Examples
+- **[Simple Seller](examples/simple-seller.md)** - Basic implementation example
+
+## Additional Resources
+
+| Resource | Link |
+|----------|------|
+| **Live Demo** | [aptos-x402.vercel.app](https://aptos-x402.vercel.app) |
+| **GitHub Repository** | [github.com/adipundir/aptos-x402](https://github.com/adipundir/aptos-x402) |
+| **NPM Package** | [npmjs.com/package/aptos-x402](https://www.npmjs.com/package/aptos-x402) |
+| **x402 Protocol Spec** | [github.com/coinbase/x402](https://github.com/coinbase/x402) |
+| **Aptos Docs** | [aptos.dev](https://aptos.dev) |
+
+## Support
+
+- 🐛 **Issues:** [github.com/adipundir/aptos-x402/issues](https://github.com/adipundir/aptos-x402/issues)
+- 💬 **Discussions:** [github.com/adipundir/aptos-x402/discussions](https://github.com/adipundir/aptos-x402/discussions)
+- 🐦 **Twitter:** [@aptos-x402](https://x.com/aptosx402)

@@ -1,41 +1,56 @@
 # Quickstart for Sellers
 
-This guide shows you how to add payment requirements to your Next.js API in under 5 minutes using x402 middleware.
+Add payment requirements to your Next.js API in 5 minutes with x402 middleware.
 
 ## Prerequisites
 
-You'll need a Next.js 15+ application with the App Router, Node.js 20 or higher, and TypeScript (recommended).
+| Requirement | Version |
+|-------------|---------|
+| **Next.js** | 15.0.0+ with App Router |
+| **Node.js** | 20.0.0+ |
+| **TypeScript** | 5.x (recommended) |
 
 ## Installation
-
-Install the x402 SDK:
 
 ```bash
 npm install aptos-x402
 ```
 
-The Aptos SDK is included as a dependency, so you don't need to install it separately.
+> The Aptos SDK (`@aptos-labs/ts-sdk`) is included as a peer dependency.
 
-## Set Up Your Wallet
+## Step 1: Configure Wallet Address
 
-You need an Aptos wallet address to receive payments. If you already have one from Petra Wallet or Martian Wallet, you can use that address directly. Otherwise, generate a new account using the Aptos SDK or our helper scripts.
+You need an Aptos wallet address to receive payments. The private key stays in your wallet - only the address is needed on your server.
 
-The wallet address is simply where payment funds will be transferred. You don't need the private key on your server - clients will send payments to this address, and you'll see the funds appear in your wallet.
+### Option A: Use Existing Wallet
 
-## Configure Environment Variables
+If you have [Petra Wallet](https://petra.app/) or [Martian Wallet](https://martianwallet.xyz/), copy your address (starts with `0x`).
 
-Create a `.env.local` file in your project root:
+### Option B: Generate Programmatically
 
+```bash
+npx tsx -e "import { Account } from '@aptos-labs/ts-sdk'; const acc = Account.generate(); console.log('Address:', acc.accountAddress.toString());"
 ```
-PAYMENT_RECIPIENT_ADDRESS=Your_Address
+
+## Step 2: Configure Environment
+
+Create `.env.local` in your project root:
+
+```env
+PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS
 FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
 ```
 
-Replace the address with your actual Aptos wallet address. The facilitator URL above points to our **free public facilitator** which works on both **testnet and mainnet** and is suitable for production use. You can optionally deploy your own facilitator service if you need guaranteed SLAs or custom configurations.
+| Variable | Description |
+|----------|-------------|
+| `PAYMENT_RECIPIENT_ADDRESS` | Your Aptos wallet address (receives payments) |
+| `FACILITATOR_URL` | Service that handles blockchain operations |
 
-## Create the Middleware
+> **Note:** The public facilitator URL shown above is free and works on both testnet and mainnet. You can optionally [self-host](../guides/facilitator-setup.md) for custom requirements.
 
-Create a file named `middleware.ts` in your project root (at the same level as your `app` directory, not inside it):
+## Step 3: Create Middleware
+
+Create `middleware.ts` in your project root (same level as `app/` directory):
 
 ```typescript
 import { paymentMiddleware } from 'aptos-x402';
@@ -44,10 +59,18 @@ export const middleware = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     '/api/premium/weather': {
-      price: '1000000',
+      price: '1000000',  // 0.01 APT
       network: 'testnet',
       config: {
-        description: 'Premium weather data with 7-day forecast'
+        description: 'Premium weather data with 7-day forecast',
+        mimeType: 'application/json'
+      }
+    },
+    '/api/premium/stocks': {
+      price: '5000000',  // 0.05 APT
+      network: 'testnet',
+      config: {
+        description: 'Real-time stock market data'
       }
     }
   },
@@ -61,29 +84,42 @@ export const config = {
 };
 ```
 
-This configuration protects all routes under `/api/premium/` and requires 0.01 APT (1,000,000 Octas) for the weather endpoint. The matcher pattern determines which routes the middleware applies to.
+### Configuration Explained
 
-Note: The `routes` map uses exact pathnames as keys. The matcher controls which requests reach the middleware, but you must list each exact endpoint you want to charge in the `routes` object (for example, `/api/premium/weather` and `/api/premium/stocks`).
+| Field | Purpose |
+|-------|---------|
+| **Route path** | Exact API endpoint path (e.g., `/api/premium/weather`) |
+| **price** | Payment amount in Octas |
+| **network** | Blockchain network (`'testnet'` or `'mainnet'`) |
+| **description** | Human-readable resource description |
+| **matcher** | Pattern for routes the middleware applies to |
 
-## Understanding Octas
+### Octas Pricing Reference
 
-Aptos uses Octas as the smallest unit, similar to satoshis in Bitcoin or wei in Ethereum. One APT equals 100,000,000 Octas. Common price points:
+Aptos uses **Octas** as the smallest unit (like satoshis or wei):
 
-- 0.001 APT = 100,000 Octas
-- 0.01 APT = 1,000,000 Octas
-- 0.1 APT = 10,000,000 Octas
-- 1 APT = 100,000,000 Octas
+```
+1 APT = 100,000,000 Octas
 
-## Create Your API Route
+Common prices:
+  $0.01 equivalent → ~100,000 Octas    (0.001 APT)
+  $0.10 equivalent → ~1,000,000 Octas  (0.01 APT)
+  $1.00 equivalent → ~10,000,000 Octas (0.1 APT)
+```
 
-Your API routes require no payment logic. Write them as you normally would:
+## Step 4: Create API Routes
+
+Your API routes require **zero payment logic** - write them as normal:
 
 ```typescript
+// app/api/premium/weather/route.ts
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  // This code ONLY executes after successful payment
+  
   return NextResponse.json({
     location: 'San Francisco',
     temperature: 72,
@@ -91,30 +127,33 @@ export async function GET() {
     forecast: [
       { day: 'Monday', high: 73, low: 58 },
       { day: 'Tuesday', high: 70, low: 55 },
-      // Additional forecast days...
-    ]
+      { day: 'Wednesday', high: 68, low: 54 }
+    ],
+    premium: true
   });
 }
 ```
 
-This code only executes after the middleware has verified and settled payment. If payment hasn't been made or fails, your route handler never runs.
+### Payment Flow
 
-## Test the Integration
+The middleware automatically handles:
 
-Start your development server:
+1. **No Payment** → Returns 402 with payment instructions
+2. **Invalid Payment** → Returns 403 with error details
+3. **Valid Payment** → Verifies → Settles → Executes your route → Returns 200
+
+## Step 5: Test Your Setup
+
+### Test Without Payment
 
 ```bash
 npm run dev
-```
 
-Make a request to your protected endpoint:
-
-```bash
+# In another terminal
 curl http://localhost:3000/api/premium/weather
 ```
 
-You should receive a 402 Payment Required response with payment details:
-
+Expected 402 response:
 ```json
 {
   "x402Version": 1,
@@ -122,54 +161,57 @@ You should receive a 402 Payment Required response with payment details:
     "scheme": "exact",
     "network": "aptos-testnet",
     "maxAmountRequired": "1000000",
-    "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+    "payTo": "0xYOUR_WALLET_ADDRESS",
     "description": "Premium weather data with 7-day forecast",
     "resource": "http://localhost:3000/api/premium/weather"
   }]
 }
 ```
 
-This 402 response tells clients how to pay for access. The middleware handles returning this response automatically when no valid payment is present.
+If you see this 402 response, your middleware is working correctly!
 
-To complete a paid request from a client, follow the [Quickstart for Buyers](quickstart-buyers.md) and call your protected endpoint using `x402axios`.
+### Test With Payment
 
-## How It Works
-
-When a request arrives at a protected route, the middleware checks for an X-PAYMENT header. If absent, it returns 402 with payment requirements. If present, it verifies the payment structure, settles the transaction on the Aptos blockchain, and only allows your API code to execute after successful settlement.
-
-The middleware adds timing information to responses in headers like X-Verification-Time and X-Settlement-Time, which can help with debugging and monitoring performance.
-
-## Protecting Multiple Endpoints
-
-You can protect multiple endpoints with different prices:
+Use the client from [Quickstart for Buyers](quickstart-buyers.md):
 
 ```typescript
-export const middleware = paymentMiddleware(
-  process.env.PAYMENT_RECIPIENT_ADDRESS!,
-  {
-    '/api/premium/weather': {
-      price: '1000000',
-      network: 'testnet',
-      config: { description: 'Weather data' }
-    },
-    '/api/premium/stocks': {
-      price: '5000000',
-      network: 'testnet',
-      config: { description: 'Stock market data' }
-    }
-  },
-  { url: process.env.FACILITATOR_URL! }
-);
+import { x402axios } from 'aptos-x402';
+
+const response = await x402axios.get('http://localhost:3000/api/premium/weather', {
+  privateKey: process.env.APTOS_PRIVATE_KEY
+});
+
+console.log(response.data);
+console.log('Paid:', response.paymentInfo?.transactionHash);
 ```
 
-Each route can have its own price and description. The middleware handles routing automatically based on the request path.
+## Response Headers
+
+Successful payments include these headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-PAYMENT-RESPONSE` | Payment receipt with transaction hash |
+| `X-Verification-Time` | Milliseconds for payment verification |
+| `X-Settlement-Time` | Milliseconds for blockchain settlement |
 
 ## Next Steps
 
-You've successfully set up payment protection for your API. To complete your integration:
+### For Development
 
-- Test with real payments by following the client integration guide
-- Set up your own facilitator for production use
-- Switch from testnet to mainnet when ready to accept real payments
+- Use testnet for all testing
+- Get free testnet APT from [faucet](https://aptoslabs.com/testnet-faucet)
+- Monitor transaction on [Aptos Explorer](https://explorer.aptoslabs.com/)
 
-See [Facilitator Setup](../guides/facilitator-setup.md) for production deployment guidance.
+### For Production
+
+1. **Deploy Own Facilitator** - See [Facilitator Setup](../guides/facilitator-setup.md)
+2. **Switch to Mainnet** - Change `network: 'mainnet'` in configuration
+3. **Monitor Performance** - Track verification and settlement times
+4. **Implement Error Handling** - Handle payment failures gracefully
+
+## Additional Resources
+
+- [Quickstart for Buyers](quickstart-buyers.md) - Consume your protected API
+- [HTTP 402 Protocol](../core-concepts/http-402.md) - Deep dive into the protocol
+- [Facilitator Guide](../guides/facilitator-setup.md) - Self-hosting options
