@@ -17,7 +17,7 @@ The MDC file provides Cursor with complete API documentation, function signature
 ## Monetize Your APIs
 
 ```
-Set up Aptos x402 payment middleware for my Next.js API:
+Set up Aptos x402 payment middleware to protect my existing Next.js API routes:
 
 STEP 1 - Install:
 npm install aptos-x402
@@ -37,13 +37,15 @@ paymentMiddleware(
 
 RouteConfig: { price: string; network?: string; config?: { description?: string } }
 
-Example: Protect '/api/protected/data' with price: '1000000', network: 'aptos-testnet'
-Matcher: ['/api/protected/:path*']
+Example: Protect '[YOUR_API_ROUTE]' with price: '1000000', network: 'aptos-testnet'
+Matcher: ['[YOUR_API_ROUTE_PATTERN]']
 
-STEP 4 - Protected API Route (app/api/protected/data/route.ts):
-export async function GET() {
-  return NextResponse.json({ message: "Premium data", timestamp: Date.now() })
-}
+Leave placeholder comments for user to specify:
+- API route to protect
+- Price in octas
+- Matcher pattern
+
+Do NOT create new API routes - only protect existing ones with middleware.
 ```
 
 ## Consume Paid APIs
