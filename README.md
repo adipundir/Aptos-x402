@@ -58,6 +58,24 @@ npm install aptos-x402
 
 ---
 
+## 🤖 AI-Powered Setup (Cursor IDE)
+
+Get started in seconds with AI-assisted integration:
+
+```bash
+mkdir -p .cursor/rules
+curl -o .cursor/rules/aptos-x402.mdc https://raw.githubusercontent.com/adipundir/aptos-x402/main/integration/aptos-x402.mdc
+```
+
+**Restart Cursor IDE**, then ask:
+> "Set up Aptos x402 in my Next.js app with payment middleware and a test client component"
+
+The MDC context file provides Cursor with complete API documentation, types, and examples for accurate code generation.
+
+**Learn more:** [Cursor Integration Guide](./docs/guides/cursor-integration.md)
+
+---
+
 ## 🛒 Client Integration (Consuming Paid APIs)
 
 Access x402-protected APIs with zero configuration. The `x402axios` client automatically detects payment requirements, builds transactions, and handles the entire payment flow.

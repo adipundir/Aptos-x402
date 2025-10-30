@@ -1,8 +1,8 @@
 {
   "name": "aptos-x402",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "HTTP 402 Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection and zero fallbacks",
-  "author": "Adi Pundir",
+  "author": "Aditya Pundir",
   "license": "MIT",
   "repository": {
     "type": "git",

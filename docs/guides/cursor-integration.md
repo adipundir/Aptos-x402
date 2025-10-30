@@ -16,21 +16,25 @@ Aptos x402 provides a comprehensive MDC (Model Development Context) file that en
 
 ## Quick Setup
 
-### 1. Copy the MDC File
+### 1. Download the MDC File
 
-Copy the aptos-x402 MDC file to your project:
+Download the aptos-x402 MDC context file directly from GitHub:
 
 ```bash
 # Create the .cursor/rules directory
 mkdir -p .cursor/rules
 
-# Copy the MDC file from the aptos-x402 repository
-cp /path/to/aptos-x402/.cursor/rules/aptos-x402.mdc .cursor/rules/
+# Download the MDC file from GitHub
+curl -o .cursor/rules/aptos-x402.mdc https://raw.githubusercontent.com/adipundir/aptos-x402/main/integration/aptos-x402.mdc
 ```
 
-### 2. Start Using Cursor
+### 2. Restart Cursor IDE
 
-Once the MDC file is in place, Cursor will automatically understand how to integrate aptos-x402 into your project. You can:
+**Important:** After adding the MDC file, you must restart Cursor IDE for it to load the new context.
+
+### 3. Start Using Cursor
+
+Once the MDC file is loaded, Cursor will automatically understand how to integrate aptos-x402 into your project. You can:
 
 - Ask Cursor to "Add x402 payment protection to my API routes"
 - Request "Set up aptos-x402 middleware for Next.js"
@@ -71,19 +75,65 @@ The MDC file includes guidance for:
 - **React** (any framework)
 - **Node.js** (vanilla)
 
-## Example Usage
+## One-Prompt Setup
 
-Once integrated, you can ask Cursor questions like:
+### Monetize Your APIs
 
 ```
-"Help me add x402 payment protection to my /api/premium route"
+Set up Aptos x402 payment middleware for my Next.js API:
+
+STEP 1 - Install:
+npm install aptos-x402
+
+STEP 2 - Environment Variables (.env.local):
+PAYMENT_RECIPIENT_ADDRESS=0x[your_aptos_address]
+FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+
+STEP 3 - Middleware (middleware.ts):
+import { paymentMiddleware } from 'aptos-x402'
+
+paymentMiddleware(
+  recipientAddress: string,
+  routes: Record<string, RouteConfig>,
+  facilitatorConfig: { url: string }
+)
+
+RouteConfig: { price: string; network?: string; config?: { description?: string } }
+
+Example: Protect '/api/protected/data' with price: '1000000', network: 'aptos-testnet'
+Matcher: ['/api/protected/:path*']
+
+STEP 4 - Protected API Route (app/api/protected/data/route.ts):
+export async function GET() {
+  return NextResponse.json({ message: "Premium data", timestamp: Date.now() })
+}
 ```
 
-Cursor will provide:
-- Complete middleware configuration
-- Environment variable setup
-- Client-side integration code
-- TypeScript type definitions
+### Consume Paid APIs
+
+```
+Set up Aptos x402 client to consume paid APIs:
+
+STEP 1 - Install:
+npm install aptos-x402
+
+STEP 2 - Environment Variables (.env.local):
+NEXT_PUBLIC_APTOS_PRIVATE_KEY=0x[your_private_key]
+
+STEP 3 - Client Component (app/components/PaymentClient.tsx):
+import { x402axios } from 'aptos-x402'
+
+const response = await x402axios.get(apiUrl, { 
+  privateKey: process.env.NEXT_PUBLIC_APTOS_PRIVATE_KEY 
+})
+
+Response:
+- response.data - API data
+- response.paymentInfo?.transactionHash
+- response.paymentInfo?.settled
+
+Include: Loading state, error handling, Aptos explorer link
+```
 
 ## Advanced Features
 
