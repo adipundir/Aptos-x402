@@ -35,6 +35,7 @@ const docsStructure: DocItem[] = [
   },
   {
     title: 'API Reference',
+    path: 'api-reference/README.md', // Add README.md overview for API Reference parent (create this doc if you want overview)
     children: [
       { title: 'Server API', path: 'api-reference/server-api.md' },
       { title: 'Types', path: 'api-reference/types.md' },

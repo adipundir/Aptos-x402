@@ -118,28 +118,34 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   };
 
   const renderSidebarItem = (item: DocItem, level = 0) => {
-    if (item.children) {
-      const isExpanded = expandedSections.has(item.title);
+    const isParent = !!item.children;
+    const isLink = !!item.path;
+    const isExpanded = expandedSections.has(item.title);
+    if (isParent) {
       return (
         <div key={item.title} className="mb-2">
           <button
-            onClick={() => toggleSection(item.title)}
+            onClick={() => {
+              if (isLink) {
+                navigateToDoc(item.path!);
+              } else {
+                toggleSection(item.title);
+              }
+            }}
             className={`w-full text-left px-3 py-2.5 hover:bg-zinc-50 transition-all duration-200 flex items-center justify-between rounded-lg group ${
               level > 0 ? 'text-sm ml-3' : 'font-semibold text-sm'
-            }`}
+            } ${isLink ? 'cursor-pointer text-zinc-900' : ''}`}
           >
             <div className="flex items-center gap-2">
               {level === 0 && getSectionIcon(item.title)}
               <span className={level === 0 ? 'text-zinc-900' : 'text-zinc-700'}>{item.title}</span>
               {level === 0 && item.children && (
-                <Badge variant="secondary" className={`text-xs font-normal ${getSectionBadge()}`}>
-                  {item.children.length}
-                </Badge>
+                <Badge variant="secondary" className={`text-xs font-normal ${getSectionBadge()}`}>{item.children.length}</Badge>
               )}
             </div>
             <ChevronRight className={`w-4 h-4 text-zinc-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
           </button>
-          {isExpanded && (
+          {isExpanded && item.children && (
             <div className="mt-1 space-y-0.5 pl-3 ml-3 border-l-2 border-zinc-100">
               {item.children.map((child) => renderSidebarItem(child, level + 1))}
             </div>
@@ -147,22 +153,23 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         </div>
       );
     }
-    if (!item.path) return null;
-    
-    const isSelected = selectedDoc === item.path;
-    return (
-      <button
-        key={item.path}
-        onClick={() => navigateToDoc(item.path!)}
-        className={`w-full text-left px-3 py-2 transition-all duration-200 text-sm rounded-lg ${
-          isSelected 
-            ? 'bg-zinc-100 text-zinc-900 font-medium' 
-            : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-        } ${level > 0 ? 'ml-3' : ''}`}
-      >
-        {item.title}
-      </button>
-    );
+    if (isLink) {
+      const isSelected = selectedDoc === item.path;
+      return (
+        <button
+          key={item.path}
+          onClick={() => navigateToDoc(item.path!)}
+          className={`w-full text-left px-3 py-2 transition-all duration-200 text-sm rounded-lg ${
+            isSelected 
+              ? 'bg-zinc-100 text-zinc-900 font-medium' 
+              : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
+          } ${level > 0 ? 'ml-3' : ''}`}
+        >
+          {item.title}
+        </button>
+      );
+    }
+    return null;
   };
 
   const parseMarkdownWithCodeBlocks = (md: string) => {
