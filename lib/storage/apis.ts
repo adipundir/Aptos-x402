@@ -14,10 +14,11 @@ export interface ApiMetadata {
   requiresAuth?: boolean;
 }
 
-// Base URL - defaults to localhost, should be set via NEXT_PUBLIC_BASE_URL in production
-const BASE_URL = typeof window !== 'undefined' 
-  ? window.location.origin 
-  : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
+// Base URL - works in both browser (DOM) and Node (SDK build) contexts
+// Prefer env when provided, otherwise fall back to global location if available
+const BASE_URL =
+  process.env.NEXT_PUBLIC_BASE_URL ||
+  ((typeof globalThis !== 'undefined' && (globalThis as any).location?.origin) || 'http://localhost:3000');
 
 export const API_REGISTRY: ApiMetadata[] = [
   {

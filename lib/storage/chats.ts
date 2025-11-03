@@ -15,6 +15,7 @@ export interface ChatMessage {
     apiCalled?: string;
     paymentHash?: string;
     error?: string;
+    llmUsed?: string;
   };
 }
 
