@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getAgentById, updateAgent, deleteAgent, getAgentForClient } from '@/lib/storage/agents';
+import { USER_ID_COOKIE } from '@/lib/utils/user-id';
 
 export const dynamic = 'force-dynamic';
 
-// Helper to get userId from request (can be extended with auth later)
-function getUserId(request: Request): string {
-  // For now, use a default userId or extract from headers/cookies
-  // TODO: Replace with actual authentication logic
-  const userId = request.headers.get('x-user-id') || 'default-user';
-  return userId;
+async function getUserId(request: Request): Promise<string> {
+  // Try cookie first (preferred method), then fall back to header
+  const cookieStore = await cookies();
+  const userIdFromCookie = cookieStore.get(USER_ID_COOKIE)?.value;
+  if (userIdFromCookie) {
+    return userIdFromCookie;
+  }
+  return request.headers.get('x-user-id') || 'default-user';
 }
 
 export async function GET(
@@ -16,7 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     const { agentId } = await params;
     const agent = await getAgentById(agentId, userId);
     if (!agent) {
@@ -39,7 +43,7 @@ export async function PATCH(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     const { agentId } = await params;
     const body = await request.json();
     const updated = await updateAgent(agentId, body, userId);
@@ -65,7 +69,7 @@ export async function DELETE(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     const { agentId } = await params;
     const deleted = await deleteAgent(agentId, userId);
     if (!deleted) {

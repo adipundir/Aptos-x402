@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getAgentById } from '@/lib/storage/agents';
 import { executeAgentQuery } from '@/lib/agent/executor';
 import { addMessage, getChatWithMessages } from '@/lib/storage/chats';
 import { getOrCreateUserWallet } from '@/lib/storage/user-wallets';
+import { USER_ID_COOKIE } from '@/lib/utils/user-id';
 
 export const dynamic = 'force-dynamic';
 
-// Helper to get userId from request (can be extended with auth later)
-function getUserId(request: Request): string {
-  // For now, use a default userId or extract from headers/cookies
-  // TODO: Replace with actual authentication logic
-  const userId = request.headers.get('x-user-id') || 'default-user';
-  return userId;
+async function getUserId(request: Request): Promise<string> {
+  // Try cookie first (preferred method), then fall back to header
+  const cookieStore = await cookies();
+  const userIdFromCookie = cookieStore.get(USER_ID_COOKIE)?.value;
+  if (userIdFromCookie) {
+    return userIdFromCookie;
+  }
+  return request.headers.get('x-user-id') || 'default-user';
 }
 
 export async function POST(
@@ -19,7 +23,7 @@ export async function POST(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     const { agentId } = await params;
     const agent = await getAgentById(agentId, userId);
     if (!agent) {
@@ -167,7 +171,7 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = getUserId(request);
+    const userId = await getUserId(request);
     const { agentId } = await params;
     const agent = await getAgentById(agentId, userId);
     if (!agent) {
