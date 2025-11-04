@@ -7,6 +7,21 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+// Cache model instances to avoid re-initialization overhead
+const modelCache = new Map<string, ChatGoogleGenerativeAI>();
+
+function getModel(modelName: string): ChatGoogleGenerativeAI {
+  if (!modelCache.has(modelName)) {
+    modelCache.set(modelName, new ChatGoogleGenerativeAI({
+      modelName: modelName,
+      temperature: 0.1,
+      apiKey: GEMINI_API_KEY,
+      maxTokens: 512, // Limit tokens for faster responses
+    }));
+  }
+  return modelCache.get(modelName)!;
+}
+
 export interface ExtractedData {
   formattedResponse: string;
   extractedData?: any;
@@ -30,39 +45,21 @@ export async function extractDataWithLLM(
   }
 
   try {
-    const model = new ChatGoogleGenerativeAI({
-      modelName: modelName,
-      temperature: 0.1, // Lower temperature for more direct, deterministic responses
-      apiKey: GEMINI_API_KEY,
-    });
+    const model = getModel(modelName);
 
-    const prompt = `Extract and format data from the API response based on the user query. Work with ANY API structure - weather, stocks, news, trading, etc. Be direct and concise - no intros, no explanations, just the answer.
+    // Optimize prompt - shorter and more direct for faster processing
+    // Truncate large API data to avoid token bloat
+    const dataStr = JSON.stringify(apiData);
+    const maxDataLength = 2000; // Limit data size to avoid huge prompts
+    const truncatedData = dataStr.length > maxDataLength 
+      ? dataStr.substring(0, maxDataLength) + '...[truncated]'
+      : dataStr;
 
-User Query: "${userQuery}"
+    const prompt = `Query: "${userQuery}"
 API: ${apiName}
-API Response Data:
-${JSON.stringify(apiData, null, 2)}
+Data: ${truncatedData}
 
-CRITICAL RULES:
-- NO conversational intros like "Okay, I can help" or "Based on your query"
-- NO repeating the user's query back to them
-- Start directly with the answer
-- If the query is vague or doesn't match the data (e.g., greeting with API data), show what data IS available
-- Extract ONLY what the user asked for when specific (filtering, specific fields, etc.)
-- If query is general/unspecific, provide a brief summary of available data
-- Understand the API data structure dynamically - don't assume any specific format
-- Format clearly but be brief
-- If data is empty/null/undefined, say "No data available" (one line)
-
-Examples:
-Query: "weather for tuesday" → "Tuesday: Sunny, 73°F high, 56°F low"
-Query: "AAPL stock price" → "$150.25"
-Query: "hello" (with stock symbols data) → "Available stock symbols: AAPL, GOOGL, MSFT, AMZN, TSLA"
-Query: "latest news headline" → "Tech stocks surge on AI breakthrough"
-Query: "temperature only" → "73°F"
-Query: "what stocks?" (with symbols list) → "Available symbols: AAPL, GOOGL, MSFT, AMZN, TSLA"
-
-Answer:`;
+Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
 
     const response = await model.invoke(prompt);
     const formattedResponse = response.content?.toString().trim();

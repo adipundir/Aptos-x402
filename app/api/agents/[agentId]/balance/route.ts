@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgentById } from '@/lib/storage/agents';
 import { getWalletBalance } from '@/lib/agent/wallet';
+import { getOrCreateUserWallet } from '@/lib/storage/user-wallets';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,10 +28,28 @@ export async function GET(
       );
     }
 
+    // Determine which wallet balance to show:
+    // - If user owns the agent: show agent's wallet balance
+    // - If public agent used by someone else: show user's wallet balance
+    const isOwner = agent.userId === userId;
+    let walletAddress: string;
+    let walletType: 'agent' | 'user' = 'agent';
+
+    if (agent.visibility === 'public' && !isOwner) {
+      // Public agent used by someone else - show user's wallet balance
+      const userWallet = await getOrCreateUserWallet(userId);
+      walletAddress = userWallet.walletAddress;
+      walletType = 'user';
+    } else {
+      // User owns the agent (or it's private) - show agent's wallet balance
+      walletAddress = agent.walletAddress;
+      walletType = 'agent';
+    }
+
     // Ensure wallet address is in correct format
-    const walletAddress = agent.walletAddress.startsWith('0x') 
-      ? agent.walletAddress 
-      : `0x${agent.walletAddress}`;
+    walletAddress = walletAddress.startsWith('0x') 
+      ? walletAddress 
+      : `0x${walletAddress}`;
 
     const walletInfo = await getWalletBalance(walletAddress, 'testnet');
     
@@ -38,6 +57,8 @@ export async function GET(
       balance: walletInfo.balance,
       balanceAPT: walletInfo.balanceAPT,
       address: walletInfo.address,
+      walletType, // Indicate which wallet is being shown
+      isOwner,
     });
   } catch (error: any) {
     console.error('Error fetching wallet balance:', error);

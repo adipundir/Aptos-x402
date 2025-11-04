@@ -317,6 +317,41 @@ async function x402axiosMain<T = any>(
     throw new Error('Either privateKey or account must be provided');
   }
 
+  // Step 4.5: Check balance before building transaction
+  console.log(`[x402-axios] Checking account balance...`);
+  try {
+    const accountBalance = await aptos.getAccountAPTAmount({
+      accountAddress: aptosAccount.accountAddress,
+    });
+    
+    const amountBigInt = BigInt(amount);
+    const estimatedFee = BigInt(1000); // Conservative estimate: 0.00001 APT
+    const totalRequired = amountBigInt + estimatedFee;
+    
+    console.log(`[x402-axios] Balance check:`, {
+      available: `${accountBalance} Octas (${accountBalance / 100_000_000} APT)`,
+      required: `${totalRequired} Octas (${Number(totalRequired) / 100_000_000} APT)`,
+      amount: `${amountBigInt} Octas (${Number(amountBigInt) / 100_000_000} APT)`,
+      fee: `${estimatedFee} Octas (${Number(estimatedFee) / 100_000_000} APT)`,
+    });
+    
+    if (BigInt(accountBalance) < totalRequired) {
+      const missingAmount = totalRequired - BigInt(accountBalance);
+      const errorMsg = `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE: Available ${accountBalance / 100_000_000} APT, Required ${Number(totalRequired) / 100_000_000} APT (amount: ${Number(amountBigInt) / 100_000_000} APT + fee: ${Number(estimatedFee) / 100_000_000} APT), Missing ${Number(missingAmount) / 100_000_000} APT`;
+      console.error(`[x402-axios] ❌ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+    
+    console.log(`[x402-axios] ✅ Balance check passed`);
+  } catch (balanceError: any) {
+    // If it's already our balance error, re-throw it
+    if (balanceError.message?.includes('INSUFFICIENT_BALANCE')) {
+      throw balanceError;
+    }
+    // Otherwise, log but continue (balance check is best-effort)
+    console.warn(`[x402-axios] ⚠️  Balance check failed, continuing:`, balanceError.message);
+  }
+
   console.log(`[x402-axios] Building transaction for ${amount} Octas to ${recipient.slice(0, 10)}...`);
 
   // Step 5: Build transaction based on scheme

@@ -50,6 +50,16 @@ export const chatMessages = pgTable('chat_messages', {
   timestamp: timestamp('timestamp').notNull().defaultNow(),
 });
 
+export const userWallets = pgTable('user_wallets', {
+  userId: varchar('user_id', { length: 255 }).primaryKey(), // User identifier (UUID)
+  walletAddress: varchar('wallet_address', { length: 255 }).notNull(),
+  privateKey: text('private_key').notNull(), // Encrypted server-side, never exposed to client
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  userWalletsUserIdx: index('user_wallets_user_idx').on(table.userId),
+}));
+
 // Type exports for use in storage functions
 export type Agent = typeof agents.$inferSelect;
 export type NewAgent = typeof agents.$inferInsert;
@@ -57,4 +67,6 @@ export type ChatThread = typeof chatThreads.$inferSelect;
 export type NewChatThread = typeof chatThreads.$inferInsert;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type NewChatMessage = typeof chatMessages.$inferInsert;
+export type UserWallet = typeof userWallets.$inferSelect;
+export type NewUserWallet = typeof userWallets.$inferInsert;
 

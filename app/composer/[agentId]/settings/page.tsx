@@ -269,6 +269,8 @@ export default function AgentSettingsPage() {
         <FundingModal
           agentId={agentId}
           walletAddress={agent.walletAddress}
+          walletType="agent"
+          isOwner={true}
           onClose={() => {
             setShowFunding(false);
             fetchBalance();

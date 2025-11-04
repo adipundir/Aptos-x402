@@ -8,6 +8,21 @@ import { getAllApis, ApiMetadata } from '../storage/apis';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
+// Cache model instances to avoid re-initialization overhead
+const modelCache = new Map<string, ChatGoogleGenerativeAI>();
+
+function getModel(modelName: string): ChatGoogleGenerativeAI {
+  if (!modelCache.has(modelName)) {
+    modelCache.set(modelName, new ChatGoogleGenerativeAI({
+      modelName: modelName,
+      temperature: 0.3,
+      apiKey: GEMINI_API_KEY,
+      maxTokens: 512, // Limit tokens for faster responses
+    }));
+  }
+  return modelCache.get(modelName)!;
+}
+
 export interface LLMResponse {
   shouldCallAPI: boolean;
   apiId?: string | null;
@@ -29,46 +44,20 @@ export async function processQueryWithLLM(
   }
 
   try {
-    const model = new ChatGoogleGenerativeAI({
-      modelName: modelName,
-      temperature: 0.3, // Lower temperature for faster, more deterministic responses
-      apiKey: GEMINI_API_KEY,
-    });
+    const model = getModel(modelName);
 
+    // Optimize API descriptions - only include essential info
     const apiDescriptions = availableApis.map(api => 
-      `- ${api.name} (${api.id}): ${api.description}`
-    ).join('\n');
+      `${api.id}:${api.name}`
+    ).join(';');
 
-    const prompt = `You are a helpful AI assistant named "${agentName}". You can access APIs to fetch data when needed, but you should be conversational and natural first.
+    // Shorter, more focused prompt for faster LLM response
+    const prompt = `Agent: ${agentName}
+APIs: ${apiDescriptions}
+Query: "${userQuery}"
 
-Available APIs:
-${apiDescriptions}
-
-User Query: "${userQuery}"
-
-CRITICAL RULES:
-1. For greetings (hello, hi, hey, how are you, what's up, etc.) - ALWAYS set shouldCallAPI to false and respond conversationally
-2. For casual conversation (thanks, ok, yes, no, sure, etc.) - ALWAYS set shouldCallAPI to false and respond conversationally  
-3. ONLY set shouldCallAPI to true if the user EXPLICITLY requests data or information that requires an API call
-4. Be natural, friendly, and conversational - act like a real AI assistant, not just an API router
-
-Respond in JSON format with this structure:
-{
-  "shouldCallAPI": true/false,
-  "apiId": "api-id-here" or null,
-  "conversationalResponse": "Your conversational response to the user"
-}
-
-Examples:
-- "hello" → {"shouldCallAPI": false, "apiId": null, "conversationalResponse": "Hello! I'm ${agentName}. How can I help you today? I can fetch weather data, stock prices, news, and more!"}
-- "hi there" → {"shouldCallAPI": false, "apiId": null, "conversationalResponse": "Hi! Nice to meet you! What would you like to know?"}
-- "what's the weather?" → {"shouldCallAPI": true, "apiId": "weather", "conversationalResponse": "Let me fetch the current weather data for you."}
-- "how are you?" → {"shouldCallAPI": false, "apiId": null, "conversationalResponse": "I'm doing great, thanks for asking! How can I assist you today?"}
-- "thanks" → {"shouldCallAPI": false, "apiId": null, "conversationalResponse": "You're welcome! Feel free to ask if you need anything else."}
-
-IMPORTANT: When shouldCallAPI is false, provide a natural conversational response. When shouldCallAPI is true, you can provide a brief intro before fetching data.
-
-Respond ONLY with valid JSON, no other text.`;
+Rules: Greetings/casual → shouldCallAPI=false. Data requests → shouldCallAPI=true with apiId.
+JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse":"response"}`;
 
     const response = await model.invoke(prompt);
     const content = response.content?.toString().trim();

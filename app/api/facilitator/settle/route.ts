@@ -204,6 +204,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(settleResponse, { status: 400 });
     }
     
+    // Validate transaction before submission
+    console.log(`\n🔍 [Facilitator Settle] Validating transaction before submission...`);
+    
+    try {
+      // Extract sender address from transaction (SimpleTransaction is a RawTransaction wrapper)
+      const txAny = transaction as any;
+      const senderAddress = txAny.sender?.toString() || txAny.rawTransaction?.sender?.toString();
+      
+      if (!senderAddress) {
+        console.warn(`[Facilitator Settle] ⚠️  Could not extract sender address, skipping balance check`);
+      } else {
+        console.log(`[Facilitator Settle] Sender address: ${senderAddress}`);
+        
+        // Check sender balance before submission
+        const senderBalance = await aptos.getAccountAPTAmount({
+          accountAddress: senderAddress,
+        });
+        
+        console.log(`[Facilitator Settle] Sender balance: ${senderBalance} Octas (${senderBalance / 100_000_000} APT)`);
+        
+        // Extract amount from transaction (for transfer transactions)
+        let requiredAmount = BigInt(0);
+        const payload = txAny.payload || txAny.rawTransaction?.payload;
+        if (payload && typeof payload === 'object') {
+          if (payload.function === '0x1::aptos_account::transfer' && payload.arguments) {
+            // Second argument is the amount
+            if (payload.arguments[1]) {
+              requiredAmount = BigInt(payload.arguments[1]);
+              console.log(`[Facilitator Settle] Required amount: ${requiredAmount} Octas (${Number(requiredAmount) / 100_000_000} APT)`);
+            }
+          }
+        }
+      
+        // Estimate transaction fee (typically ~100-200 Octas, but we'll use a conservative estimate)
+        const estimatedFee = BigInt(1000); // 0.00001 APT conservative estimate
+        const totalRequired = requiredAmount + estimatedFee;
+        
+        console.log(`[Facilitator Settle] Total required (amount + fee): ${totalRequired} Octas (${Number(totalRequired) / 100_000_000} APT)`);
+        
+        if (BigInt(senderBalance) < totalRequired) {
+          const missingAmount = totalRequired - BigInt(senderBalance);
+          console.error(`[Facilitator Settle] ❌ Insufficient balance!`);
+          console.error(`[Facilitator Settle] Available: ${senderBalance} Octas (${senderBalance / 100_000_000} APT)`);
+          console.error(`[Facilitator Settle] Required: ${totalRequired} Octas (${Number(totalRequired) / 100_000_000} APT)`);
+          console.error(`[Facilitator Settle] Missing: ${missingAmount} Octas (${Number(missingAmount) / 100_000_000} APT)`);
+          
+          const settleResponse: SettleResponse = {
+            success: false,
+            error: `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE: Available ${senderBalance / 100_000_000} APT, Required ${Number(totalRequired) / 100_000_000} APT`,
+            txHash: null,
+            networkId: null,
+          };
+          return NextResponse.json(settleResponse, { status: 400 });
+        }
+        
+        console.log(`[Facilitator Settle] ✅ Balance check passed`);
+      }
+    } catch (validationError: any) {
+      console.error(`[Facilitator Settle] ❌ Validation error:`, validationError);
+      // Don't fail on validation errors, just log them and proceed
+      // The blockchain will reject invalid transactions anyway
+      console.log(`[Facilitator Settle] ⚠️  Continuing with submission despite validation warning`);
+    }
+    
     // Submit using SDK's proper method (Pattern A from official Aptos SDK docs)
     console.log(`\n📤 [Facilitator Settle] Submitting via SDK submit.simple()...`);
     
@@ -219,9 +283,22 @@ export async function POST(request: NextRequest) {
       console.log(`[Facilitator Settle] Transaction hash: ${pendingTx.hash}`);
     } catch (submitError: any) {
       console.error(`[Facilitator Settle] ❌ Submission failed:`, submitError);
+      
+      // Extract meaningful error message
+      let errorMessage = submitError.message || String(submitError);
+      
+      // Check for common error patterns
+      if (errorMessage.includes('INSUFFICIENT_BALANCE') || errorMessage.includes('insufficient')) {
+        errorMessage = `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE: ${errorMessage}`;
+      } else if (errorMessage.includes('SEQUENCE_NUMBER')) {
+        errorMessage = `SEQUENCE_NUMBER_MISMATCH: ${errorMessage}`;
+      } else if (errorMessage.includes('invalid') || errorMessage.includes('Invalid')) {
+        errorMessage = `INVALID_TRANSACTION: ${errorMessage}`;
+      }
+      
       const settleResponse: SettleResponse = {
         success: false,
-        error: submitError.message || String(submitError),
+        error: errorMessage,
         txHash: null,
         networkId: null,
       };

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +9,7 @@ import { FundingModal } from './FundingModal';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getUserIdHeaders } from '@/lib/utils/user-id';
+import { ChatInterfaceSkeleton } from './ChatInterfaceSkeleton';
 
 interface ChatMessage {
   id: string;
@@ -44,17 +44,33 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showFunding, setShowFunding] = useState(false);
   const [balance, setBalance] = useState<string>('0.00000000');
   const [selectedLLM, setSelectedLLM] = useState<string>('gemini-2.5-flash');
   const [selectedAPI, setSelectedAPI] = useState<string>('auto');
   const [availableApis, setAvailableApis] = useState<any[]>([]);
+  const [walletInfo, setWalletInfo] = useState<{address: string; type: 'agent' | 'user'; isOwner: boolean}>({
+    address: walletAddress,
+    type: 'agent',
+    isOwner: true,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchChat();
-    fetchBalance();
-    fetchApis();
+    const loadData = async () => {
+      setInitialLoading(true);
+      try {
+        await Promise.all([
+          fetchChat(),
+          fetchBalance(),
+          fetchApis(),
+        ]);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId]);
 
@@ -100,6 +116,14 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
       if (data.balanceAPT) {
         setBalance(data.balanceAPT);
       }
+      // Update wallet info (which wallet is being used and who owns it)
+      if (data.address && data.walletType && data.isOwner !== undefined) {
+        setWalletInfo({
+          address: data.address,
+          type: data.walletType,
+          isOwner: data.isOwner,
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch balance:', error);
     }
@@ -142,12 +166,55 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
 
       const data = await res.json();
 
-      if (data.error === 'INSUFFICIENT_FUNDS') {
+      // Handle insufficient balance errors
+      if (data.error && (
+        data.error.includes('INSUFFICIENT_BALANCE') || 
+        data.error.includes('INSUFFICIENT_FUNDS') ||
+        data.error.includes('insufficient')
+      )) {
         setShowFunding(true);
+        // Refresh balance to show current state
+        fetchBalance();
+        // Add error message to chat
+        const errorMessage: ChatMessage = {
+          id: `error_${Date.now()}`,
+          role: 'agent',
+          content: data.message || 'Insufficient balance. Please fund your wallet.',
+          timestamp: new Date().toISOString(),
+          metadata: { error: data.error },
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        return;
       }
 
-      if (data.chat?.messages) {
+      // Handle successful response - add agent message directly from response
+      if (data.success && data.message) {
+        const agentMessage: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          role: 'agent',
+          content: data.message,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            apiCalled: data.apiCalled,
+            paymentHash: data.paymentHash,
+            paymentAmount: data.paymentAmount,
+            llmUsed: data.llmUsed,
+          },
+        };
+        setMessages(prev => [...prev, agentMessage]);
+      } else if (data.chat?.messages) {
+        // Fallback: if chat history is returned, use it
         setMessages(data.chat.messages);
+      } else if (data.message) {
+        // Handle error messages
+        const errorMessage: ChatMessage = {
+          id: `error_${Date.now()}`,
+          role: 'agent',
+          content: data.message,
+          timestamp: new Date().toISOString(),
+          metadata: { error: data.error },
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
 
       // Refresh balance after API call
@@ -166,6 +233,11 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
       setLoading(false);
     }
   };
+
+  // Show skeleton while initial data is loading
+  if (initialLoading) {
+    return <ChatInterfaceSkeleton />;
+  }
 
   return (
     <>
@@ -379,7 +451,9 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
       {showFunding && (
         <FundingModal
           agentId={agentId}
-          walletAddress={walletAddress}
+          walletAddress={walletInfo.address}
+          walletType={walletInfo.type}
+          isOwner={walletInfo.isOwner}
           onClose={() => {
             setShowFunding(false);
             fetchBalance();

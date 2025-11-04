@@ -15,6 +15,13 @@
       "when": 1762264057034,
       "tag": "0001_salty_spyke",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762270886282,
+      "tag": "0002_sloppy_the_twelve",
+      "breakpoints": true
     }
   ]
 }

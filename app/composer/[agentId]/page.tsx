@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChatInterface } from '@/components/composer/ChatInterface';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { ChatInterfaceSkeleton } from '@/components/composer/ChatInterfaceSkeleton';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { getUserIdHeaders } from '@/lib/utils/user-id';
@@ -38,18 +39,6 @@ export default function AgentChatPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-6 py-24 max-w-4xl flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
-      </div>
-    );
-  }
-
-  if (!agent) {
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-6 max-w-6xl">
@@ -61,12 +50,16 @@ export default function AgentChatPage() {
             </Button>
           </Link>
         </div>
-      <ChatInterface
-        agentId={agent.id}
-        agentName={agent.name}
-        walletAddress={agent.walletAddress}
-        agentApiIds={agent.apiIds}
-      />
+        {loading ? (
+          <ChatInterfaceSkeleton />
+        ) : agent ? (
+          <ChatInterface
+            agentId={agent.id}
+            agentName={agent.name}
+            walletAddress={agent.walletAddress}
+            agentApiIds={agent.apiIds}
+          />
+        ) : null}
       </div>
     </div>
   );

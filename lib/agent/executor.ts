@@ -23,6 +23,10 @@ export interface AgentResponse {
 
 /**
  * Execute agent query by calling appropriate API
+ * @param agent - The agent configuration
+ * @param userQuery - The user's query/message
+ * @param options - Execution options including LLM and API selection
+ * @param userPrivateKey - Optional user's private key for payment (required for public agents)
  */
 export async function executeAgentQuery(
   agent: Agent,
@@ -30,7 +34,8 @@ export async function executeAgentQuery(
   options?: {
     llm?: string;
     apiId?: string | null;
-  }
+  },
+  userPrivateKey?: string
 ): Promise<AgentResponse> {
   try {
     // Get available APIs for this agent
@@ -102,15 +107,18 @@ export async function executeAgentQuery(
         };
       }
     } else {
-      // Specific API manually selected - but still check if query is a greeting
+      // Specific API manually selected - use fast keyword check for greetings (skip LLM call)
       // We should never call APIs for greetings, even if manually selected
-      const greetingCheck = await processQueryWithLLM(userQuery, availableApis, agent.name || 'Agent', modelName);
+      const lowerQuery = userQuery.toLowerCase().trim();
+      const greetings = ['hello', 'hi', 'hey', 'howdy', 'greetings', 'good morning', 'good afternoon', 'good evening'];
+      const casual = ['thanks', 'thank you', 'ok', 'okay', 'yes', 'no', 'sure', 'alright', 'cool', 'nice', 'how are you', 'what\'s up'];
       
-      if (greetingCheck && !greetingCheck.shouldCallAPI) {
+      if (greetings.some(g => lowerQuery === g || lowerQuery.startsWith(g + ' ')) ||
+          casual.some(c => lowerQuery === c || lowerQuery.startsWith(c + ' '))) {
         return {
           success: true,
-          message: greetingCheck.conversationalResponse || `Hello! I'm ${agent.name || 'your agent'}. How can I help you today?`,
-          llmUsed: options?.llm === 'keyword' ? undefined : llmUsed,
+          message: `Hello! I'm ${agent.name || 'your agent'}. How can I help you today?`,
+          llmUsed: undefined, // No LLM used for greeting check
         };
       }
       
@@ -124,10 +132,22 @@ export async function executeAgentQuery(
       }
     }
     
-    // Call the API using x402axios with agent's private key
+    // Determine which wallet to use for payment:
+    // - If userPrivateKey is provided: user is chatting with someone else's public agent -> use user's wallet
+    // - Otherwise: user owns the agent -> use agent's wallet
+    let paymentPrivateKey: string;
+    if (userPrivateKey) {
+      // User chatting with public agent owned by someone else - use user's wallet
+      paymentPrivateKey = userPrivateKey;
+    } else {
+      // User owns the agent (or it's private) - use agent's wallet
+      paymentPrivateKey = agent.privateKey;
+    }
+    
+    // Call the API using x402axios with appropriate private key
     try {
       const config: any = {
-        privateKey: agent.privateKey,
+        privateKey: paymentPrivateKey,
       };
       
       let response;

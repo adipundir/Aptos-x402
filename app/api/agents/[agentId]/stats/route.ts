@@ -44,29 +44,25 @@ export async function GET(
         if (msg.metadata?.apiCalled) {
           apiCallsCount++;
           
-          console.log('[Stats] Message with API call:', {
-            apiCalled: msg.metadata.apiCalled,
-            paymentAmount: msg.metadata.paymentAmount,
-            paymentHash: msg.metadata.paymentHash,
-          });
-          
           // Extract actual payment amount from metadata (in Octas)
           if (msg.metadata.paymentAmount) {
             const amountInOctas = parseFloat(msg.metadata.paymentAmount);
             const amountInAPT = amountInOctas / 100_000_000; // Convert Octas to APT
             totalSpent += amountInAPT;
-            console.log('[Stats] Added to total:', { amountInOctas, amountInAPT, totalSpent });
           }
         }
       });
     }
     
-    console.log('[Stats] Final calculation:', {
-      totalRequests,
-      apiCallsCount,
-      totalSpent,
-      totalSpentUsd: totalSpent * 10
-    });
+    // Log stats calculation (only in development for debugging)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Stats] Calculated stats from historical messages (no new transactions):', {
+        totalRequests,
+        apiCallsCount,
+        totalSpent,
+        totalSpentUsd: totalSpent * 10
+      });
+    }
 
     // Convert APT to USD (approximate, would need real price feed)
     const aptToUsd = 10; // Example: 1 APT = $10
