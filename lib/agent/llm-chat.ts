@@ -17,7 +17,6 @@ function getModel(modelName: string): ChatGoogleGenerativeAI {
       modelName: modelName,
       temperature: 0.3,
       apiKey: GEMINI_API_KEY,
-      maxTokens: 512, // Limit tokens for faster responses
     }));
   }
   return modelCache.get(modelName)!;

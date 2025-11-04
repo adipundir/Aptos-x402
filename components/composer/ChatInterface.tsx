@@ -19,6 +19,7 @@ interface ChatMessage {
   metadata?: {
     apiCalled?: string;
     paymentHash?: string;
+    paymentAmount?: string;
     error?: string;
     llmUsed?: string;
   };
