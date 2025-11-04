@@ -1,62 +1,13 @@
 /**
  * Chat Storage
- * File-based storage for chat conversations
+ * Neon PostgreSQL storage for chat conversations
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import { db, chatThreads, chatMessages, type ChatThread, type ChatMessage, type NewChatThread, type NewChatMessage } from '@/lib/db';
+import { eq, and, desc } from 'drizzle-orm';
 
-export interface ChatMessage {
-  id: string;
-  role: 'user' | 'agent';
-  content: string;
-  timestamp: string;
-  metadata?: {
-    apiCalled?: string;
-    paymentHash?: string;
-    error?: string;
-    llmUsed?: string;
-  };
-}
-
-export interface ChatThread {
-  id: string;
-  agentId: string;
-  messages: ChatMessage[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-const STORAGE_DIR = path.join(process.cwd(), '.composer-data');
-const CHATS_FILE = path.join(STORAGE_DIR, 'chats.json');
-
-// Ensure storage directory exists
-function ensureStorageDir() {
-  if (!fs.existsSync(STORAGE_DIR)) {
-    fs.mkdirSync(STORAGE_DIR, { recursive: true });
-  }
-}
-
-// Read chats from file
-function readChats(): ChatThread[] {
-  ensureStorageDir();
-  if (!fs.existsSync(CHATS_FILE)) {
-    return [];
-  }
-  try {
-    const data = fs.readFileSync(CHATS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading chats file:', error);
-    return [];
-  }
-}
-
-// Write chats to file
-function writeChats(chats: ChatThread[]): void {
-  ensureStorageDir();
-  fs.writeFileSync(CHATS_FILE, JSON.stringify(chats, null, 2));
-}
+// Re-export types for compatibility
+export type { ChatMessage, ChatThread };
 
 // Generate unique ID
 function generateId(): string {
@@ -67,68 +18,123 @@ function generateMessageId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function getChatByAgentId(agentId: string): ChatThread | null {
-  const chats = readChats();
-  return chats.find(c => c.agentId === agentId) || null;
+/**
+ * Get chat thread by agent ID and user ID
+ */
+export async function getChatByAgentId(agentId: string, userId: string): Promise<ChatThread | null> {
+  const result = await db
+    .select()
+    .from(chatThreads)
+    .where(and(eq(chatThreads.agentId, agentId), eq(chatThreads.userId, userId)))
+    .limit(1);
+  return result[0] || null;
 }
 
-export function getOrCreateChat(agentId: string): ChatThread {
-  const chats = readChats();
-  let chat = chats.find(c => c.agentId === agentId);
+/**
+ * Get or create a chat thread for an agent and user
+ */
+export async function getOrCreateChat(agentId: string, userId: string): Promise<ChatThread> {
+  let chat = await getChatByAgentId(agentId, userId);
   
   if (!chat) {
-    chat = {
+    const newChat: NewChatThread = {
       id: generateId(),
       agentId,
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    chats.push(chat);
-    writeChats(chats);
+    const [created] = await db.insert(chatThreads).values(newChat).returning();
+    chat = created;
   }
   
   return chat;
 }
 
-export function addMessage(agentId: string, message: Omit<ChatMessage, 'id' | 'timestamp'>): ChatMessage {
-  const chats = readChats();
-  let chat = chats.find(c => c.agentId === agentId);
-  
-  if (!chat) {
-    chat = {
-      id: generateId(),
-      agentId,
-      messages: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    chats.push(chat);
+/**
+ * Get all messages for a chat thread
+ */
+export async function getChatMessages(threadId: string): Promise<ChatMessage[]> {
+  return await db
+    .select()
+    .from(chatMessages)
+    .where(eq(chatMessages.threadId, threadId))
+    .orderBy(desc(chatMessages.timestamp));
+}
+
+/**
+ * Get full chat thread with messages
+ */
+export async function getChatWithMessages(agentId: string, userId: string): Promise<{
+  thread: ChatThread;
+  messages: ChatMessage[];
+} | null> {
+  const thread = await getChatByAgentId(agentId, userId);
+  if (!thread) {
+    return null;
   }
   
-  const newMessage: ChatMessage = {
-    ...message,
+  const messages = await getChatMessages(thread.id);
+  return { thread, messages };
+}
+
+/**
+ * Add a message to a chat thread
+ */
+export async function addMessage(
+  agentId: string,
+  userId: string,
+  message: {
+    role: 'user' | 'agent';
+    content: string;
+    metadata?: {
+      apiCalled?: string;
+      paymentHash?: string;
+      error?: string;
+      llmUsed?: string;
+    } | null;
+  }
+): Promise<ChatMessage> {
+  // Get or create thread
+  const thread = await getOrCreateChat(agentId, userId);
+  
+  // Add message
+  const newMessage: NewChatMessage = {
+    role: message.role,
+    content: message.content,
+    metadata: message.metadata || null,
     id: generateMessageId(),
-    timestamp: new Date().toISOString(),
+    threadId: thread.id,
+    timestamp: new Date(),
   };
   
-  chat.messages.push(newMessage);
-  chat.updatedAt = new Date().toISOString();
+  const [created] = await db.insert(chatMessages).values(newMessage).returning();
   
-  writeChats(chats);
-  return newMessage;
+  // Update thread's updatedAt timestamp
+  await db
+    .update(chatThreads)
+    .set({ updatedAt: new Date() })
+    .where(eq(chatThreads.id, thread.id));
+  
+  return created;
 }
 
-export function clearChat(agentId: string): boolean {
-  const chats = readChats();
-  const chat = chats.find(c => c.agentId === agentId);
-  if (!chat) {
+/**
+ * Clear all messages from a chat thread
+ */
+export async function clearChat(agentId: string, userId: string): Promise<boolean> {
+  const thread = await getChatByAgentId(agentId, userId);
+  if (!thread) {
     return false;
   }
-  chat.messages = [];
-  chat.updatedAt = new Date().toISOString();
-  writeChats(chats);
+  
+  await db.delete(chatMessages).where(eq(chatMessages.threadId, thread.id));
+  
+  // Update thread's updatedAt timestamp
+  await db
+    .update(chatThreads)
+    .set({ updatedAt: new Date() })
+    .where(eq(chatThreads.id, thread.id));
+  
   return true;
 }
-
-

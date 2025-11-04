@@ -34,22 +34,40 @@ export async function getWalletBalance(
   const aptos = getAptosClient(network);
   
   try {
-    const balance = await aptos.getAccountAPTAmount({
-      accountAddress: address,
-    });
+    // Ensure address is properly formatted
+    const formattedAddress = address.startsWith('0x') ? address : `0x${address}`;
+    
+    // Try as string first (most common case)
+    let balance: number;
+    try {
+      balance = await aptos.getAccountAPTAmount({
+        accountAddress: formattedAddress,
+      });
+    } catch (err: any) {
+      // If string fails, try converting to AccountAddress
+      if (err.message?.includes('Type mismatch')) {
+        const { AccountAddress } = await import('@aptos-labs/ts-sdk');
+        const accountAddress = AccountAddress.fromString(formattedAddress);
+        balance = await aptos.getAccountAPTAmount({
+          accountAddress,
+        });
+      } else {
+        throw err;
+      }
+    }
     
     const balanceString = balance.toString();
     const balanceAPT = (balance / 100_000_000).toFixed(8);
     
     return {
-      address,
+      address: formattedAddress,
       balance: balanceString,
       balanceAPT,
     };
   } catch (error) {
     console.error('Error fetching wallet balance:', error);
     return {
-      address,
+      address: address.startsWith('0x') ? address : `0x${address}`,
       balance: '0',
       balanceAPT: '0.00000000',
     };

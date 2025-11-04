@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgentById } from '@/lib/storage/agents';
 import { executeAgentQuery } from '@/lib/agent/executor';
-import { addMessage, getOrCreateChat } from '@/lib/storage/chats';
+import { addMessage, getChatWithMessages } from '@/lib/storage/chats';
 
 export const dynamic = 'force-dynamic';
+
+// Helper to get userId from request (can be extended with auth later)
+function getUserId(request: Request): string {
+  // For now, use a default userId or extract from headers/cookies
+  // TODO: Replace with actual authentication logic
+  const userId = request.headers.get('x-user-id') || 'default-user';
+  return userId;
+}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
+    const userId = getUserId(request);
     const { agentId } = await params;
-    const agent = getAgentById(agentId);
+    const agent = await getAgentById(agentId, userId);
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -30,7 +39,7 @@ export async function POST(
     }
 
     // Add user message to chat history
-    addMessage(agentId, {
+    await addMessage(agentId, userId, {
       role: 'user',
       content: message,
     });
@@ -63,7 +72,7 @@ export async function POST(
     // If LLM was used, trust its extraction - don't append raw data
 
     // Add agent response to chat history
-    const agentChatMessage = addMessage(agentId, {
+    await addMessage(agentId, userId, {
       role: 'agent',
       content: agentMessage,
       metadata: {
@@ -75,15 +84,25 @@ export async function POST(
     });
 
     // Get full chat history
-    const chat = getOrCreateChat(agentId);
+    const chatData = await getChatWithMessages(agentId, userId);
 
     return NextResponse.json({
       success: response.success,
       message: agentMessage,
       data: response.data,
-      chat: {
-        messages: chat.messages,
-      },
+      chat: chatData ? {
+        id: chatData.thread.id,
+        agentId: chatData.thread.agentId,
+        messages: chatData.messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          metadata: msg.metadata,
+        })),
+        createdAt: chatData.thread.createdAt,
+        updatedAt: chatData.thread.updatedAt,
+      } : null,
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -98,8 +117,9 @@ export async function GET(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
+    const userId = getUserId(request);
     const { agentId } = await params;
-    const agent = getAgentById(agentId);
+    const agent = await getAgentById(agentId, userId);
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -107,8 +127,34 @@ export async function GET(
       );
     }
 
-    const chat = getOrCreateChat(agentId);
-    return NextResponse.json({ chat });
+    const chatData = await getChatWithMessages(agentId, userId);
+    if (!chatData) {
+      return NextResponse.json({ 
+        chat: {
+          id: null,
+          agentId,
+          messages: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+      });
+    }
+
+    return NextResponse.json({ 
+      chat: {
+        id: chatData.thread.id,
+        agentId: chatData.thread.agentId,
+        messages: chatData.messages.map(msg => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          metadata: msg.metadata,
+        })),
+        createdAt: chatData.thread.createdAt,
+        updatedAt: chatData.thread.updatedAt,
+      }
+    });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch chat' },

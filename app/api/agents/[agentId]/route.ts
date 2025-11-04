@@ -3,13 +3,22 @@ import { getAgentById, updateAgent, deleteAgent, getAgentForClient } from '@/lib
 
 export const dynamic = 'force-dynamic';
 
+// Helper to get userId from request (can be extended with auth later)
+function getUserId(request: Request): string {
+  // For now, use a default userId or extract from headers/cookies
+  // TODO: Replace with actual authentication logic
+  const userId = request.headers.get('x-user-id') || 'default-user';
+  return userId;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
+    const userId = getUserId(request);
     const { agentId } = await params;
-    const agent = getAgentById(agentId);
+    const agent = await getAgentById(agentId, userId);
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -30,9 +39,10 @@ export async function PATCH(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
+    const userId = getUserId(request);
     const { agentId } = await params;
     const body = await request.json();
-    const updated = updateAgent(agentId, body);
+    const updated = await updateAgent(agentId, body, userId);
     
     if (!updated) {
       return NextResponse.json(
@@ -55,8 +65,9 @@ export async function DELETE(
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
+    const userId = getUserId(request);
     const { agentId } = await params;
-    const deleted = deleteAgent(agentId);
+    const deleted = await deleteAgent(agentId, userId);
     if (!deleted) {
       return NextResponse.json(
         { error: 'Agent not found' },

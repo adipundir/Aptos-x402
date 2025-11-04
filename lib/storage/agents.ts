@@ -1,111 +1,108 @@
 /**
  * Agent Storage
- * File-based storage for agent configurations
+ * Neon PostgreSQL storage for agent configurations
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import { db, agents, type Agent, type NewAgent } from '@/lib/db';
+import { eq, and } from 'drizzle-orm';
 
-export interface Agent {
-  id: string;
-  name: string;
-  description?: string;
-  imageUrl?: string;
-  visibility: 'public' | 'private';
-  walletAddress: string;
-  privateKey: string; // Stored server-side only, never exposed to client
-  apiIds: string[]; // IDs of APIs this agent can use
-  createdAt: string;
-  updatedAt: string;
-}
-
-const STORAGE_DIR = path.join(process.cwd(), '.composer-data');
-const AGENTS_FILE = path.join(STORAGE_DIR, 'agents.json');
-
-// Ensure storage directory exists
-function ensureStorageDir() {
-  if (!fs.existsSync(STORAGE_DIR)) {
-    fs.mkdirSync(STORAGE_DIR, { recursive: true });
-  }
-}
-
-// Read agents from file
-function readAgents(): Agent[] {
-  ensureStorageDir();
-  if (!fs.existsSync(AGENTS_FILE)) {
-    return [];
-  }
-  try {
-    const data = fs.readFileSync(AGENTS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading agents file:', error);
-    return [];
-  }
-}
-
-// Write agents to file
-function writeAgents(agents: Agent[]): void {
-  ensureStorageDir();
-  fs.writeFileSync(AGENTS_FILE, JSON.stringify(agents, null, 2));
-}
+// Re-export types for compatibility
+export type { Agent };
 
 // Generate unique ID
 function generateId(): string {
   return `agent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export function getAllAgents(): Agent[] {
-  return readAgents();
+/**
+ * Get all agents, optionally filtered by userId
+ */
+export async function getAllAgents(userId?: string): Promise<Agent[]> {
+  if (userId) {
+    return await db.select().from(agents).where(eq(agents.userId, userId));
+  }
+  return await db.select().from(agents);
 }
 
-export function getAgentById(id: string): Agent | null {
-  const agents = readAgents();
-  return agents.find(a => a.id === id) || null;
+/**
+ * Get agent by ID, optionally filtered by userId for security
+ */
+export async function getAgentById(id: string, userId?: string): Promise<Agent | null> {
+  if (userId) {
+    const result = await db
+      .select()
+      .from(agents)
+      .where(and(eq(agents.id, id), eq(agents.userId, userId)))
+      .limit(1);
+    return result[0] || null;
+  }
+  const result = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
+  return result[0] || null;
 }
 
-export function createAgent(agentData: Omit<Agent, 'id' | 'createdAt' | 'updatedAt'>): Agent {
-  const agents = readAgents();
-  const newAgent: Agent = {
+/**
+ * Create a new agent
+ */
+export async function createAgent(
+  agentData: Omit<NewAgent, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Agent> {
+  const newAgent: NewAgent = {
     ...agentData,
     id: generateId(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
-  agents.push(newAgent);
-  writeAgents(agents);
-  return newAgent;
+
+  const [created] = await db.insert(agents).values(newAgent).returning();
+  return created;
 }
 
-export function updateAgent(id: string, updates: Partial<Omit<Agent, 'id' | 'createdAt' | 'walletAddress' | 'privateKey'>>): Agent | null {
-  const agents = readAgents();
-  const index = agents.findIndex(a => a.id === id);
-  if (index === -1) {
-    return null;
-  }
-  agents[index] = {
-    ...agents[index],
+/**
+ * Update an agent
+ */
+export async function updateAgent(
+  id: string,
+  updates: Partial<Omit<NewAgent, 'id' | 'createdAt' | 'walletAddress' | 'privateKey'>>,
+  userId?: string
+): Promise<Agent | null> {
+  const updateData = {
     ...updates,
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(),
   };
-  writeAgents(agents);
-  return agents[index];
-}
 
-export function deleteAgent(id: string): boolean {
-  const agents = readAgents();
-  const filtered = agents.filter(a => a.id !== id);
-  if (filtered.length === agents.length) {
-    return false; // Agent not found
+  if (userId) {
+    const [updated] = await db
+      .update(agents)
+      .set(updateData)
+      .where(and(eq(agents.id, id), eq(agents.userId, userId)))
+      .returning();
+    return updated || null;
   }
-  writeAgents(filtered);
-  return true;
+
+  const [updated] = await db.update(agents).set(updateData).where(eq(agents.id, id)).returning();
+  return updated || null;
 }
 
-// Client-safe version (without private key)
+/**
+ * Delete an agent
+ */
+export async function deleteAgent(id: string, userId?: string): Promise<boolean> {
+  if (userId) {
+    const result = await db
+      .delete(agents)
+      .where(and(eq(agents.id, id), eq(agents.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  const result = await db.delete(agents).where(eq(agents.id, id)).returning();
+  return result.length > 0;
+}
+
+/**
+ * Client-safe version (without private key)
+ */
 export function getAgentForClient(agent: Agent): Omit<Agent, 'privateKey'> {
   const { privateKey, ...clientSafe } = agent;
   return clientSafe;
 }
-
-

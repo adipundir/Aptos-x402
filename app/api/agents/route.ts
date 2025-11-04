@@ -4,9 +4,18 @@ import { generateAgentWallet } from '@/lib/agent/wallet';
 
 export const dynamic = 'force-dynamic';
 
+// Helper to get userId from request (can be extended with auth later)
+function getUserId(request: Request): string {
+  // For now, use a default userId or extract from headers/cookies
+  // TODO: Replace with actual authentication logic
+  const userId = request.headers.get('x-user-id') || 'default-user';
+  return userId;
+}
+
 export async function GET(request: Request) {
   try {
-    const agents = getAllAgents();
+    const userId = getUserId(request);
+    const agents = await getAllAgents(userId);
     // Return client-safe versions (without private keys)
     const clientSafeAgents = agents.map(getAgentForClient);
     return NextResponse.json({ agents: clientSafeAgents });
@@ -20,6 +29,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: NextRequest) {
   try {
+    const userId = getUserId(request);
     const body = await request.json();
     const { name, description, imageUrl, visibility, apiIds } = body;
 
@@ -34,7 +44,8 @@ export async function POST(request: NextRequest) {
     const { address, privateKey } = generateAgentWallet();
 
     // Create agent
-    const agent = createAgent({
+    const agent = await createAgent({
+      userId,
       name,
       description,
       imageUrl,

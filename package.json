@@ -54,7 +54,11 @@
     "start": "next start",
     "demo": "tsx scripts/demo-agent.ts",
     "prepublishOnly": "npm run build:sdk",
-    "test": "echo \"Tests coming soon\" && exit 0"
+    "test": "echo \"Tests coming soon\" && exit 0",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "peerDependencies": {
     "@aptos-labs/ts-sdk": ">=1.26.0",
@@ -65,6 +69,7 @@
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@langchain/core": "^0.3.0",
     "@langchain/google-genai": "^0.1.0",
+    "@neondatabase/serverless": "^1.0.2",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.7",
@@ -76,6 +81,8 @@
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "drizzle-kit": "^0.31.6",
+    "drizzle-orm": "^0.44.7",
     "langchain": "^0.3.0",
     "lucide-react": "^0.548.0",
     "next": ">=15.0.0",

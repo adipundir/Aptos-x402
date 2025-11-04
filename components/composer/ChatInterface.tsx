@@ -161,16 +161,16 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
 
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-200px)] bg-white rounded-lg border border-zinc-200 shadow-sm">
+      <div className="flex flex-col h-[calc(100vh-120px)] sm:h-[calc(100vh-200px)] bg-white rounded-lg border border-zinc-200 shadow-sm">
         {/* Header - Sticky */}
-        <div className="border-b border-zinc-200 px-6 py-4 bg-white rounded-t-lg flex-shrink-0">
+        <div className="border-b border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white rounded-t-lg flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white font-semibold">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0">
                 {agentName.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <h3 className="font-semibold text-zinc-900">{agentName}</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm sm:text-base text-zinc-900 truncate">{agentName}</h3>
                 <div className="flex items-center gap-2 text-xs text-zinc-500">
                   <Wallet className="w-3 h-3" />
                   <span>{balance} APT</span>
@@ -180,21 +180,21 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
             <Button
               size="sm"
               onClick={() => setShowFunding(true)}
-              className="bg-zinc-900 hover:bg-zinc-800 text-white"
+              className="bg-zinc-900 hover:bg-zinc-800 text-white flex-shrink-0"
             >
-              <Wallet className="w-4 h-4 mr-2" />
-              Fund
+              <Wallet className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Fund</span>
             </Button>
           </div>
         </div>
 
         {/* Settings Bar */}
-        <div className="border-b border-zinc-100 px-6 py-3 bg-zinc-50 flex-shrink-0">
-          <div className="flex items-center gap-4">
+        <div className="border-b border-zinc-100 px-4 sm:px-6 py-2 sm:py-3 bg-zinc-50 flex-shrink-0 overflow-x-auto">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-max">
             <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-zinc-600" />
+              <Bot className="w-4 h-4 text-zinc-600 flex-shrink-0" />
               <Select value={selectedLLM} onValueChange={setSelectedLLM}>
-                <SelectTrigger className="h-9 w-[200px] bg-white border-zinc-300 text-zinc-900">
+                <SelectTrigger className="h-8 sm:h-9 w-[160px] sm:w-[200px] bg-white border-zinc-300 text-zinc-900 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
@@ -203,7 +203,7 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                       key={llm.id} 
                       value={llm.id}
                       disabled={!llm.enabled}
-                      className={`text-zinc-900 ${!llm.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`text-zinc-900 text-xs sm:text-sm ${!llm.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {llm.name}
                       {!llm.enabled && ' (Coming Soon)'}
@@ -214,15 +214,15 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
             </div>
             
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-zinc-600" />
+              <Zap className="w-4 h-4 text-zinc-600 flex-shrink-0" />
               <Select value={selectedAPI} onValueChange={setSelectedAPI}>
-                <SelectTrigger className="h-9 w-[180px] bg-white border-zinc-300 text-zinc-900">
+                <SelectTrigger className="h-8 sm:h-9 w-[140px] sm:w-[180px] bg-white border-zinc-300 text-zinc-900 text-xs sm:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-white">
-                  <SelectItem value="auto" className="text-zinc-900">Auto Select</SelectItem>
+                  <SelectItem value="auto" className="text-zinc-900 text-xs sm:text-sm">Auto Select</SelectItem>
                   {availableApis.map(api => (
-                    <SelectItem key={api.id} value={api.id} className="text-zinc-900">
+                    <SelectItem key={api.id} value={api.id} className="text-zinc-900 text-xs sm:text-sm">
                       {api.name}
                     </SelectItem>
                   ))}
@@ -235,57 +235,57 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
         {/* Messages Area */}
         <div className="flex-1 overflow-hidden bg-white">
           <ScrollArea className="h-full">
-            <div className="max-w-3xl mx-auto px-6 py-8">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
               {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-4">
-                    <Bot className="w-8 h-8 text-zinc-400" />
+                <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-4">
+                    <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-zinc-400" />
                   </div>
-                  <h4 className="text-lg font-semibold text-zinc-900 mb-2">
+                  <h4 className="text-base sm:text-lg font-semibold text-zinc-900 mb-2">
                     Chat with {agentName}
                   </h4>
-                  <p className="text-sm text-zinc-500 max-w-md">
+                  <p className="text-xs sm:text-sm text-zinc-500 max-w-md">
                     Start a conversation by asking questions or requesting information. 
                     Your agent can access various APIs to help you.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {messages.map((message) => (
+                <div className="space-y-4 sm:space-y-6">
+                  {[...messages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((message) => (
                     <div key={message.id} className="group">
                       {message.role === 'user' ? (
                         /* User Message - Right Aligned */
-                        <div className="flex gap-4 justify-end">
-                          <div className="flex-1 max-w-[70%] pt-1">
-                            <div className="bg-zinc-900 text-white rounded-2xl px-5 py-3 ml-auto">
-                              <p className="text-[15px] leading-relaxed whitespace-pre-wrap">
+                        <div className="flex gap-2 sm:gap-4 justify-end">
+                          <div className="flex-1 max-w-[85%] sm:max-w-[70%] pt-1">
+                            <div className="bg-zinc-900 text-white rounded-2xl px-3 sm:px-5 py-2 sm:py-3 ml-auto">
+                              <p className="text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap">
                                 {message.content}
                               </p>
                             </div>
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-xs sm:text-sm font-semibold flex-shrink-0">
                             U
                           </div>
                         </div>
                       ) : (
                         /* Agent Message */
-                        <div className="flex gap-4">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
-                            <Bot className="w-4 h-4" />
+                        <div className="flex gap-2 sm:gap-4">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
+                            <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
                           </div>
-                          <div className="flex-1 space-y-3">
+                          <div className="flex-1 space-y-2 sm:space-y-3">
                             {/* Metadata Badges */}
                             {(message.metadata?.llmUsed || message.metadata?.apiCalled) && (
-                              <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                 {message.metadata?.llmUsed && (
-                                  <Badge variant="outline" className="text-xs bg-zinc-50 border-zinc-300 px-2 py-0.5">
-                                    <Bot className="w-3 h-3 mr-1 text-zinc-600" />
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-zinc-50 border-zinc-300 px-1.5 sm:px-2 py-0.5">
+                                    <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 text-zinc-600" />
                                     <span className="text-zinc-700">{message.metadata.llmUsed}</span>
                                   </Badge>
                                 )}
                                 {message.metadata?.apiCalled && (
-                                  <Badge variant="outline" className="text-xs bg-zinc-50 border-zinc-300 px-2 py-0.5">
-                                    <Zap className="w-3 h-3 mr-1 text-zinc-600" />
+                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-zinc-50 border-zinc-300 px-1.5 sm:px-2 py-0.5">
+                                    <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 text-zinc-600" />
                                     <span className="text-zinc-700">{message.metadata.apiCalled}</span>
                                   </Badge>
                                 )}
@@ -293,13 +293,13 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                             )}
                             {/* Message Content */}
                             <div className="prose prose-sm max-w-none">
-                              <p className="text-zinc-900 text-[15px] leading-relaxed whitespace-pre-wrap m-0">
+                              <p className="text-zinc-900 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap m-0">
                                 {message.content}
                               </p>
                             </div>
                             {/* Error or Payment Info */}
                             {message.metadata?.error && (
-                              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-md">
+                              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md">
                                 <AlertCircle className="w-3 h-3" />
                                 <span>{message.metadata.error}</span>
                               </div>
@@ -315,14 +315,14 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                     </div>
                   ))}
                   {loading && (
-                    <div className="flex gap-4">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
-                        <Bot className="w-4 h-4" />
+                    <div className="flex gap-2 sm:gap-4">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
+                        <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
-                      <div className="flex-1 pt-2">
+                      <div className="flex-1 pt-1 sm:pt-2">
                         <div className="flex items-center gap-2 text-zinc-500">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span className="text-sm">Thinking...</span>
+                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                          <span className="text-xs sm:text-sm">Thinking...</span>
                         </div>
                       </div>
                     </div>
@@ -335,7 +335,7 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
         </div>
 
         {/* Input Area - Sticky Bottom */}
-        <div className="border-t border-zinc-200 px-6 py-4 bg-white rounded-b-lg flex-shrink-0">
+        <div className="border-t border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white rounded-b-lg flex-shrink-0">
           <div className="max-w-3xl mx-auto">
             <div className="relative flex items-center gap-2">
               <div className="relative flex-1">
@@ -345,23 +345,23 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                   placeholder="Message..."
                   disabled={loading}
-                  className="pr-12 py-6 text-[15px] border-zinc-300 focus:border-zinc-400 rounded-xl resize-none"
+                  className="pr-10 sm:pr-12 py-4 sm:py-6 text-sm sm:text-[15px] text-zinc-900 placeholder:text-zinc-400 border-zinc-300 focus:border-zinc-400 rounded-xl resize-none bg-white"
                 />
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg h-8 w-8"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg h-7 w-7 sm:h-8 sm:w-8"
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-zinc-500 text-center mt-2">
+            <p className="text-[10px] sm:text-xs text-zinc-500 text-center mt-1.5 sm:mt-2 px-2">
               Powered by x402 • Messages may incur blockchain transaction costs
             </p>
           </div>

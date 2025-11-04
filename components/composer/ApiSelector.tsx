@@ -92,7 +92,7 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
           variant={selectedCategory === null ? 'default' : 'ghost'}
           size="sm"
           onClick={() => setSelectedCategory(null)}
-          className={selectedCategory === null ? 'bg-zinc-900 hover:bg-zinc-800 text-white' : 'text-zinc-700 hover:bg-zinc-100'}
+          className={`text-xs sm:text-sm ${selectedCategory === null ? 'bg-zinc-900 hover:bg-zinc-800 text-white' : 'text-zinc-700 hover:bg-zinc-100'}`}
         >
           All
         </Button>
@@ -102,7 +102,7 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
             variant={selectedCategory === category ? 'default' : 'ghost'}
             size="sm"
             onClick={() => setSelectedCategory(category)}
-            className={selectedCategory === category ? 'bg-zinc-900 hover:bg-zinc-800 text-white' : 'text-zinc-700 hover:bg-zinc-100'}
+            className={`text-xs sm:text-sm ${selectedCategory === category ? 'bg-zinc-900 hover:bg-zinc-800 text-white' : 'text-zinc-700 hover:bg-zinc-100'}`}
           >
             {category}
           </Button>
@@ -110,10 +110,10 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
       </div>
 
       {/* API List */}
-      <ScrollArea className="h-[500px]">
-        <div className="space-y-4 pr-4">
+      <ScrollArea className="h-[400px] sm:h-[500px]">
+        <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4">
           {filteredApis.length === 0 ? (
-            <div className="text-center py-12 text-zinc-500">
+            <div className="text-center py-12 text-zinc-500 text-sm sm:text-base">
               No APIs found matching your search.
             </div>
           ) : (
@@ -122,39 +122,39 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
               return (
                 <Card
                   key={api.id}
-                  className={`p-6 cursor-pointer transition-all hover:shadow-lg border-2 ${
+                  className={`p-4 sm:p-6 cursor-pointer transition-all hover:shadow-lg border-2 ${
                     isSelected 
                       ? 'border-zinc-900 bg-zinc-50' 
                       : 'border-zinc-200 hover:border-zinc-300'
                   }`}
                   onClick={() => toggleApi(api.id)}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                       isSelected ? 'bg-zinc-900 border-zinc-900' : 'border-zinc-300'
                     }`}>
-                      {isSelected && <Check className="w-4 h-4 text-white" />}
+                      {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
                     </div>
-                    <div className="flex-1 min-w-0 space-y-3">
+                    <div className="flex-1 min-w-0 space-y-2 sm:space-y-3">
                       <div>
-                        <h4 className="text-lg font-semibold text-zinc-900 mb-2">{api.name}</h4>
-                        <p className="text-sm text-zinc-600 leading-relaxed">{api.description}</p>
+                        <h4 className="text-base sm:text-lg font-semibold text-zinc-900 mb-1 sm:mb-2">{api.name}</h4>
+                        <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">{api.description}</p>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className="text-xs px-2 py-1 border-zinc-300">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 border-zinc-300">
                           {api.method}
                         </Badge>
-                        <Badge variant="outline" className="text-xs px-2 py-1 border-zinc-300">
+                        <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 border-zinc-300">
                           {api.category}
                         </Badge>
-                        <span className="text-sm font-medium text-zinc-700">
+                        <span className="text-xs sm:text-sm font-medium text-zinc-700">
                           {formatCost(api.cost)}
                         </span>
                       </div>
                       
                       <div className="pt-2 border-t border-zinc-200">
-                        <p className="text-xs text-zinc-500 font-mono break-all">
+                        <p className="text-[10px] sm:text-xs text-zinc-500 font-mono break-all">
                           {api.url}
                         </p>
                       </div>
