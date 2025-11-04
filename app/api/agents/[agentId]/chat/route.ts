@@ -78,6 +78,7 @@ export async function POST(
       metadata: {
         apiCalled: response.apiCalled,
         paymentHash: response.paymentHash,
+        paymentAmount: response.paymentAmount, // Amount in Octas
         error: response.error,
         llmUsed: response.llmUsed,
       },

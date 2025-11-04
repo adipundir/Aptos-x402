@@ -15,10 +15,22 @@ function getUserId(request: Request): string {
 export async function GET(request: Request) {
   try {
     const userId = getUserId(request);
-    const agents = await getAllAgents(userId);
+    const { searchParams } = new URL(request.url);
+    const scope = searchParams.get('scope') as 'mine' | 'public' | null;
+    
+    // Get agents based on scope
+    const agents = await getAllAgents(scope || undefined, userId);
+    
     // Return client-safe versions (without private keys)
     const clientSafeAgents = agents.map(getAgentForClient);
-    return NextResponse.json({ agents: clientSafeAgents });
+    
+    // Cache public agents for 1 minute
+    const headers = new Headers();
+    if (scope === 'public') {
+      headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    }
+    
+    return NextResponse.json({ agents: clientSafeAgents }, { headers });
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to fetch agents' },

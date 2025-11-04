@@ -9,6 +9,7 @@ import { Send, Loader2, Wallet, AlertCircle, Zap, Bot } from 'lucide-react';
 import { FundingModal } from './FundingModal';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getUserIdHeaders } from '@/lib/utils/user-id';
 
 interface ChatMessage {
   id: string;
@@ -78,7 +79,9 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
 
   const fetchChat = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}/chat`);
+      const res = await fetch(`/api/agents/${agentId}/chat`, {
+        headers: getUserIdHeaders(),
+      });
       const data = await res.json();
       if (data.chat?.messages) {
         setMessages(data.chat.messages);
@@ -90,7 +93,9 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
 
   const fetchBalance = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}/balance`);
+      const res = await fetch(`/api/agents/${agentId}/balance`, {
+        headers: getUserIdHeaders(),
+      });
       const data = await res.json();
       if (data.balanceAPT) {
         setBalance(data.balanceAPT);
@@ -124,7 +129,10 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
     try {
       const res = await fetch(`/api/agents/${agentId}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getUserIdHeaders(),
+        },
         body: JSON.stringify({ 
           message: input,
           llm: selectedLLM,

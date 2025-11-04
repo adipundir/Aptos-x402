@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AgentCard } from '@/components/composer/AgentCard';
-import { Plus, Loader2 } from 'lucide-react';
+import { AgentCardSkeleton } from '@/components/composer/AgentCardSkeleton';
+import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { getUserIdHeaders } from '@/lib/utils/user-id';
 
 interface Agent {
   id: string;
@@ -17,10 +19,18 @@ interface Agent {
   createdAt: string;
 }
 
+interface AgentStats {
+  requests: number;
+  apiCalls: number;
+  totalSpentAPT: string;
+  totalSpentUSD: string;
+}
+
 export default function ComposerPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [balances, setBalances] = useState<Record<string, string>>({});
+  const [stats, setStats] = useState<Record<string, AgentStats>>({});
 
   useEffect(() => {
     fetchAgents();
@@ -28,27 +38,63 @@ export default function ComposerPage() {
 
   const fetchAgents = async () => {
     try {
-      const res = await fetch('/api/agents');
+      // Fetch agents with user ID header
+      const res = await fetch('/api/agents', {
+        headers: getUserIdHeaders(),
+      });
       const data = await res.json();
       setAgents(data.agents || []);
       
-      // Fetch balances for all agents
-      const balancePromises = (data.agents || []).map(async (agent: Agent) => {
+      // Fetch balances and stats for all agents in parallel
+      const dataPromises = (data.agents || []).map(async (agent: Agent) => {
         try {
-          const balanceRes = await fetch(`/api/agents/${agent.id}/balance`);
+          const [balanceRes, statsRes] = await Promise.all([
+            fetch(`/api/agents/${agent.id}/balance`, {
+              headers: getUserIdHeaders(),
+            }),
+            fetch(`/api/agents/${agent.id}/stats`, {
+              headers: getUserIdHeaders(),
+            }),
+          ]);
+          
           const balanceData = await balanceRes.json();
-          return { id: agent.id, balance: balanceData.balanceAPT || '0.00000000' };
+          const statsData = await statsRes.json();
+          
+          return { 
+            id: agent.id, 
+            balance: balanceData.balanceAPT || '0.00000000',
+            stats: statsData.stats || {
+              requests: 0,
+              apiCalls: 0,
+              totalSpentAPT: '0.00000000',
+              totalSpentUSD: '0.00'
+            }
+          };
         } catch {
-          return { id: agent.id, balance: '0.00000000' };
+          return { 
+            id: agent.id, 
+            balance: '0.00000000',
+            stats: {
+              requests: 0,
+              apiCalls: 0,
+              totalSpentAPT: '0.00000000',
+              totalSpentUSD: '0.00'
+            }
+          };
         }
       });
       
-      const balanceResults = await Promise.all(balancePromises);
+      const results = await Promise.all(dataPromises);
       const balanceMap: Record<string, string> = {};
-      balanceResults.forEach(({ id, balance }) => {
+      const statsMap: Record<string, AgentStats> = {};
+      
+      results.forEach(({ id, balance, stats }) => {
         balanceMap[id] = balance;
+        statsMap[id] = stats;
       });
+      
       setBalances(balanceMap);
+      setStats(statsMap);
     } catch (error) {
       console.error('Failed to fetch agents:', error);
     } finally {
@@ -62,6 +108,7 @@ export default function ComposerPage() {
     try {
       const res = await fetch(`/api/agents/${agentId}`, {
         method: 'DELETE',
+        headers: getUserIdHeaders(),
       });
 
       if (res.ok) {
@@ -93,8 +140,10 @@ export default function ComposerPage() {
         </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-zinc-400" />
+        <div className="space-y-6">
+          <AgentCardSkeleton />
+          <AgentCardSkeleton />
+          <AgentCardSkeleton />
         </div>
       ) : agents.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-zinc-300 rounded-lg">
@@ -107,12 +156,13 @@ export default function ComposerPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
           {agents.map((agent) => (
             <AgentCard
               key={agent.id}
               agent={agent}
               balance={balances[agent.id]}
+              stats={stats[agent.id]}
               onDelete={handleDelete}
             />
           ))}

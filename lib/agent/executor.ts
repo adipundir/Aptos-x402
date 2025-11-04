@@ -15,6 +15,7 @@ export interface AgentResponse {
   data?: any;
   apiCalled?: string;
   paymentHash?: string;
+  paymentAmount?: string; // Amount in Octas
   error?: string;
   llmUsed?: string;
 }
@@ -143,6 +144,14 @@ export async function executeAgentQuery(
       
       // Extract payment info if available
       const paymentHash = response.paymentInfo?.transactionHash;
+      const paymentAmount = response.paymentInfo?.amount; // Amount in Octas
+      
+      console.log('[Agent Executor] Payment info:', {
+        hasPaymentInfo: !!response.paymentInfo,
+        paymentHash,
+        paymentAmount,
+        fullPaymentInfo: response.paymentInfo
+      });
       
       // Use LLM to extract and format specific data from API response
       let finalMessage: string;
@@ -179,6 +188,7 @@ export async function executeAgentQuery(
         data: extractedData,
         apiCalled: selectedApi.name,
         paymentHash,
+        paymentAmount, // Amount in Octas
         llmUsed: options?.llm === 'keyword' ? undefined : llmUsed,
       };
     } catch (apiError: any) {

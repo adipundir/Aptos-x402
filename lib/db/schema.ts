@@ -3,7 +3,7 @@
  * Drizzle ORM schema for Neon PostgreSQL database
  */
 
-import { pgTable, text, timestamp, jsonb, varchar } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, jsonb, varchar, index } from 'drizzle-orm/pg-core';
 
 export const agents = pgTable('agents', {
   id: varchar('id', { length: 255 }).primaryKey(),
@@ -17,7 +17,11 @@ export const agents = pgTable('agents', {
   apiIds: jsonb('api_ids').$type<string[]>().notNull().default([]),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  agentsUserIdx: index('agents_user_idx').on(table.userId),
+  agentsVisibilityIdx: index('agents_visibility_idx').on(table.visibility),
+  agentsCreatedAtIdx: index('agents_created_at_idx').on(table.createdAt),
+}));
 
 export const chatThreads = pgTable('chat_threads', {
   id: varchar('id', { length: 255 }).primaryKey(),
@@ -25,7 +29,11 @@ export const chatThreads = pgTable('chat_threads', {
   userId: varchar('user_id', { length: 255 }).notNull(), // User identifier
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  chatThreadsUserIdx: index('chat_threads_user_idx').on(table.userId),
+  chatThreadsAgentIdx: index('chat_threads_agent_idx').on(table.agentId),
+  chatThreadsUpdatedAtIdx: index('chat_threads_updated_at_idx').on(table.updatedAt),
+}));
 
 export const chatMessages = pgTable('chat_messages', {
   id: varchar('id', { length: 255 }).primaryKey(),
@@ -35,6 +43,7 @@ export const chatMessages = pgTable('chat_messages', {
   metadata: jsonb('metadata').$type<{
     apiCalled?: string;
     paymentHash?: string;
+    paymentAmount?: string; // Amount in Octas
     error?: string;
     llmUsed?: string;
   }>(),

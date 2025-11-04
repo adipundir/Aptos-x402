@@ -90,6 +90,7 @@ export async function addMessage(
     metadata?: {
       apiCalled?: string;
       paymentHash?: string;
+      paymentAmount?: string; // Amount in Octas
       error?: string;
       llmUsed?: string;
     } | null;

@@ -60,9 +60,13 @@ export function AgentCreationWizard() {
   const handleCreate = async () => {
     setLoading(true);
     try {
+      const { getUserIdHeaders } = await import('@/lib/utils/user-id');
       const res = await fetch('/api/agents', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getUserIdHeaders(),
+        },
         body: JSON.stringify(formData),
       });
 

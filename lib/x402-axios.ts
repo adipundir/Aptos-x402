@@ -259,7 +259,7 @@ async function x402axiosMain<T = any>(
       data: transformedData as T,
       status: response.status,
       statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries()),
+      headers: Object.fromEntries(Array.from((response.headers as any).entries() || [])),
       config: finalConfig,
     };
   }
@@ -414,7 +414,7 @@ async function x402axiosMain<T = any>(
     data: transformedData as T,
     status: response.status,
     statusText: response.statusText,
-    headers: Object.fromEntries(response.headers.entries()),
+    headers: Object.fromEntries(Array.from((response.headers as any).entries() || [])),
     config: finalConfig,
     paymentInfo,
   };

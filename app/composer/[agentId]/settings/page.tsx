@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { FundingModal } from '@/components/composer/FundingModal';
 import { Loader2, ArrowLeft, Wallet, Save, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { getUserIdHeaders } from '@/lib/utils/user-id';
 
 export default function AgentSettingsPage() {
   const params = useParams();
@@ -32,7 +33,9 @@ export default function AgentSettingsPage() {
 
   const fetchAgent = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}`);
+      const res = await fetch(`/api/agents/${agentId}`, {
+        headers: getUserIdHeaders(),
+      });
       if (!res.ok) {
         router.push('/composer');
         return;
@@ -56,7 +59,9 @@ export default function AgentSettingsPage() {
 
   const fetchBalance = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}/balance`);
+      const res = await fetch(`/api/agents/${agentId}/balance`, {
+        headers: getUserIdHeaders(),
+      });
       const data = await res.json();
       if (data.balanceAPT) {
         setBalance(data.balanceAPT);
@@ -71,7 +76,10 @@ export default function AgentSettingsPage() {
     try {
       const res = await fetch(`/api/agents/${agentId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getUserIdHeaders(),
+        },
         body: JSON.stringify(formData),
       });
 
@@ -96,6 +104,7 @@ export default function AgentSettingsPage() {
     try {
       const res = await fetch(`/api/agents/${agentId}`, {
         method: 'DELETE',
+        headers: getUserIdHeaders(),
       });
 
       if (res.ok) {

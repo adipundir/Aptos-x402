@@ -6,6 +6,7 @@ import { ChatInterface } from '@/components/composer/ChatInterface';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { getUserIdHeaders } from '@/lib/utils/user-id';
 
 export default function AgentChatPage() {
   const params = useParams();
@@ -20,7 +21,9 @@ export default function AgentChatPage() {
 
   const fetchAgent = async () => {
     try {
-      const res = await fetch(`/api/agents/${agentId}`);
+      const res = await fetch(`/api/agents/${agentId}`, {
+        headers: getUserIdHeaders(),
+      });
       if (!res.ok) {
         router.push('/composer');
         return;

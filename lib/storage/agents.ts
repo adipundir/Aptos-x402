@@ -4,7 +4,7 @@
  */
 
 import { db, agents, type Agent, type NewAgent } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 
 // Re-export types for compatibility
 export type { Agent };
@@ -15,29 +15,65 @@ function generateId(): string {
 }
 
 /**
- * Get all agents, optionally filtered by userId
+ * Get all agents with different scopes
+ * @param scope - 'mine' (user's agents), 'public' (all public agents), or undefined (user's agents + public agents)
+ * @param userId - User ID for filtering
  */
-export async function getAllAgents(userId?: string): Promise<Agent[]> {
-  if (userId) {
+export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): Promise<Agent[]> {
+  if (scope === 'public') {
+    // Return only public agents
+    return await db.select().from(agents).where(eq(agents.visibility, 'public'));
+  }
+  
+  if (scope === 'mine' && userId) {
+    // Return only user's agents
     return await db.select().from(agents).where(eq(agents.userId, userId));
   }
-  return await db.select().from(agents);
+  
+  if (userId) {
+    // Return user's agents + public agents
+    return await db
+      .select()
+      .from(agents)
+      .where(
+        or(
+          eq(agents.userId, userId),
+          eq(agents.visibility, 'public')
+        )
+      );
+  }
+  
+  // No userId: return all public agents only
+  return await db.select().from(agents).where(eq(agents.visibility, 'public'));
 }
 
 /**
- * Get agent by ID, optionally filtered by userId for security
+ * Get agent by ID with access control
+ * - If userId matches: return agent (owner access)
+ * - If agent is public: return agent (public access)
+ * - Otherwise: return null (no access)
  */
 export async function getAgentById(id: string, userId?: string): Promise<Agent | null> {
-  if (userId) {
-    const result = await db
-      .select()
-      .from(agents)
-      .where(and(eq(agents.id, id), eq(agents.userId, userId)))
-      .limit(1);
-    return result[0] || null;
-  }
   const result = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
-  return result[0] || null;
+  
+  if (result.length === 0) {
+    return null;
+  }
+  
+  const agent = result[0];
+  
+  // Owner always has access
+  if (userId && agent.userId === userId) {
+    return agent;
+  }
+  
+  // Public agents are accessible to everyone
+  if (agent.visibility === 'public') {
+    return agent;
+  }
+  
+  // Private agent, not owner: no access
+  return null;
 }
 
 /**
