@@ -19,6 +19,27 @@ export const middleware = paymentMiddleware(
         description: "Access to weather data API (0.00000001 APT)",
       },
     },
+    "/api/protected/stocks": {
+      price: "1000000",   // 0.01 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to stock prices API (0.01 APT)",
+      },
+    },
+    "/api/protected/news": {
+      price: "500000",   // 0.005 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to news API (0.005 APT)",
+      },
+    },
+    "/api/protected/random": {
+      price: "100000",   // 0.001 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to random data API (0.001 APT)",
+      },
+    },
   },
   {
     // Facilitator URL is REQUIRED for x402 protocol

@@ -1,0 +1,152 @@
+/**
+ * LLM Chat Handler
+ * Uses LLM to generate conversational responses
+ */
+
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { getAllApis, ApiMetadata } from '../storage/apis';
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+// Cache model instances to avoid re-initialization overhead
+const modelCache = new Map<string, ChatGoogleGenerativeAI>();
+
+function getModel(modelName: string): ChatGoogleGenerativeAI {
+  if (!modelCache.has(modelName)) {
+    modelCache.set(modelName, new ChatGoogleGenerativeAI({
+      modelName: modelName,
+      temperature: 0.3,
+      apiKey: GEMINI_API_KEY,
+    }));
+  }
+  return modelCache.get(modelName)!;
+}
+
+export interface LLMResponse {
+  shouldCallAPI: boolean;
+  apiId?: string | null;
+  conversationalResponse?: string;
+}
+
+/**
+ * Use LLM to determine if API call is needed and generate conversational response
+ */
+export async function processQueryWithLLM(
+  userQuery: string,
+  availableApis: ApiMetadata[],
+  agentName: string,
+  modelName: string = 'gemini-2.0-flash-exp'
+): Promise<LLMResponse> {
+  // If no Gemini API key or using keyword fallback, use simple fallback
+  if (!GEMINI_API_KEY || modelName === 'keyword') {
+    return processQueryFallback(userQuery, availableApis, agentName);
+  }
+
+  try {
+    const model = getModel(modelName);
+
+    // Optimize API descriptions - only include essential info
+    const apiDescriptions = availableApis.map(api => 
+      `${api.id}:${api.name}`
+    ).join(';');
+
+    // Shorter, more focused prompt for faster LLM response
+    const prompt = `Agent: ${agentName}
+APIs: ${apiDescriptions}
+Query: "${userQuery}"
+
+Rules: Greetings/casual → shouldCallAPI=false. Data requests → shouldCallAPI=true with apiId.
+JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse":"response"}`;
+
+    const response = await model.invoke(prompt);
+    const content = response.content?.toString().trim();
+    
+    // Try to parse JSON response
+    try {
+      // Extract JSON from response (in case LLM adds extra text)
+      const jsonMatch = content?.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          shouldCallAPI: parsed.shouldCallAPI === true,
+          apiId: parsed.apiId || null,
+          conversationalResponse: parsed.conversationalResponse || undefined,
+        };
+      }
+    } catch (parseError) {
+      console.error('Failed to parse LLM JSON response:', parseError);
+    }
+
+    // Fallback if JSON parsing fails
+    return processQueryFallback(userQuery, availableApis, agentName);
+  } catch (error) {
+    console.error('Error processing query with LLM:', error);
+    return processQueryFallback(userQuery, availableApis, agentName);
+  }
+}
+
+/**
+ * Fallback processing without LLM
+ */
+function processQueryFallback(
+  query: string,
+  availableApis: ApiMetadata[],
+  agentName: string
+): LLMResponse {
+  const lowerQuery = query.toLowerCase().trim();
+  
+  // Greetings and casual conversation
+  const greetings = ['hello', 'hi', 'hey', 'howdy', 'greetings', 'good morning', 'good afternoon', 'good evening'];
+  const casual = ['thanks', 'thank you', 'ok', 'okay', 'yes', 'no', 'sure', 'alright', 'cool', 'nice', 'how are you', 'what\'s up'];
+  
+  if (greetings.some(g => lowerQuery === g || lowerQuery.startsWith(g + ' ')) ||
+      casual.some(c => lowerQuery === c || lowerQuery.startsWith(c + ' '))) {
+    return {
+      shouldCallAPI: false,
+      apiId: null,
+      conversationalResponse: `Hello! I'm ${agentName}. How can I help you today? You can ask me to fetch data from APIs like weather, stocks, news, or random data.`,
+    };
+  }
+  
+  // Check for API-related queries
+  if (lowerQuery.includes('weather') || lowerQuery.includes('temperature') || lowerQuery.includes('forecast')) {
+    const api = availableApis.find(api => api.id === 'weather');
+    if (api) {
+      return {
+        shouldCallAPI: true,
+        apiId: 'weather',
+        conversationalResponse: 'Let me fetch the weather data for you.',
+      };
+    }
+  }
+  
+  if (lowerQuery.includes('stock') || lowerQuery.includes('price') || lowerQuery.includes('market')) {
+    const api = availableApis.find(api => api.category === 'Trading');
+    if (api) {
+      return {
+        shouldCallAPI: true,
+        apiId: api.id,
+        conversationalResponse: 'Let me fetch the stock market data for you.',
+      };
+    }
+  }
+  
+  if (lowerQuery.includes('news') || lowerQuery.includes('headlines')) {
+    const api = availableApis.find(api => api.id === 'news');
+    if (api) {
+      return {
+        shouldCallAPI: true,
+        apiId: 'news',
+        conversationalResponse: 'Let me fetch the latest news for you.',
+      };
+    }
+  }
+  
+  // Default: conversational response
+  return {
+    shouldCallAPI: false,
+    apiId: null,
+    conversationalResponse: `I'm not sure what you're asking for. You can ask me to fetch data from APIs like weather, stocks, news, or random data. How can I help?`,
+  };
+}
+
