@@ -417,3 +417,188 @@ html {
 .docs-page [aria-label="Back to top"]:hover {
   animation: pulse-ring 1.5s infinite;
 }
+
+/* Enhanced table styling for docs */
+.docs-page table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.docs-page table thead {
+  background: linear-gradient(to bottom, #fafafa, #f4f4f5);
+}
+
+.docs-page table tbody tr:hover {
+  background-color: #fafafa;
+  transition: background-color 0.15s ease;
+}
+
+/* Enhanced code inline styling */
+.docs-page :not(pre) > code {
+  font-size: 0.875em;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Professional heading anchors */
+.docs-page h1:hover,
+.docs-page h2:hover,
+.docs-page h3:hover,
+.docs-page h4:hover {
+  position: relative;
+}
+
+/* Improved list styling */
+.docs-page ul li::marker {
+  font-weight: 600;
+}
+
+.docs-page ol li::marker {
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+/* Enhanced card borders on hover */
+.docs-page [class*="Card"]:hover {
+  border-color: #a1a1aa;
+}
+
+/* Subtle shadow for elevated elements */
+.docs-page .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.docs-page .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Professional gradient backgrounds */
+.docs-page .bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* Smooth scroll offset for anchors */
+.docs-page [id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Better spacing for documentation content */
+.docs-page article > div > * + * {
+  margin-top: 1.5rem;
+}
+
+/* Enhanced breadcrumb styling */
+.docs-page nav[class*="breadcrumb"] {
+  backdrop-filter: blur(8px);
+}
+
+/* Professional badge styling */
+.docs-page [class*="badge"] {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* Improved button states */
+.docs-page button:active {
+  transform: scale(0.98);
+}
+
+/* Enhanced sidebar navigation */
+.docs-page aside nav button:hover {
+  transform: translateX(2px);
+}
+
+/* Professional mobile menu overlay */
+.docs-page .backdrop-blur-sm {
+  backdrop-filter: blur(8px);
+}
+
+/* Better code block header styling */
+.docs-page pre ~ div {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Enhanced separator lines */
+.docs-page hr,
+.docs-page [data-slot="separator"] {
+  background: linear-gradient(to right, transparent, #e4e4e7 50%, transparent);
+  height: 1px;
+  border: none;
+}
+
+/* Professional tooltip styling */
+.docs-page [role="tooltip"] {
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
+  backdrop-filter: blur(8px);
+}
+
+/* Smooth opacity transitions */
+.docs-page .transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Enhanced focus states for accessibility */
+.docs-page button:focus-visible,
+.docs-page a:focus-visible {
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
+}
+
+/* Professional loading states */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.docs-page .skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
+  background-size: 200% 100%;
+}
+
+/* Enhanced text selection */
+.docs-page pre ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Professional link underlines */
+.docs-page a[href] {
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Better visual hierarchy for nested content */
+.docs-page article > div > div > * + * {
+  margin-top: 1.25rem;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 1024px) {
+  .docs-page aside {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
+  }
+}
+
+/* Professional print styles */
+@media print {
+  .docs-page aside,
+  .docs-page [aria-label="Toggle menu"],
+  .docs-page [aria-label="Toggle table of contents"],
+  .docs-page [aria-label="Back to top"] {
+    display: none !important;
+  }
+  
+  .docs-page main {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
