@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, Fragment } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Loader2, Wallet, AlertCircle, Zap, Bot } from 'lucide-react';
+import { Send, Loader2, Wallet, AlertCircle, Zap, Bot, Clock, ArrowLeft } from 'lucide-react';
 import { FundingModal } from './FundingModal';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getUserIdHeaders } from '@/lib/utils/user-id';
+import Link from 'next/link';
 import { ChatInterfaceSkeleton } from './ChatInterfaceSkeleton';
 
 interface ChatMessage {
@@ -41,6 +41,34 @@ const AVAILABLE_LLMS = [
   { id: 'keyword', name: 'Keyword Matching (No LLM)', enabled: true },
 ];
 
+const formatDateHeading = (timestamp: string) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'Recent';
+  const options: Intl.DateTimeFormatOptions = {
+    month: 'long',
+    day: 'numeric',
+  };
+  if (date.getFullYear() !== new Date().getFullYear()) {
+    options.year = 'numeric';
+  }
+  return new Intl.DateTimeFormat('en-US', options).format(date);
+};
+
+const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+};
+
+const truncateAddress = (address: string | undefined) => {
+  if (!address) return 'Not provisioned';
+  if (address.length <= 12) return address;
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+};
+
 export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds = [] }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -57,6 +85,13 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
     isOwner: true,
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const sortedMessages = useMemo(() => {
+    return [...messages].sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+  }, [messages]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -93,6 +128,12 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (!inputRef.current) return;
+    inputRef.current.style.height = 'auto';
+    inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 160)}px`;
+  }, [input]);
 
   const fetchChat = async () => {
     try {
@@ -240,213 +281,288 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
     return <ChatInterfaceSkeleton />;
   }
 
+  const walletLabel = walletInfo.isOwner ? 'Primary Agent Wallet' : 'Delegated Wallet';
+  const walletDisplay = truncateAddress(walletInfo.address);
+
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-120px)] sm:h-[calc(100vh-200px)] bg-white rounded-lg border border-zinc-200 shadow-sm">
-        {/* Header - Sticky */}
-        <div className="border-b border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white rounded-t-lg flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-zinc-900 flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0">
+  <div className="grid h-full min-h-0 grid-cols-1 overflow-hidden bg-zinc-50 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="hidden flex-col overflow-y-auto border-r border-zinc-200 bg-white px-3 py-3 lg:flex">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-sm font-semibold text-white">
                 {agentName.charAt(0).toUpperCase()}
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[7px] font-semibold uppercase tracking-wide text-white">
+                  AI
+                </span>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-sm sm:text-base text-zinc-900 truncate">{agentName}</h3>
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
-                  <Wallet className="w-3 h-3" />
-                  <span>{balance} APT</span>
+                <h2 className="truncate text-xs font-semibold leading-tight text-zinc-900">{agentName}</h2>
+                <p className="text-[10px] text-zinc-500">Operational</p>
+              </div>
+            </div>
+
+            <Badge className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[8px] font-medium uppercase tracking-wide text-emerald-600">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inset-0 rounded-full bg-emerald-400" />
+              </span>
+              Live
+            </Badge>
+
+            <div className="space-y-2.5 text-sm">
+              <div className="space-y-1 rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-2">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">Balance</span>
+                <div className="flex items-center gap-1 text-xs font-medium text-zinc-900">
+                  <Wallet className="h-3 w-3" />
+                  {balance} APT
+                </div>
+              </div>
+              <div className="space-y-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-2">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">{walletLabel}</span>
+                <div className="truncate text-[11px] text-zinc-700" title={walletInfo.address}>
+                  {walletDisplay}
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowFunding(true)}
+                className="w-full justify-center rounded-lg bg-zinc-900 py-1.5 text-[11px] font-medium text-white transition hover:bg-zinc-800"
+              >
+                <Wallet className="h-3 w-3" />
+                Fund
+              </Button>
+            </div>
+
+            <div className="space-y-2.5 text-sm">
+              <div className="space-y-1">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">Model</span>
+                <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5">
+                  <Bot className="h-3 w-3 text-zinc-500" />
+                  <Select value={selectedLLM} onValueChange={setSelectedLLM}>
+                    <SelectTrigger className="h-6 w-full border-0 bg-transparent px-0 text-[11px] font-medium text-zinc-900 placeholder:text-zinc-400 focus:ring-0 focus:ring-offset-0">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent className="border border-zinc-200 bg-white">
+                      {AVAILABLE_LLMS.map(llm => (
+                        <SelectItem
+                          key={llm.id}
+                          value={llm.id}
+                          disabled={!llm.enabled}
+                          className={`text-xs text-zinc-900 ${!llm.enabled ? 'cursor-not-allowed opacity-50' : ''}`}
+                        >
+                          {llm.name}
+                          {!llm.enabled && ' (Soon)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[8px] font-semibold uppercase tracking-wide text-zinc-400">API</span>
+                <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5">
+                  <Zap className="h-3 w-3 text-zinc-500" />
+                  <Select value={selectedAPI} onValueChange={setSelectedAPI}>
+                    <SelectTrigger className="h-6 w-full border-0 bg-transparent px-0 text-[11px] font-medium text-zinc-900 placeholder:text-zinc-400 focus:ring-0 focus:ring-offset-0">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent className="border border-zinc-200 bg-white">
+                      <SelectItem value="auto" className="text-xs text-zinc-900">
+                        Auto
+                      </SelectItem>
+                      {availableApis.map(api => (
+                        <SelectItem key={api.id} value={api.id} className="text-xs text-zinc-900">
+                          {api.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => setShowFunding(true)}
-              className="bg-zinc-900 hover:bg-zinc-800 text-white flex-shrink-0"
-            >
-              <Wallet className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">Fund</span>
-            </Button>
           </div>
-        </div>
+        </aside>
 
-        {/* Settings Bar */}
-        <div className="border-b border-zinc-100 px-4 sm:px-6 py-2 sm:py-3 bg-zinc-50 flex-shrink-0 overflow-x-auto">
-          <div className="flex items-center gap-3 sm:gap-4 min-w-max">
-            <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              <Select value={selectedLLM} onValueChange={setSelectedLLM}>
-                <SelectTrigger className="h-8 sm:h-9 w-[160px] sm:w-[200px] bg-white border-zinc-300 text-zinc-900 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  {AVAILABLE_LLMS.map(llm => (
-                    <SelectItem 
-                      key={llm.id} 
-                      value={llm.id}
-                      disabled={!llm.enabled}
-                      className={`text-zinc-900 text-xs sm:text-sm ${!llm.enabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {llm.name}
-                      {!llm.enabled && ' (Coming Soon)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              <Select value={selectedAPI} onValueChange={setSelectedAPI}>
-                <SelectTrigger className="h-8 sm:h-9 w-[140px] sm:w-[180px] bg-white border-zinc-300 text-zinc-900 text-xs sm:text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-white">
-                  <SelectItem value="auto" className="text-zinc-900 text-xs sm:text-sm">Auto Select</SelectItem>
-                  {availableApis.map(api => (
-                    <SelectItem key={api.id} value={api.id} className="text-zinc-900 text-xs sm:text-sm">
-                      {api.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-hidden bg-white">
-          <ScrollArea className="h-full">
-            <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-zinc-100 flex items-center justify-center mb-4">
-                    <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-zinc-400" />
-                  </div>
-                  <h4 className="text-base sm:text-lg font-semibold text-zinc-900 mb-2">
-                    Chat with {agentName}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-zinc-500 max-w-md">
-                    Start a conversation by asking questions or requesting information. 
-                    Your agent can access various APIs to help you.
-                  </p>
+          <section className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-2.5">
+              <div className="flex items-center gap-3">
+                <Link href="/composer">
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-900">Conversation</h2>
+                  <p className="text-xs text-zinc-500">Direct exchange with {agentName}</p>
                 </div>
-              ) : (
-                <div className="space-y-4 sm:space-y-6">
-                  {[...messages].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((message) => (
-                    <div key={message.id} className="group">
-                      {message.role === 'user' ? (
-                        /* User Message - Right Aligned */
-                        <div className="flex gap-2 sm:gap-4 justify-end">
-                          <div className="flex-1 max-w-[85%] sm:max-w-[70%] pt-1">
-                            <div className="bg-zinc-900 text-white rounded-2xl px-3 sm:px-5 py-2 sm:py-3 ml-auto">
-                              <p className="text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap">
-                                {message.content}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-zinc-900 flex items-center justify-center text-white text-xs sm:text-sm font-semibold flex-shrink-0">
-                            U
-                          </div>
-                        </div>
-                      ) : (
-                        /* Agent Message */
-                        <div className="flex gap-2 sm:gap-4">
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
-                            <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
-                          </div>
-                          <div className="flex-1 space-y-2 sm:space-y-3">
-                            {/* Metadata Badges */}
-                            {(message.metadata?.llmUsed || message.metadata?.apiCalled) && (
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                {message.metadata?.llmUsed && (
-                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-zinc-50 border-zinc-300 px-1.5 sm:px-2 py-0.5">
-                                    <Bot className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 text-zinc-600" />
-                                    <span className="text-zinc-700">{message.metadata.llmUsed}</span>
-                                  </Badge>
+              </div>
+              <Badge className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+                Live Session
+              </Badge>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-hidden bg-zinc-50">
+              <ScrollArea className="h-full w-full">
+              <div className="mx-auto w-full max-w-4xl px-4 py-4 sm:px-8 sm:py-6">
+                  {sortedMessages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-16 text-center">
+                      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-white text-zinc-400">
+                        <Bot className="h-8 w-8" />
+                      </div>
+                      <h4 className="mb-2 text-lg font-semibold text-zinc-900">Chat with {agentName}</h4>
+                      <p className="text-sm text-zinc-500">
+                        Ask for data, trigger workflows, or connect external APIs. Your agent orchestrates the right tools automatically.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(() => {
+                        let previousDateLabel: string | null = null;
+                        return sortedMessages.map(message => {
+                          const dateLabel = formatDateHeading(message.timestamp);
+                          const showDateSeparator = dateLabel && dateLabel !== previousDateLabel;
+                          previousDateLabel = dateLabel;
+                          const isUser = message.role === 'user';
+
+                          return (
+                            <Fragment key={message.id}>
+                              {showDateSeparator && (
+                                <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                                  <span className="h-px flex-1 bg-zinc-200/70" />
+                                  <span>{dateLabel}</span>
+                                  <span className="h-px flex-1 bg-zinc-200/70" />
+                                </div>
+                              )}
+                              <div className="group">
+                                {isUser ? (
+                                  <div className="flex justify-end gap-3 sm:gap-4">
+                                    <div className="flex max-w-[80%] flex-col items-end gap-1 sm:max-w-[60%]">
+                                      <div className="rounded-3xl bg-zinc-900 px-5 py-3 text-sm text-white shadow-sm">
+                                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                                      </div>
+                                      <div className="flex items-center gap-1 text-[10px] text-zinc-400">
+                                        <Clock className="h-3 w-3" />
+                                        <span>{formatTimestamp(message.timestamp)}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-900 text-[11px] font-semibold text-white">
+                                      U
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-3 sm:gap-4">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+                                      <Bot className="h-4 w-4" />
+                                    </div>
+                                    <div className="max-w-[85%] flex-1 space-y-2.5 sm:max-w-[70%]">
+                                      {(message.metadata?.llmUsed || message.metadata?.apiCalled) && (
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                          {message.metadata?.llmUsed && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600">
+                                              <Bot className="h-3 w-3" />
+                                              {message.metadata.llmUsed}
+                                            </span>
+                                          )}
+                                          {message.metadata?.apiCalled && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-medium text-zinc-600">
+                                              <Zap className="h-3 w-3" />
+                                              {message.metadata.apiCalled}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      <div className="rounded-3xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm">
+                                        <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                                      </div>
+                                      {message.metadata?.error && (
+                                        <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                                          <AlertCircle className="h-4 w-4" />
+                                          <span>{message.metadata.error}</span>
+                                        </div>
+                                      )}
+                                      {message.metadata?.paymentHash && (
+                                        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-medium text-emerald-600">
+                                          <Wallet className="h-4 w-4" />
+                                          <span>Txn {message.metadata.paymentHash.slice(0, 12)}…</span>
+                                        </div>
+                                      )}
+                                      <div className="flex items-center gap-1 text-[10px] text-zinc-500">
+                                        <Clock className="h-3 w-3" />
+                                        <span>{formatTimestamp(message.timestamp)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
                                 )}
-                                {message.metadata?.apiCalled && (
-                                  <Badge variant="outline" className="text-[10px] sm:text-xs bg-zinc-50 border-zinc-300 px-1.5 sm:px-2 py-0.5">
-                                    <Zap className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1 text-zinc-600" />
-                                    <span className="text-zinc-700">{message.metadata.apiCalled}</span>
-                                  </Badge>
-                                )}
                               </div>
-                            )}
-                            {/* Message Content */}
-                            <div className="prose prose-sm max-w-none">
-                              <p className="text-zinc-900 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap m-0">
-                                {message.content}
-                              </p>
+                            </Fragment>
+                          );
+                        });
+                      })()}
+                      {loading && (
+                        <div className="flex gap-3 sm:gap-4">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+                            <Bot className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1 pt-1 sm:pt-2">
+                            <div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-500">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Thinking…
                             </div>
-                            {/* Error or Payment Info */}
-                            {message.metadata?.error && (
-                              <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md">
-                                <AlertCircle className="w-3 h-3" />
-                                <span>{message.metadata.error}</span>
-                              </div>
-                            )}
-                            {message.metadata?.paymentHash && (
-                              <div className="text-xs text-zinc-500">
-                                Payment: {message.metadata.paymentHash.slice(0, 8)}...
-                              </div>
-                            )}
                           </div>
                         </div>
                       )}
-                    </div>
-                  ))}
-                  {loading && (
-                    <div className="flex gap-2 sm:gap-4">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center text-white flex-shrink-0">
-                        <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
-                      </div>
-                      <div className="flex-1 pt-1 sm:pt-2">
-                        <div className="flex items-center gap-2 text-zinc-500">
-                          <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                          <span className="text-xs sm:text-sm">Thinking...</span>
-                        </div>
-                      </div>
+                      <div ref={messagesEndRef} />
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
-              )}
+              </ScrollArea>
             </div>
-          </ScrollArea>
-        </div>
 
-        {/* Input Area - Sticky Bottom */}
-        <div className="border-t border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white rounded-b-lg flex-shrink-0">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative flex items-center gap-2">
-              <div className="relative flex-1">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                  placeholder="Message..."
-                  disabled={loading}
-                  className="pr-10 sm:pr-12 py-4 sm:py-6 text-sm sm:text-[15px] text-zinc-900 placeholder:text-zinc-400 border-zinc-300 focus:border-zinc-400 rounded-xl resize-none bg-white"
-                />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || loading}
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg h-7 w-7 sm:h-8 sm:w-8"
-                >
-                  {loading ? (
-                    <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  )}
-                </Button>
-              </div>
+            <div className="flex-shrink-0 border-t border-zinc-200 bg-white px-4 py-3">
+            <div className="mx-auto w-full max-w-4xl">
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  handleSend();
+                }}
+              >
+                <div className="relative flex items-end gap-2 rounded-2xl border border-zinc-200 bg-white px-3 py-2 focus-within:border-zinc-300">
+                  <textarea
+                    ref={inputRef}
+                    rows={1}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    placeholder="Send a message or use Shift+Enter for a new line"
+                    disabled={loading}
+                    className="w-full resize-none border-0 bg-transparent px-1 py-1.5 text-sm leading-relaxed text-zinc-900 placeholder:text-zinc-400 focus:outline-none sm:text-[15px]"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!input.trim() || loading}
+                    size="icon"
+                    className="mb-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-white transition hover:bg-zinc-800"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </form>
+              <p className="mt-1.5 text-center text-[10px] text-zinc-500">
+                Powered by x402 · Messages may incur blockchain transaction costs
+              </p>
             </div>
-            <p className="text-[10px] sm:text-xs text-zinc-500 text-center mt-1.5 sm:mt-2 px-2">
-              Powered by x402 • Messages may incur blockchain transaction costs
-            </p>
-          </div>
-        </div>
+            </div>
+        </section>
       </div>
 
       {showFunding && (

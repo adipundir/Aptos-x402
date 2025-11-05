@@ -40,25 +40,21 @@ export default function AgentChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-6 max-w-6xl">
-        <div className="mb-2 sm:mb-4">
-          <Link href="/composer">
-            <Button variant="ghost" size="sm" className="text-zinc-600 hover:text-zinc-900">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Agents
-            </Button>
-          </Link>
-        </div>
+    <div className="fixed inset-0 top-16 flex flex-col overflow-hidden bg-zinc-50">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {loading ? (
-          <ChatInterfaceSkeleton />
+          <div className="h-full min-h-0 overflow-hidden">
+            <ChatInterfaceSkeleton />
+          </div>
         ) : agent ? (
-          <ChatInterface
-            agentId={agent.id}
-            agentName={agent.name}
-            walletAddress={agent.walletAddress}
-            agentApiIds={agent.apiIds}
-          />
+          <div className="h-full min-h-0 overflow-hidden">
+            <ChatInterface
+              agentId={agent.id}
+              agentName={agent.name}
+              walletAddress={agent.walletAddress}
+              agentApiIds={agent.apiIds}
+            />
+          </div>
         ) : null}
       </div>
     </div>

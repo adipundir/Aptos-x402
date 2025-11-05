@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 export function ChatInterfaceSkeleton() {
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] sm:h-[calc(100vh-200px)] bg-white rounded-lg border border-zinc-200 shadow-sm">
+    <div className="flex h-full min-h-[520px] flex-col rounded-lg border border-zinc-200 bg-white shadow-sm">
       {/* Header Skeleton */}
       <div className="border-b border-zinc-200 px-4 sm:px-6 py-3 sm:py-4 bg-white rounded-t-lg flex-shrink-0">
         <div className="flex items-center justify-between">
