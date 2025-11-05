@@ -15,10 +15,28 @@ export interface ApiMetadata {
 }
 
 // Base URL - works in both browser (DOM) and Node (SDK build) contexts
-// Prefer env when provided, otherwise fall back to global location if available
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL ||
-  ((typeof globalThis !== 'undefined' && (globalThis as any).location?.origin) || 'http://localhost:3000');
+// Priority: NEXT_PUBLIC_BASE_URL > VERCEL_URL > localhost (dev only)
+function getBaseUrl(): string {
+  // 1. User-configured base URL (highest priority)
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL;
+  }
+  
+  // 2. Vercel automatically provides VERCEL_URL (e.g., "your-app.vercel.app")
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // 3. In browser/client context, use window.location
+  if (typeof window !== 'undefined' && window.location) {
+    return window.location.origin;
+  }
+  
+  // 4. Fallback to localhost for local development
+  return 'http://localhost:3000';
+}
+
+const BASE_URL = getBaseUrl();
 
 export const API_REGISTRY: ApiMetadata[] = [
   {
