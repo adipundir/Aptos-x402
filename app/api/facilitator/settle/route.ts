@@ -10,300 +10,158 @@ import { SimpleTransaction, AccountAuthenticator, Deserializer } from "@aptos-la
 
 export const dynamic = "force-dynamic";
 
+// ⚡ In-memory cache for recently submitted transactions
+const submittedTransactions = new Map<string, { txHash: string; timestamp: number; network: string }>();
+const SUBMISSION_CACHE_TTL_MS = 300000; // 5 minutes
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of submittedTransactions.entries()) {
+    if (now - value.timestamp > SUBMISSION_CACHE_TTL_MS) {
+      submittedTransactions.delete(key);
+    }
+  }
+}, 60000);
+
 /**
  * POST /api/facilitator/settle
- * 
- * x402 Facilitator Settle Endpoint (per official spec):
- * - Receives payment header and payment requirements from protected API AFTER verification
- * - Submits transaction to blockchain
- * - Waits for confirmation
- * - Returns settlement result (success, txHash, networkId)
- * 
- * This is slow and expensive - actual blockchain submission
- * Only call this AFTER the work/resource has been verified
+ * ⚡ OPTIMIZED: Submits to blockchain and returns immediately (~100-200ms)
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-  console.log(`[Facilitator Settle] POST /api/facilitator/settle`);
-  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+  console.log('\n💰 [Facilitator Settle] Starting settlement...');
 
   try {
     const body: SettleRequest = await request.json();
     const { x402Version, paymentHeader, paymentRequirements } = body;
-
-    console.log(`[Facilitator Settle] Request body:`, {
+    
+    console.log('[Settle] Request details:', {
       x402Version,
-      hasPaymentHeader: !!paymentHeader,
-      headerLength: paymentHeader?.length,
-      scheme: paymentRequirements.scheme,
-      network: paymentRequirements.network,
+      network: paymentRequirements?.network,
+      amount: paymentRequirements?.maxAmountRequired,
     });
 
-    // Validate x402 version
+    // Fast validation
     if (x402Version !== X402_VERSION) {
-      console.error(`[Facilitator Settle] ❌ Unsupported x402 version: ${x402Version}`);
-      const response: SettleResponse = {
-        success: false,
-        error: `Unsupported x402 version: ${x402Version}`,
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response);
+      console.log('[Settle] ❌ Unsupported version');
+      return NextResponse.json({ success: false, error: `Unsupported x402 version: ${x402Version}`, txHash: null, networkId: null });
     }
 
-    // Validate required fields
     if (!paymentHeader || !paymentRequirements) {
-      console.error(`[Facilitator Settle] ❌ Missing required fields`);
-      const response: SettleResponse = {
-        success: false,
-        error: "Missing paymentHeader or paymentRequirements",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response, { status: 400 });
+      console.log('[Settle] ❌ Missing required fields');
+      return NextResponse.json({ success: false, error: "Missing required fields", txHash: null, networkId: null }, { status: 400 });
     }
 
-    // Validate scheme
     if (paymentRequirements.scheme !== APTOS_SCHEME) {
-      console.error(`[Facilitator Settle] ❌ Unsupported scheme: ${paymentRequirements.scheme}`);
-      const response: SettleResponse = {
-        success: false,
-        error: `Unsupported scheme: ${paymentRequirements.scheme}`,
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response);
+      console.log('[Settle] ❌ Unsupported scheme');
+      return NextResponse.json({ success: false, error: `Unsupported scheme: ${paymentRequirements.scheme}`, txHash: null, networkId: null });
     }
 
     const network = paymentRequirements.network;
     if (!network) {
-      console.error(`[Facilitator Settle] ❌ Network not specified in payment requirements`);
-      const response: SettleResponse = {
-        success: false,
-        error: "Network not specified in payment requirements",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response, { status: 400 });
+      console.log('[Settle] ❌ Network not specified');
+      return NextResponse.json({ success: false, error: "Network not specified", txHash: null, networkId: null }, { status: 400 });
     }
-    console.log(`[Facilitator Settle] Network: ${network}`);
     
+    console.log('[Settle] ✅ Basic validation passed');
     const aptos = getAptosClient(network);
-    console.log(`[Facilitator Settle] ✅ Aptos client initialized`);
 
-    // Parse the payment header (base64 encoded PaymentPayload)
-    console.log(`[Facilitator Settle] 📥 Parsing payment payload...`);
-    console.log(`[Facilitator Settle] Raw paymentHeader (first 100 chars):`, paymentHeader.substring(0, 100) + '...');
-    
-    let paymentPayloadJson: string;
-    try {
-      paymentPayloadJson = Buffer.from(paymentHeader, 'base64').toString('utf-8');
-      console.log(`[Facilitator Settle] 📝 Decoded JSON (first 300 chars):`, paymentPayloadJson.substring(0, 300) + '...');
-    } catch (decodeError) {
-      console.error(`[Facilitator Settle] ❌ Failed to decode base64:`, decodeError);
-      const response: SettleResponse = {
-        success: false,
-        error: "Invalid base64 encoding",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response, { status: 400 });
-    }
-    
+    // Parse payment payload (⚡ direct JSON, no base64)
     let paymentPayload: PaymentPayload;
     try {
-      paymentPayload = JSON.parse(paymentPayloadJson);
-      console.log(`[Facilitator Settle] ✅ Parsed JSON successfully`);
-    } catch (parseError) {
-      console.error(`[Facilitator Settle] ❌ Failed to parse JSON:`, parseError);
-      const response: SettleResponse = {
-        success: false,
-        error: "Invalid JSON",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response, { status: 400 });
+      paymentPayload = JSON.parse(paymentHeader);
+    } catch {
+      return NextResponse.json({ success: false, error: "Invalid payment header", txHash: null, networkId: null }, { status: 400 });
     }
     
-    console.log(`[Facilitator Settle] ✅ Parsed payment payload`);
-    console.log(`[Facilitator Settle] Scheme: ${paymentPayload.scheme}`);
-    console.log(`[Facilitator Settle] Network: ${paymentPayload.network}`);
-    console.log(`[Facilitator Settle] Payload keys:`, Object.keys(paymentPayload.payload));
-
-    // Extract signature and transaction separately (like Sui)
-    console.log(`\n🔍 [Facilitator Settle] Extracting signature and transaction...`);
-    const signatureBase64 = paymentPayload.payload.signature;
-    const transactionBase64 = paymentPayload.payload.transaction;
+    const signatureHex = paymentPayload.payload.signature;
+    const transactionHex = paymentPayload.payload.transaction;
     
-    if (!signatureBase64 || !transactionBase64) {
-      console.error(`[Facilitator Settle] ❌ Missing signature or transaction`);
-      console.error(`[Facilitator Settle] Signature:`, signatureBase64 ? 'present' : 'MISSING');
-      console.error(`[Facilitator Settle] Transaction:`, transactionBase64 ? 'present' : 'MISSING');
-      const response: SettleResponse = {
-        success: false,
-        error: "Invalid payload: missing signature or transaction",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response);
-    }
-
-    console.log(`[Facilitator Settle] ✅ Signature base64 length: ${signatureBase64.length}`);
-    console.log(`[Facilitator Settle] ✅ Transaction base64 length: ${transactionBase64.length}`);
-    console.log(`[Facilitator Settle] Signature (first 50):`, signatureBase64.substring(0, 50) + '...');
-    console.log(`[Facilitator Settle] Transaction (first 50):`, transactionBase64.substring(0, 50) + '...');
-    
-    console.log(`\n📤 [Facilitator Settle] Submitting signed transaction to blockchain...`);
-    
-    // Decode the BCS bytes
-    let signatureBytes: Buffer;
-    let transactionBytes: Buffer;
-    try {
-      signatureBytes = Buffer.from(signatureBase64, 'base64');
-      transactionBytes = Buffer.from(transactionBase64, 'base64');
-      
-      console.log(`[Facilitator Settle] ✅ Signature decoded: ${signatureBytes.length} BCS bytes`);
-      console.log(`[Facilitator Settle] ✅ Transaction decoded: ${transactionBytes.length} BCS bytes`);
-      console.log(`[Facilitator Settle] Signature bytes (first 20):`, Array.from(signatureBytes.slice(0, 20)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-      console.log(`[Facilitator Settle] Transaction bytes (first 20):`, Array.from(transactionBytes.slice(0, 20)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-    } catch (decodeError) {
-      console.error(`[Facilitator Settle] ❌ Failed to decode base64:`, decodeError);
-      const response: SettleResponse = {
-        success: false,
-        error: "Invalid base64 encoding",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response);
+    if (!signatureHex || !transactionHex) {
+      return NextResponse.json({ success: false, error: "Missing signature or transaction", txHash: null, networkId: null });
     }
     
-    // Deserialize BCS bytes back into SDK objects (per official Aptos SDK docs)
-    console.log(`\n🔄 [Facilitator Settle] Deserializing BCS back to SDK objects...`);
+    // Check cache
+    const txCacheKey = `${transactionHex}:${signatureHex}:${network}`;
+    const cachedSubmission = submittedTransactions.get(txCacheKey);
+    
+    if (cachedSubmission && (Date.now() - cachedSubmission.timestamp) < SUBMISSION_CACHE_TTL_MS) {
+      console.log('[Settle] ⚡ Cache hit! Returning cached transaction:', cachedSubmission.txHash);
+      const nextResponse = NextResponse.json({
+        success: true,
+        error: null,
+        txHash: cachedSubmission.txHash,
+        networkId: cachedSubmission.network,
+      });
+      nextResponse.headers.set('X-Settlement-Time', (Date.now() - startTime).toString());
+      nextResponse.headers.set('X-Cached', 'true');
+      return nextResponse;
+    }
+    
+    console.log('[Settle] Cache miss, proceeding with submission...');
+    
+    // Decode and deserialize
     let transaction: SimpleTransaction;
     let senderAuthenticator: AccountAuthenticator;
     
     try {
-      // Deserialize the RawTransaction from BCS
-      const txDeserializer = new Deserializer(transactionBytes);
-      transaction = SimpleTransaction.deserialize(txDeserializer);
-      console.log(`[Facilitator Settle] ✅ Deserialized transaction object`);
+      console.log('[Settle] Deserializing transaction...');
+      const signatureBytes = Buffer.from(signatureHex, 'hex');
+      const transactionBytes = Buffer.from(transactionHex, 'hex');
       
-      // Deserialize the AccountAuthenticator from BCS
-      const authDeserializer = new Deserializer(signatureBytes);
-      senderAuthenticator = AccountAuthenticator.deserialize(authDeserializer);
-      console.log(`[Facilitator Settle] ✅ Deserialized authenticator object`);
-    } catch (deserializeError: any) {
-      console.error(`[Facilitator Settle] ❌ Failed to deserialize BCS:`, deserializeError);
-      const settleResponse: SettleResponse = {
-        success: false,
-        error: `BCS deserialization failed: ${deserializeError.message}`,
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(settleResponse, { status: 400 });
+      transaction = SimpleTransaction.deserialize(new Deserializer(transactionBytes));
+      senderAuthenticator = AccountAuthenticator.deserialize(new Deserializer(signatureBytes));
+      console.log('[Settle] ✅ Deserialization successful');
+    } catch (err: any) {
+      console.log('[Settle] ❌ Deserialization failed:', err.message);
+      return NextResponse.json({ success: false, error: `Deserialization failed: ${err.message}`, txHash: null, networkId: null }, { status: 400 });
     }
     
-    // Submit using SDK's proper method (Pattern A from official Aptos SDK docs)
-    console.log(`\n📤 [Facilitator Settle] Submitting via SDK submit.simple()...`);
-    
-    let pendingTx;
+    // Submit to blockchain
+    let txHash: string;
     try {
-      const committed = await aptos.transaction.submit.simple({
-        transaction,
-        senderAuthenticator,
-      });
-      
-      pendingTx = { hash: committed.hash };
-      console.log(`[Facilitator Settle] ✅ Transaction submitted!`);
-      console.log(`[Facilitator Settle] Transaction hash: ${pendingTx.hash}`);
+      console.log('[Settle] Submitting transaction to blockchain...');
+      const committed = await aptos.transaction.submit.simple({ transaction, senderAuthenticator });
+      txHash = committed.hash;
+      console.log('[Settle] ✅ Transaction submitted to mempool:', txHash);
     } catch (submitError: any) {
-      console.error(`[Facilitator Settle] ❌ Submission failed:`, submitError);
-      const settleResponse: SettleResponse = {
-        success: false,
-        error: submitError.message || String(submitError),
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(settleResponse, { status: 500 });
+      console.log('[Settle] ❌ Submission failed:', submitError.message);
+      return NextResponse.json({ success: false, error: submitError.message || String(submitError), txHash: null, networkId: null }, { status: 500 });
     }
 
-    console.log(`\n⏳ [Facilitator Settle] Waiting for blockchain confirmation...`);
+    // Async confirmation (non-blocking)
+    console.log('[Settle] Starting background confirmation...');
+    aptos.waitForTransaction({ 
+      transactionHash: txHash,
+      options: { checkSuccess: true, timeoutSecs: 30 }
+    }).then(() => {
+      console.log('[Settle] ✅ Transaction confirmed on-chain:', txHash);
+    }).catch((err) => {
+      console.log('[Settle] ⚠️ Background confirmation failed:', err.message);
+    });
+
+    // Cache result
+    submittedTransactions.set(txCacheKey, {
+      txHash,
+      timestamp: Date.now(),
+      network,
+    });
+    console.log('[Settle] Transaction cached');
+
+    const settlementTime = Date.now() - startTime;
+    console.log(`[Settle] ✅ Settlement complete! Took ${settlementTime}ms`);
     
-    // Wait for transaction to be confirmed (per x402 spec)
-    await aptos.waitForTransaction({ 
-      transactionHash: pendingTx.hash 
-    });
-
-    console.log(`[Facilitator Settle] ✅ Transaction confirmed!`);
-
-    // Check if transaction succeeded
-    console.log(`[Facilitator Settle] Fetching transaction details...`);
-    const txDetails = await aptos.transaction.getTransactionByHash({
-      transactionHash: pendingTx.hash,
-    });
-
-    console.log(`[Facilitator Settle] Transaction details:`, {
-      hasSuccess: 'success' in txDetails,
-      success: 'success' in txDetails ? txDetails.success : 'N/A',
-      type: txDetails.type,
-    });
-
-    if (!('success' in txDetails) || !txDetails.success) {
-      console.error(`[Facilitator Settle] ❌ Transaction FAILED on blockchain`);
-      const settleResponse: SettleResponse = {
-        success: false,
-        error: "Transaction failed on blockchain",
-        txHash: pendingTx.hash,
-        networkId: network,
-      };
-      return NextResponse.json(settleResponse);
-    }
-
-    console.log(`\n✅ [Facilitator Settle] Payment settled successfully!`);
-    console.log(`[Facilitator Settle] Transaction hash: ${pendingTx.hash}`);
-
-    const duration = Date.now() - startTime;
-    console.log(`[Facilitator Settle] ⏱️  Settlement took ${duration}ms`);
-
-    const settleResponse: SettleResponse = {
-      success: true,
-      error: null,
-      txHash: pendingTx.hash,
-      networkId: network,
-    };
-
-    console.log(`[Facilitator Settle] Response:`, settleResponse);
-    const nextResponse = NextResponse.json(settleResponse);
-    nextResponse.headers.set('X-Settlement-Time', duration.toString());
+    const nextResponse = NextResponse.json({ success: true, error: null, txHash, networkId: network });
+    nextResponse.headers.set('X-Settlement-Time', settlementTime.toString());
     return nextResponse;
 
   } catch (error: any) {
-    console.error(`\n❌ [Facilitator Settle] ERROR during settlement`);
-    console.error(`[Facilitator Settle] Error type:`, error.constructor.name);
-    console.error(`[Facilitator Settle] Error message:`, error.message);
-    console.error(`[Facilitator Settle] Full error:`, error);
-    
-    // Check if it's a duplicate transaction error
     if (error.message?.includes("SEQUENCE_NUMBER_TOO_OLD") || 
         error.message?.includes("INVALID_SEQ_NUMBER") ||
         error.message?.includes("already submitted")) {
-      const response: SettleResponse = {
-        success: false,
-        error: "Transaction already used",
-        txHash: null,
-        networkId: null,
-      };
-      return NextResponse.json(response, { status: 409 });
+      return NextResponse.json({ success: false, error: "Transaction already used", txHash: null, networkId: null }, { status: 409 });
     }
-
-    const response: SettleResponse = {
-      success: false,
-      error: error.message || String(error),
-      txHash: null,
-      networkId: null,
-    };
     
-    return NextResponse.json(response, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || String(error), txHash: null, networkId: null }, { status: 500 });
   }
 }

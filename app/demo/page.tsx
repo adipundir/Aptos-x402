@@ -26,15 +26,6 @@ export default function Home() {
     setTiming(null);
 
     try {
-      console.log('\n🚀 Using x402axios (Simple Aptos payment wrapper)...');
-      console.log('This will:');
-      console.log('  1. Make request to the protected API');
-      console.log('  2. Detect 402 Payment Required response');
-      console.log('  3. Extract payment requirements from the 402 spec');
-      console.log('  4. Build & sign payment transaction automatically');
-      console.log('  5. Retry with X-PAYMENT header');
-      console.log('  6. Return the response\n');
-
       const startTime = performance.now();
       
       // Simple! Just privateKey and url (axios-compatible interface)
@@ -45,21 +36,9 @@ export default function Home() {
       const endTime = performance.now();
       const totalTime = Math.round(endTime - startTime);
 
-      console.log('✅ x402Axios completed successfully!');
-
       // Extract timing headers if present
       const verificationTime = result.headers['x-verification-time'];
       const settlementTime = result.headers['x-settlement-time'];
-      
-      // Payment info is automatically included
-      if (result.paymentInfo) {
-        console.log('💰 Payment Info:', {
-          transactionHash: result.paymentInfo.transactionHash,
-          amount: result.paymentInfo.amount,
-          recipient: result.paymentInfo.recipient,
-          settled: result.paymentInfo.settled,
-        });
-      }
 
       setResponse({
         status: result.status,
@@ -83,7 +62,6 @@ export default function Home() {
         setStep("success");
       }
     } catch (err: any) {
-      console.error('❌ Error during x402-axios request:', err);
       setResponse({ 
         error: err.message || String(err),
         details: err.response?.data 

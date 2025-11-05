@@ -27,6 +27,26 @@ import {
   Ed25519PrivateKey,
 } from "@aptos-labs/ts-sdk";
 
+// ⚡ PERFORMANCE: Cache Aptos clients and accounts to avoid recreation
+const aptosClientCache = new Map<string, Aptos>();
+const accountCache = new Map<string, Account>();
+
+function getAptosClient(network: Network): Aptos {
+  const key = network.toString();
+  if (!aptosClientCache.has(key)) {
+    aptosClientCache.set(key, new Aptos(new AptosConfig({ network })));
+  }
+  return aptosClientCache.get(key)!;
+}
+
+function getAccount(privateKey: string): Account {
+  if (!accountCache.has(privateKey)) {
+    const privateKeyObj = new Ed25519PrivateKey(privateKey);
+    accountCache.set(privateKey, Account.fromPrivateKey({ privateKey: privateKeyObj }));
+  }
+  return accountCache.get(privateKey)!;
+}
+
 // Axos-compatible request configuration
 export interface AxiosRequestConfig {
   /** URL to request */
@@ -206,8 +226,6 @@ async function x402axiosMain<T = any>(
   } = finalConfig;
 
   const url = buildURL(finalConfig);
-  
-  console.log('[x402-axios] Making request to:', url);
 
   // Step 1: Make initial request (no payment)
   const init: RequestInit = {
@@ -247,12 +265,8 @@ async function x402axiosMain<T = any>(
     responseData = await response.text();
   }
 
-  console.log(`[x402-axios] Initial response: ${response.status}`);
-
   // If not 402, return immediately (no payment required)
   if (response.status !== 402) {
-    console.log('[x402-axios] No payment required');
-    
     const transformedData = transformResponseData(responseData, finalConfig);
     
     return {
@@ -264,9 +278,8 @@ async function x402axiosMain<T = any>(
     };
   }
 
-  console.log('[x402-axios] Received 402 Payment Required');
-
   // Step 2: Extract payment requirements from 402 response
+  console.log('\n💳 [x402-axios] Received 402 Payment Required response');
   const paymentReqs = responseData.accepts?.[0] || responseData;
   const recipient = paymentReqs.payTo || paymentReqs.paymentAddress;
   const amount = paymentReqs.maxAmountRequired || paymentReqs.price;
@@ -276,95 +289,115 @@ async function x402axiosMain<T = any>(
   }
   const scheme = paymentReqs.scheme || 'exact';
 
+  console.log('[x402-axios] Payment requirements extracted:', {
+    recipient,
+    amount,
+    network: networkId,
+    scheme,
+  });
+
   if (!recipient || !amount) {
     throw new Error('Invalid 402 response: missing payment requirements');
   }
 
-  console.log('[x402-axios] Payment requirements:', {
-    scheme,
-    network: networkId,
-    amount: `${amount} Octas`,
-    recipient: recipient.slice(0, 10) + '...',
-  });
-
-  // Step 3: Determine network from 402 response
+  // Step 3: Determine network and get cached client
+  console.log('[x402-axios] Step 3: Getting Aptos client...');
   const networkMap: Record<string, Network> = {
     'aptos-testnet': Network.TESTNET,
     'aptos-mainnet': Network.MAINNET,
   };
   const network = networkMap[networkId] || Network.TESTNET;
+  const aptos = getAptosClient(network);
+  console.log('[x402-axios] ✅ Aptos client ready (cached)');
 
-  console.log('[x402-axios] Network mapping:', {
-    networkId,
-    mappedNetwork: network,
-    networkMap
-  });
-
-  // Step 4: Initialize Aptos client based on discovered network
-  const aptosConfig = new AptosConfig({ network });
-  const aptos = new Aptos(aptosConfig);
-  
-  console.log('[x402-axios] Aptos client initialized with network:', network);
-
-  // Create account from private key or use provided account
+  // Step 4: Get or create account (cached)
+  console.log('[x402-axios] Step 4: Getting account...');
   let aptosAccount: Account;
   if (account) {
     aptosAccount = account;
+    console.log('[x402-axios] Using provided account:', aptosAccount.accountAddress.toString());
   } else if (privateKey) {
-    const privateKeyObj = new Ed25519PrivateKey(privateKey);
-    aptosAccount = Account.fromPrivateKey({ privateKey: privateKeyObj });
+    aptosAccount = getAccount(privateKey);
+    console.log('[x402-axios] ✅ Account loaded from private key (cached):', aptosAccount.accountAddress.toString());
   } else {
     throw new Error('Either privateKey or account must be provided');
   }
 
-  console.log(`[x402-axios] Building transaction for ${amount} Octas to ${recipient.slice(0, 10)}...`);
-
-  // Step 5: Build transaction based on scheme
+  // Step 5: Build transaction
+  console.log('[x402-axios] Step 5: Building transaction...');
   let transaction;
   if (scheme === 'exact') {
+    const amountNum = BigInt(amount);
+    console.log('[x402-axios] Transaction details:', {
+      sender: aptosAccount.accountAddress.toString(),
+      recipient,
+      amount: amountNum.toString(),
+      function: '0x1::aptos_account::transfer',
+    });
     transaction = await aptos.transaction.build.simple({
       sender: aptosAccount.accountAddress,
       data: {
         function: "0x1::aptos_account::transfer",
-        functionArguments: [recipient, amount],
+        functionArguments: [recipient, amountNum],
       },
     });
+    console.log('[x402-axios] ✅ Transaction built successfully');
   } else {
     throw new Error(`Unsupported payment scheme: ${scheme}`);
   }
 
-  console.log('[x402-axios] Signing transaction...');
-
-  // Step 6: Sign transaction
-  const senderAuthenticator = aptos.transaction.sign({ 
-    signer: aptosAccount, 
-    transaction 
-  });
-
-  // Step 7: Serialize transaction and signature separately
+  // Step 6: Sign and serialize (optimized)
+  console.log('[x402-axios] Step 6: Signing transaction...');
+  const senderAuthenticator = aptos.transaction.sign({ signer: aptosAccount, transaction });
+  console.log('[x402-axios] ✅ Transaction signed');
+  
+  console.log('[x402-axios] Step 7: Serializing to BCS format...');
   const transactionBytes = transaction.bcsToBytes();
   const signatureBytes = senderAuthenticator.bcsToBytes();
+  console.log('[x402-axios] BCS serialization:', {
+    transactionSize: transactionBytes.length,
+    signatureSize: signatureBytes.length,
+  });
   
-  const transactionBase64 = Buffer.from(transactionBytes).toString('base64');
-  const signatureBase64 = Buffer.from(signatureBytes).toString('base64');
-
-  // Step 8: Create x402 PaymentPayload
+  // Step 7: Create payment header (optimized - hex encoding instead of double base64)
+  console.log('[x402-axios] Step 8: Creating payment header...');
+  
+  // ⚡ OPTIMIZATION: Use hex instead of base64 (smaller, faster)
+  const transactionHex = Buffer.from(transactionBytes).toString('hex');
+  const signatureHex = Buffer.from(signatureBytes).toString('hex');
+  
   const paymentPayload = {
     x402Version: 1,
     scheme,
     network: networkId,
     payload: {
-      transaction: transactionBase64,
-      signature: signatureBase64,
+      transaction: transactionHex,
+      signature: signatureHex,
     },
   };
-
-  // Step 9: Encode as base64 for X-PAYMENT header
-  const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
   
-  console.log(`[x402-axios] Retrying with payment (header: ${paymentHeader.length} chars)...`);
+  console.log('[x402-axios] Payment payload structure:', {
+    x402Version: paymentPayload.x402Version,
+    scheme: paymentPayload.scheme,
+    network: paymentPayload.network,
+    payload: {
+      transaction: `hex(${transactionHex.substring(0, 20)}...)`,
+      signature: `hex(${signatureHex.substring(0, 20)}...)`,
+    },
+    sizes: {
+      transactionBytes: transactionBytes.length,
+      signatureBytes: signatureBytes.length,
+      transactionHex: transactionHex.length,
+      signatureHex: signatureHex.length,
+    }
+  });
+  
+  // ⚡ Single JSON stringify (no double base64)
+  const paymentHeader = JSON.stringify(paymentPayload);
+  console.log('[x402-axios] ✅ Payment header created (JSON only):', paymentHeader.substring(0, 50) + '...');
 
-  // Step 10: Retry request with X-PAYMENT header
+  // Step 9: Retry request with X-PAYMENT header
+  console.log('[x402-axios] Step 9: Retrying request with X-PAYMENT header...');
   const paidInit: RequestInit = {
     ...init,
     headers: {
@@ -372,8 +405,14 @@ async function x402axiosMain<T = any>(
       'X-PAYMENT': paymentHeader,
     },
   };
+  const requestHeaders = paidInit.headers as Record<string, string> | undefined;
+  console.log('[x402-axios] Request headers:', {
+    'Content-Type': requestHeaders?.['Content-Type'] || 'application/json',
+    'X-PAYMENT': 'present (' + paymentHeader.length + ' chars)',
+  });
 
   response = await fetch(url, paidInit);
+  console.log('[x402-axios] Response status:', response.status);
   
   // Handle response based on responseType
   if (responseType === 'json') {
@@ -388,9 +427,7 @@ async function x402axiosMain<T = any>(
     responseData = await response.text();
   }
 
-  console.log(`[x402-axios] Payment response: ${response.status}`);
-
-  // Step 11: Extract payment info from X-Payment-Response header
+  // Step 8: Extract payment info from X-Payment-Response header
   let paymentInfo;
   const paymentResponseHeader = response.headers.get('x-payment-response');
   
@@ -403,8 +440,6 @@ async function x402axiosMain<T = any>(
         recipient: recipient,
         settled: decoded.settlement.success === true,
       };
-      
-      console.log(`[x402-axios] Payment settled: ${paymentInfo.transactionHash}`);
     }
   }
 

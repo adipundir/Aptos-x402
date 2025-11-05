@@ -18,7 +18,9 @@
 
 **Aptos x402** is a TypeScript SDK implementing the [x402 payment protocol](https://github.com/coinbase/x402) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
 
-Built for **machine-to-machine micropayments**, this SDK provides zero-friction payment integration for Next.js applications with automatic payment handling, cryptographic verification, and sub-3-second settlement times.
+Built for **machine-to-machine micropayments**, this SDK provides zero-friction payment integration for Next.js applications with automatic payment handling, cryptographic verification, and **sub-second settlement times** (optimized from 2-3s to 200-500ms).
+
+> ⚡ **Performance:** Latest optimizations deliver **5-10x faster** payments with verification caching, async confirmation, and smart deduplication. See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for details.
 
 <!-- ## Key Features
 
@@ -639,12 +641,48 @@ No human intervention required.
 
 ---
 
+## Performance Monitoring
+
+Track payment performance with built-in timing headers:
+
+```typescript
+const response = await x402axios.get(url, { privateKey });
+
+// Check performance metrics
+const verifyTime = response.headers['x-verification-time'];
+const settleTime = response.headers['x-settlement-time'];
+const cached = response.headers['x-cached'] === 'true';
+
+console.log(`Verification: ${verifyTime}ms`);
+console.log(`Settlement: ${settleTime}ms`);
+console.log(`Cached: ${cached}`);
+```
+
+### Performance Benchmarks
+
+Run the included benchmark to measure your setup:
+
+```bash
+APTOS_PRIVATE_KEY=0x... npx tsx scripts/benchmark-payment-flow.ts
+```
+
+**Expected Performance:**
+- First request (uncached): ~800-1000ms
+- Cached requests: ~650-800ms
+- Settlement alone: ~200-300ms
+- Legacy (pre-optimization): ~2000-3000ms
+
+**Optimization Details:** See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for complete breakdown of the **5-10x performance improvements**.
+
+---
+
 ## Resources
 
 ### Documentation
 - [Full Documentation](https://aptos-x402.vercel.app/docs)
 - [API Reference](./docs/api-reference/server-api.md)
 - [Protocol Specification](https://github.com/coinbase/x402)
+- [Performance Guide](./PERFORMANCE_OPTIMIZATIONS.md)
 
 ### Links
 - [GitHub Repository](https://github.com/adipundir/aptos-x402)

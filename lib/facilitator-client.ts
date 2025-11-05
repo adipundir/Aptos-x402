@@ -9,7 +9,7 @@
  */
 
 export interface VerifyPaymentRequest {
-  signedTransaction: string;  // base64 encoded signed transaction
+  signedTransaction: string;  // hex encoded signed transaction
   expectedRecipient: string;
   expectedAmount: string;
   expectedNetwork: string;
@@ -37,7 +37,7 @@ export interface SettlePaymentResponse {
  * Verify a payment through the facilitator (does NOT submit to blockchain)
  * 
  * @param facilitatorUrl - URL of the facilitator verify endpoint
- * @param signedTransaction - Base64 encoded signed transaction
+ * @param signedTransaction - Hex encoded signed transaction
  * @param expectedRecipient - Expected payment recipient address
  * @param expectedAmount - Expected payment amount in octas
  * @param expectedNetwork - Expected network (testnet/mainnet)
@@ -88,7 +88,7 @@ export async function verifyPayment(
  * Settle a payment through the facilitator (submits to blockchain)
  * 
  * @param facilitatorUrl - URL of the facilitator settle endpoint
- * @param signedTransaction - Base64 encoded signed transaction
+ * @param signedTransaction - Hex encoded signed transaction
  * @param expectedNetwork - Expected network (testnet/mainnet)
  * @returns Settlement result with transaction hash
  */
@@ -154,7 +154,7 @@ export function createPaymentResponse(settlementResult: SettlePaymentResponse) {
  * Facilitator URL MUST be provided - no defaults
  * 
  * @param facilitatorUrl - Facilitator base URL (e.g., "https://facilitator.com")
- * @param signedTransaction - Base64 encoded signed transaction
+ * @param signedTransaction - Hex encoded signed transaction
  * @param expectedRecipient - Expected payment recipient
  * @param expectedAmount - Expected payment amount
  * @param expectedNetwork - Expected network
@@ -184,7 +184,7 @@ export async function verifyPaymentSimple(
  * Facilitator URL MUST be provided - no defaults
  * 
  * @param facilitatorUrl - Facilitator base URL (e.g., "https://facilitator.com")
- * @param signedTransaction - Base64 encoded signed transaction
+ * @param signedTransaction - Hex encoded signed transaction
  * @param expectedNetwork - Expected network
  * @returns Settlement result
  */

@@ -53,6 +53,7 @@
     "build:demo": "next build --turbopack",
     "start": "next start",
     "demo": "tsx scripts/demo-agent.ts",
+    "test:payment": "tsx scripts/test-payment-flow.ts",
     "prepublishOnly": "npm run build:sdk",
     "test": "echo \"Tests coming soon\" && exit 0"
   },

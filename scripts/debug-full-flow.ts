@@ -150,16 +150,16 @@ async function debugFullFlow() {
     console.log("\n📦 Step 6: Creating x402 PaymentPayload");
     console.log("-".repeat(40));
     
-    const transactionBase64 = Buffer.from(transaction.bcsToBytes()).toString('base64');
-    const signatureBase64 = Buffer.from(signatureBytes).toString('base64');
+    const transactionHex = Buffer.from(transaction.bcsToBytes()).toString('hex');
+    const signatureHex = Buffer.from(signatureBytes).toString('hex');
     
     const paymentPayload = {
       x402Version: 1,
       scheme: "exact",
       network: network,
       payload: {
-        transaction: transactionBase64,
-        signature: signatureBase64,
+        transaction: transactionHex,
+        signature: signatureHex,
       },
     };
     
@@ -167,8 +167,8 @@ async function debugFullFlow() {
     console.log(`  x402Version: ${paymentPayload.x402Version}`);
     console.log(`  scheme: ${paymentPayload.scheme}`);
     console.log(`  network: ${paymentPayload.network}`);
-    console.log(`  transaction (base64): ${transactionBase64.substring(0, 50)}...`);
-    console.log(`  signature (base64): ${signatureBase64.substring(0, 50)}...`);
+    console.log(`  transaction (hex): ${transactionHex.substring(0, 50)}...`);
+    console.log(`  signature (hex): ${signatureHex.substring(0, 50)}...`);
     
     // Step 7: Test transaction submission
     console.log("\n🚀 Step 7: Testing Transaction Submission");
