@@ -30,58 +30,68 @@ interface AgentCardProps {
 
 export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
   return (
-    <Card className="p-6 lg:p-8 rounded-2xl border border-zinc-200 shadow-sm hover:shadow-md transition-shadow w-full">
-      <div className="flex flex-col lg:flex-row items-start justify-between gap-8">
+    <Card className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:border-zinc-300 hover:shadow-lg lg:p-8">
+      {/* Subtle gradient background on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-zinc-50/50 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      
+      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         {/* Left Section: Agent Info */}
-        <div className="flex items-start gap-5 flex-1 w-full">
+        <div className="flex flex-1 items-start gap-4 lg:gap-5">
           {/* Agent Image */}
-          <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-xl bg-zinc-100 flex items-center justify-center flex-shrink-0 shadow-inner">
+          <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-zinc-100 transition-transform duration-300 group-hover:scale-105 lg:h-16 lg:w-16">
             {agent.imageUrl ? (
               <Image
                 src={agent.imageUrl}
                 alt={agent.name}
-                width={80}
-                height={80}
+                width={64}
+                height={64}
                 className="rounded-xl object-cover"
               />
             ) : (
-              <div className="w-full h-full rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-2xl font-semibold">
+              <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-inner lg:text-2xl">
                 {agent.name.charAt(0).toUpperCase()}
               </div>
             )}
+            {/* Small green dot for active status */}
+            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
           </div>
 
           {/* Agent Details */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-3">
-              <h3 className="text-lg lg:text-xl font-semibold text-zinc-900">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-lg font-bold tracking-tight text-zinc-900 lg:text-xl">
                 {agent.name}
               </h3>
-              <Badge variant={agent.visibility === 'public' ? 'default' : 'secondary'} className="text-[11px] tracking-wide uppercase">
+              <Badge 
+                variant={agent.visibility === 'public' ? 'default' : 'secondary'} 
+                className="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+              >
                 {agent.visibility}
               </Badge>
             </div>
+            
             {agent.description && (
-              <p className="text-sm text-zinc-600 mb-4 line-clamp-2">
+              <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600">
                 {agent.description}
               </p>
             )}
-            <div className="flex items-center gap-2 text-sm text-zinc-500">
-              <Wallet className="w-4 h-4" />
-              <span className="truncate font-medium text-zinc-700">{agent.walletAddress.slice(0, 16)}...</span>
+            
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-50 px-3 py-2 text-xs">
+              <Wallet className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="truncate font-mono text-zinc-700">{agent.walletAddress.slice(0, 18)}...</span>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 mt-5">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <Link href={`/composer/${agent.id}`}>
-                <Button size="sm" variant="default" className="bg-zinc-900 hover:bg-zinc-800 text-white px-4">
-                  <MessageSquare className="w-4 h-4 mr-2" />
+                <Button size="sm" className="h-9 bg-zinc-900 px-4 font-medium text-white shadow-sm transition-all hover:bg-zinc-800 hover:shadow">
+                  <MessageSquare className="mr-2 h-3.5 w-3.5 text-zinc-400" />
                   Chat
                 </Button>
               </Link>
               <Link href={`/composer/${agent.id}/settings`}>
-                <Button size="sm" className="border-zinc-300 text-white px-4">
-                  <Settings className="w-4 h-4 mr-2" />
+                <Button size="sm" variant="outline" className="h-9 border-zinc-200 bg-white px-4 font-medium text-zinc-700 shadow-sm transition-all hover:border-zinc-300 hover:bg-zinc-50">
+                  <Settings className="mr-2 h-3.5 w-3.5 text-zinc-400" />
                   Settings
                 </Button>
               </Link>
@@ -90,9 +100,9 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                   size="sm"
                   variant="ghost"
                   onClick={() => onDelete(agent.id)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-9 text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               )}
             </div>
@@ -101,36 +111,43 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
 
         {/* Right Section: Metrics */}
         <div className="w-full lg:w-auto lg:min-w-[360px]">
-          <div className="border border-zinc-200 rounded-xl bg-zinc-50/40 flex flex-col sm:flex-row overflow-hidden divide-y divide-zinc-200 sm:divide-y-0 sm:divide-x">
+          <div className="flex overflow-hidden rounded-xl border border-zinc-200/80 bg-gradient-to-br from-white to-zinc-50/50 shadow-sm">
             {/* Requests */}
-            <div className="flex-1 px-5 py-4 sm:py-5 flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                <MessageSquare className="w-3.5 h-3.5" />
+            <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <MessageSquare className="h-3 w-3 text-zinc-400" />
                 Requests
               </span>
-              <span className="text-2xl font-semibold text-zinc-900 leading-tight">
+              <span className="text-2xl font-bold leading-none text-zinc-900">
                 {stats?.requests || 0}
               </span>
             </div>
 
-            <div className="flex-1 px-5 py-4 sm:py-5 flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                <Wallet className="w-3.5 h-3.5" />
+            <div className="w-px bg-zinc-200/60" />
+
+            {/* Balance */}
+            <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <Wallet className="h-3 w-3 text-zinc-400" />
                 Balance
               </span>
-              <span className="text-2xl font-semibold text-zinc-900 leading-tight">
+              <span className="text-2xl font-bold leading-none text-zinc-900">
                 {balance ? `${parseFloat(balance).toFixed(4)}` : '0.0000'}
-                <span className="text-sm font-medium text-zinc-500 ml-1">APT</span>
+                <span className="ml-1 text-xs font-semibold text-zinc-500">APT</span>
               </span>
             </div>
-            <div className="flex-1 px-5 py-4 sm:py-5 flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <div className="w-px bg-zinc-200/60" />
+
+            {/* APIs */}
+            <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <svg className="h-3 w-3 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 APIs
               </span>
-              <span className="text-2xl font-semibold text-zinc-900 leading-tight">{agent.apiIds.length}</span>
+              <span className="text-2xl font-bold leading-none text-zinc-900">{agent.apiIds.length}</span>
             </div>
           </div>
         </div>
