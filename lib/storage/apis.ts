@@ -14,7 +14,7 @@ export interface ApiMetadata {
   requiresAuth?: boolean;
 }
 
-// Base URL - works in both browser (DOM) and Node (SDK build) contexts
+// Base URL - computed dynamically at runtime to handle Vercel serverless environment
 // Priority: NEXT_PUBLIC_BASE_URL > VERCEL_URL > localhost (dev only)
 function getBaseUrl(): string {
   // 1. User-configured base URL (highest priority)
@@ -23,6 +23,10 @@ function getBaseUrl(): string {
   }
   
   // 2. Vercel automatically provides VERCEL_URL (e.g., "your-app.vercel.app")
+  // Also check VERCEL_PROJECT_PRODUCTION_URL for production deployments
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
@@ -36,12 +40,10 @@ function getBaseUrl(): string {
   return 'http://localhost:3000';
 }
 
-const BASE_URL = getBaseUrl();
-
-export const API_REGISTRY: ApiMetadata[] = [
+// Base API metadata without URLs (URLs computed dynamically)
+const API_METADATA: Omit<ApiMetadata, 'url'>[] = [
   {
     id: 'weather',
-    url: `${BASE_URL}/api/protected/weather`,
     name: 'Weather API',
     description: 'Get current weather data and forecasts for locations',
     category: 'Weather',
@@ -50,7 +52,6 @@ export const API_REGISTRY: ApiMetadata[] = [
   },
   {
     id: 'stocks',
-    url: `${BASE_URL}/api/protected/stocks`,
     name: 'Stock Prices API',
     description: 'Get real-time stock market data and prices',
     category: 'Trading',
@@ -59,7 +60,6 @@ export const API_REGISTRY: ApiMetadata[] = [
   },
   {
     id: 'news',
-    url: `${BASE_URL}/api/protected/news`,
     name: 'News API',
     description: 'Get latest news headlines and articles',
     category: 'AI',
@@ -68,7 +68,6 @@ export const API_REGISTRY: ApiMetadata[] = [
   },
   {
     id: 'random',
-    url: `${BASE_URL}/api/protected/random`,
     name: 'Random Data API',
     description: 'Get random data for testing purposes',
     category: 'Random',
@@ -77,21 +76,49 @@ export const API_REGISTRY: ApiMetadata[] = [
   },
 ];
 
+// Helper to get API registry with dynamically computed URLs
+function getApiRegistry(): ApiMetadata[] {
+  const baseUrl = getBaseUrl();
+  console.log('[API Registry] Base URL resolved:', baseUrl);
+  console.log('[API Registry] Environment check:', {
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ? 'set' : 'not set',
+    VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'set' : 'not set',
+    VERCEL_URL: process.env.VERCEL_URL ? `set (${process.env.VERCEL_URL})` : 'not set',
+    hasWindow: typeof window !== 'undefined',
+  });
+  
+  const registry = API_METADATA.map(api => ({
+    ...api,
+    url: `${baseUrl}/api/protected/${api.id}`,
+  }));
+  
+  console.log('[API Registry] Generated URLs:', registry.map(api => ({ id: api.id, url: api.url })));
+  
+  return registry;
+}
+
+// Export registry as a getter function to ensure URLs are computed at runtime
+export const API_REGISTRY: ApiMetadata[] = getApiRegistry();
+
 export function getAllApis(): ApiMetadata[] {
-  return API_REGISTRY;
+  // Always recompute URLs at runtime to handle serverless environments
+  return getApiRegistry();
 }
 
 export function getApiById(id: string): ApiMetadata | null {
-  return API_REGISTRY.find(api => api.id === id) || null;
+  // Always recompute URLs at runtime to handle serverless environments
+  return getApiRegistry().find(api => api.id === id) || null;
 }
 
 export function getApisByCategory(category: ApiMetadata['category']): ApiMetadata[] {
-  return API_REGISTRY.filter(api => api.category === category);
+  // Always recompute URLs at runtime to handle serverless environments
+  return getApiRegistry().filter(api => api.category === category);
 }
 
 export function searchApis(query: string): ApiMetadata[] {
+  // Always recompute URLs at runtime to handle serverless environments
   const lowerQuery = query.toLowerCase();
-  return API_REGISTRY.filter(
+  return getApiRegistry().filter(
     api =>
       api.name.toLowerCase().includes(lowerQuery) ||
       api.description.toLowerCase().includes(lowerQuery) ||

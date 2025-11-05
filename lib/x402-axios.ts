@@ -254,7 +254,29 @@ async function x402axiosMain<T = any>(
   // Handle response based on responseType
   let responseData: any;
   if (responseType === 'json') {
-    responseData = await response.json();
+    try {
+      const contentType = response.headers.get('content-type') || '';
+      const text = await response.text();
+      
+      // Check if response is HTML (error page) instead of JSON
+      if (contentType.includes('text/html') || text.trim().startsWith('<!')) {
+        console.error('[x402-axios] ❌ Received HTML instead of JSON on initial request. URL:', url);
+        console.error('[x402-axios] Response preview:', text.substring(0, 200));
+        throw new Error(`API returned HTML error page instead of JSON. Status: ${response.status}. URL: ${url}. This usually means the URL is incorrect or the API route doesn't exist.`);
+      }
+      
+      // Try to parse as JSON
+      try {
+        responseData = JSON.parse(text);
+      } catch (parseError) {
+        console.error('[x402-axios] ❌ Failed to parse JSON on initial request. URL:', url);
+        console.error('[x402-axios] Response preview:', text.substring(0, 200));
+        throw new Error(`Invalid JSON response from ${url}: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+      }
+    } catch (error) {
+      // Re-throw with better context
+      throw error;
+    }
   } else if (responseType === 'text') {
     responseData = await response.text();
   } else if (responseType === 'blob') {
@@ -451,7 +473,27 @@ async function x402axiosMain<T = any>(
   
   // Handle response based on responseType
   if (responseType === 'json') {
-    responseData = await response.json();
+    try {
+      const contentType = response.headers.get('content-type') || '';
+      const text = await response.text();
+      
+      // Check if response is HTML (error page) instead of JSON
+      if (contentType.includes('text/html') || text.trim().startsWith('<!')) {
+        console.error('[x402-axios] ❌ Received HTML instead of JSON. Response preview:', text.substring(0, 200));
+        throw new Error(`API returned HTML error page instead of JSON. Status: ${response.status}. This usually means the URL is incorrect or the API route doesn't exist.`);
+      }
+      
+      // Try to parse as JSON
+      try {
+        responseData = JSON.parse(text);
+      } catch (parseError) {
+        console.error('[x402-axios] ❌ Failed to parse JSON. Response preview:', text.substring(0, 200));
+        throw new Error(`Invalid JSON response: ${parseError instanceof Error ? parseError.message : String(parseError)}. Response preview: ${text.substring(0, 100)}`);
+      }
+    } catch (error) {
+      // Re-throw with better context
+      throw error;
+    }
   } else if (responseType === 'text') {
     responseData = await response.text();
   } else if (responseType === 'blob') {
