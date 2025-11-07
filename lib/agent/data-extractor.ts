@@ -112,13 +112,14 @@ async function extractDataWithGitHubModel(
       ? dataStr.substring(0, maxDataLength) + '...[truncated]'
       : dataStr;
 
-    const prompt = `Query: "${userQuery}"
-API: ${apiName}
-Data: ${truncatedData}
+    // Use a safer prompt that's less likely to trigger content filters
+    const prompt = `User asked: ${userQuery}
+API response from ${apiName}:
+${truncatedData}
 
-Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
+Provide a concise summary answering the user's question. Be factual and direct.`;
 
-    const formattedResponse = await invokeGitHubModel(prompt, modelName, { temperature: 0.1 });
+    const formattedResponse = await invokeGitHubModel(prompt, modelName);
 
     // Try to extract structured data if possible
     let extractedData = apiData;
@@ -136,10 +137,24 @@ Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
       formattedResponse: formattedResponse || formatDataFallback(userQuery, apiData, apiName),
       extractedData,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error extracting data with GitHub Model:', error);
+    
+    // If content filter error, try falling back to Gemini if available
+    if (error.message?.includes('content filter') || error.message?.includes('content management')) {
+      console.log('[Data Extractor] GitHub Model content filter triggered, falling back to Gemini...');
+      if (GEMINI_API_KEY) {
+        try {
+          return await extractDataWithLLM(userQuery, apiData, apiName, 'gemini-2.0-flash-exp');
+        } catch (geminiError) {
+          console.error('Gemini fallback also failed:', geminiError);
+        }
+      }
+    }
+    
+    // Fallback to smart formatter instead of raw JSON
     return {
-      formattedResponse: formatDataFallback(userQuery, apiData, apiName),
+      formattedResponse: formatDataSmart(userQuery, apiData, apiName),
       extractedData: apiData,
     };
   }
@@ -152,6 +167,64 @@ Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
 function formatDataFallback(userQuery: string, apiData: any, apiName: string): string {
   // Just return the raw data as JSON - no hardcoded API-specific logic
   // The LLM handles all extraction and formatting when available
+  return JSON.stringify(apiData, null, 2);
+}
+
+/**
+ * Smart formatter that extracts relevant data based on API type and query
+ * Used when LLM extraction fails but we still want specific output
+ */
+function formatDataSmart(userQuery: string, apiData: any, apiName: string): string {
+  const lowerQuery = userQuery.toLowerCase();
+  
+  // News API specific formatting
+  if (apiName.toLowerCase().includes('news') && apiData.headlines) {
+    const headlines = Array.isArray(apiData.headlines) ? apiData.headlines : [];
+    if (headlines.length > 0) {
+      return headlines.map((item: any, idx: number) => 
+        `${idx + 1}. ${item.title || item.headline || 'Untitled'}\n   Source: ${item.source || 'Unknown'}\n   ${item.publishedAt ? `Published: ${new Date(item.publishedAt).toLocaleDateString()}` : ''}`
+      ).join('\n\n');
+    }
+  }
+  
+  // Weather API specific formatting
+  if (apiName.toLowerCase().includes('weather') && apiData.temperature) {
+    return `Temperature: ${apiData.temperature}°${apiData.unit || 'F'}\nCondition: ${apiData.condition || 'Unknown'}\nLocation: ${apiData.location || 'Unknown'}`;
+  }
+  
+  // Stocks API specific formatting
+  if (apiName.toLowerCase().includes('stock') && apiData.price) {
+    return `Stock: ${apiData.symbol || 'Unknown'}\nPrice: $${apiData.price}\nChange: ${apiData.change || '0'}%`;
+  }
+  
+  // If it's an array, show first few items
+  if (Array.isArray(apiData)) {
+    const items = apiData.slice(0, 5);
+    return items.map((item: any, idx: number) => {
+      if (typeof item === 'string') return `${idx + 1}. ${item}`;
+      if (typeof item === 'object') {
+        const keys = Object.keys(item).slice(0, 3);
+        return `${idx + 1}. ${keys.map(k => `${k}: ${item[k]}`).join(', ')}`;
+      }
+      return `${idx + 1}. ${String(item)}`;
+    }).join('\n') + (apiData.length > 5 ? `\n\n... and ${apiData.length - 5} more items` : '');
+  }
+  
+  // If it's an object, show key fields
+  if (typeof apiData === 'object' && apiData !== null) {
+    const keys = Object.keys(apiData).slice(0, 5);
+    const relevant = keys.filter(k => {
+      const val = apiData[k];
+      return val !== null && val !== undefined && 
+             (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean');
+    });
+    
+    if (relevant.length > 0) {
+      return relevant.map(k => `${k}: ${apiData[k]}`).join('\n');
+    }
+  }
+  
+  // Final fallback to JSON
   return JSON.stringify(apiData, null, 2);
 }
 
