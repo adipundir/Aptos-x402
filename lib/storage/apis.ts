@@ -15,7 +15,7 @@ export interface ApiMetadata {
 }
 
 // Base URL - computed dynamically at runtime to handle Vercel serverless environment
-// Priority: NEXT_PUBLIC_BASE_URL > VERCEL_URL > localhost (dev only)
+// Priority: NEXT_PUBLIC_BASE_URL > VERCEL_URL > PORT detection > localhost (dev only)
 function getBaseUrl(): string {
   // 1. User-configured base URL (highest priority)
   if (process.env.NEXT_PUBLIC_BASE_URL) {
@@ -31,13 +31,18 @@ function getBaseUrl(): string {
     return `https://${process.env.VERCEL_URL}`;
   }
   
-  // 3. In browser/client context, use window.location
+  // 3. In browser/client context, use window.location (always correct)
   if (typeof window !== 'undefined' && window.location) {
     return window.location.origin;
   }
   
-  // 4. Fallback to localhost for local development
-  return 'http://localhost:3000';
+  // 4. Server-side: Try to detect port from various sources
+  // Next.js doesn't always set PORT when auto-selecting ports
+  // Check common Next.js dev server ports
+  const port = process.env.PORT || 
+               process.env.NEXT_PORT || 
+               (process.env.NODE_ENV === 'development' ? '3001' : '3000'); // Default to 3001 in dev (common when 3000 is taken)
+  return `http://localhost:${port}`;
 }
 
 // Base API metadata without URLs (URLs computed dynamically)
@@ -77,14 +82,16 @@ const API_METADATA: Omit<ApiMetadata, 'url'>[] = [
 ];
 
 // Helper to get API registry with dynamically computed URLs
-function getApiRegistry(): ApiMetadata[] {
-  const baseUrl = getBaseUrl();
+function getApiRegistry(baseUrlOverride?: string): ApiMetadata[] {
+  const baseUrl = baseUrlOverride || getBaseUrl();
   console.log('[API Registry] Base URL resolved:', baseUrl);
   console.log('[API Registry] Environment check:', {
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL ? 'set' : 'not set',
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL ? 'set' : 'not set',
     VERCEL_URL: process.env.VERCEL_URL ? `set (${process.env.VERCEL_URL})` : 'not set',
+    PORT: process.env.PORT || 'not set',
     hasWindow: typeof window !== 'undefined',
+    baseUrlOverride: baseUrlOverride || 'none',
   });
   
   const registry = API_METADATA.map(api => ({
@@ -100,25 +107,25 @@ function getApiRegistry(): ApiMetadata[] {
 // Export registry as a getter function to ensure URLs are computed at runtime
 export const API_REGISTRY: ApiMetadata[] = getApiRegistry();
 
-export function getAllApis(): ApiMetadata[] {
+export function getAllApis(baseUrl?: string): ApiMetadata[] {
   // Always recompute URLs at runtime to handle serverless environments
-  return getApiRegistry();
+  return getApiRegistry(baseUrl);
 }
 
-export function getApiById(id: string): ApiMetadata | null {
+export function getApiById(id: string, baseUrl?: string): ApiMetadata | null {
   // Always recompute URLs at runtime to handle serverless environments
-  return getApiRegistry().find(api => api.id === id) || null;
+  return getApiRegistry(baseUrl).find(api => api.id === id) || null;
 }
 
-export function getApisByCategory(category: ApiMetadata['category']): ApiMetadata[] {
+export function getApisByCategory(category: ApiMetadata['category'], baseUrl?: string): ApiMetadata[] {
   // Always recompute URLs at runtime to handle serverless environments
-  return getApiRegistry().filter(api => api.category === category);
+  return getApiRegistry(baseUrl).filter(api => api.category === category);
 }
 
-export function searchApis(query: string): ApiMetadata[] {
+export function searchApis(query: string, baseUrl?: string): ApiMetadata[] {
   // Always recompute URLs at runtime to handle serverless environments
   const lowerQuery = query.toLowerCase();
-  return getApiRegistry().filter(
+  return getApiRegistry(baseUrl).filter(
     api =>
       api.name.toLowerCase().includes(lowerQuery) ||
       api.description.toLowerCase().includes(lowerQuery) ||

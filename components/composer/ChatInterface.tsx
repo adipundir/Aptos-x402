@@ -33,11 +33,20 @@ interface ChatInterfaceProps {
 }
 
 const AVAILABLE_LLMS = [
+  // GitHub Models (less token consuming)
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', enabled: true },
+  { id: 'gpt-5-nano', name: 'GPT-5 Nano', enabled: true },
+  { id: 'grok-3-mini', name: 'Grok 3 Mini', enabled: true },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', enabled: true },
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', enabled: true },
+  { id: 'phi-4-mini-reasoning', name: 'Phi-4 Mini Reasoning', enabled: true },
+  { id: 'o4-mini', name: 'O4 Mini', enabled: true },
+  // Gemini Models
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', enabled: true },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', enabled: true },
   { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', enabled: true },
+  // Other
   { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', enabled: false },
-  { id: 'gpt-5', name: 'GPT-5', enabled: false },
   { id: 'keyword', name: 'Keyword Matching (No LLM)', enabled: true },
 ];
 
@@ -76,7 +85,7 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
   const [initialLoading, setInitialLoading] = useState(true);
   const [showFunding, setShowFunding] = useState(false);
   const [balance, setBalance] = useState<string>('0.00000000');
-  const [selectedLLM, setSelectedLLM] = useState<string>('gemini-2.5-flash');
+  const [selectedLLM, setSelectedLLM] = useState<string>('gpt-5-mini');
   const [selectedAPI, setSelectedAPI] = useState<string>('auto');
   const [availableApis, setAvailableApis] = useState<any[]>([]);
   const [walletInfo, setWalletInfo] = useState<{address: string; type: 'agent' | 'user'; isOwner: boolean}>({

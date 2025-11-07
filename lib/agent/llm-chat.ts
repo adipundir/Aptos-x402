@@ -1,10 +1,11 @@
 /**
  * LLM Chat Handler
- * Uses LLM to generate conversational responses
+ * Uses LLM (Gemini or GitHub Models) to generate conversational responses
  */
 
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { getAllApis, ApiMetadata } from '../storage/apis';
+import { invokeGitHubModel, isGitHubModel } from './github-models';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -37,6 +38,11 @@ export async function processQueryWithLLM(
   agentName: string,
   modelName: string = 'gemini-2.0-flash-exp'
 ): Promise<LLMResponse> {
+  // Check if this is a GitHub Model
+  if (isGitHubModel(modelName)) {
+    return processQueryWithGitHubModel(userQuery, availableApis, agentName, modelName);
+  }
+
   // If no Gemini API key or using keyword fallback, use simple fallback
   if (!GEMINI_API_KEY || modelName === 'keyword') {
     return processQueryFallback(userQuery, availableApis, agentName);
@@ -81,6 +87,55 @@ JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse
     return processQueryFallback(userQuery, availableApis, agentName);
   } catch (error) {
     console.error('Error processing query with LLM:', error);
+    return processQueryFallback(userQuery, availableApis, agentName);
+  }
+}
+
+/**
+ * Process query with GitHub Models
+ */
+async function processQueryWithGitHubModel(
+  userQuery: string,
+  availableApis: ApiMetadata[],
+  agentName: string,
+  modelName: string
+): Promise<LLMResponse> {
+  try {
+    // Optimize API descriptions - only include essential info
+    const apiDescriptions = availableApis.map(api => 
+      `${api.id}:${api.name}`
+    ).join(';');
+
+    // Shorter, more focused prompt for faster LLM response
+    const prompt = `Agent: ${agentName}
+APIs: ${apiDescriptions}
+Query: "${userQuery}"
+
+Rules: Greetings/casual → shouldCallAPI=false. Data requests → shouldCallAPI=true with apiId.
+JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse":"response"}`;
+
+    const content = await invokeGitHubModel(prompt, modelName, { temperature: 0.3 });
+    
+    // Try to parse JSON response
+    try {
+      // Extract JSON from response (in case LLM adds extra text)
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          shouldCallAPI: parsed.shouldCallAPI === true,
+          apiId: parsed.apiId || null,
+          conversationalResponse: parsed.conversationalResponse || undefined,
+        };
+      }
+    } catch (parseError) {
+      console.error('Failed to parse GitHub Model JSON response:', parseError);
+    }
+
+    // Fallback if JSON parsing fails
+    return processQueryFallback(userQuery, availableApis, agentName);
+  } catch (error) {
+    console.error('Error processing query with GitHub Model:', error);
     return processQueryFallback(userQuery, availableApis, agentName);
   }
 }

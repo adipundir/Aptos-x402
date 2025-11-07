@@ -72,7 +72,7 @@ export async function POST(
 
     // Execute agent query with LLM and API options (this is the main bottleneck)
     const response = await executeAgentQuery(agent, message, {
-      llm: llm || 'gemini-2.5-flash',
+      llm: llm || 'gpt-5-mini',
       apiId: apiId || null,
     }, userPrivateKey);
 

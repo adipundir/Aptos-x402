@@ -39,6 +39,7 @@ export async function executeAgentQuery(
 ): Promise<AgentResponse> {
   try {
     // Get available APIs for this agent
+    // Use relative URLs or detect from environment - will be resolved by x402axios
     const allApis = getAllApis();
     const availableApis = allApis.filter(api => agent.apiIds.includes(api.id));
     
@@ -58,15 +59,20 @@ export async function executeAgentQuery(
     // Determine which model to use for LLM processing
     let modelName = 'keyword';
     if (options?.llm && options.llm !== 'keyword') {
-      if (options.llm === 'claude-sonnet-4' || options.llm === 'gpt-5') {
-        return {
-          success: false,
-          message: 'This LLM is not yet available. Please select an enabled LLM.',
-          error: 'LLM_NOT_AVAILABLE',
-        };
-      }
-      
-      if (options.llm.startsWith('gemini')) {
+      // Check for GitHub Models
+      if (options.llm.startsWith('gpt-5') || options.llm.startsWith('grok-3') || 
+          options.llm.startsWith('gpt-4.1') || options.llm.startsWith('phi-4') ||
+          options.llm.startsWith('o4-mini')) {
+        modelName = options.llm;
+        llmUsed = options.llm === 'gpt-5-mini' ? 'GPT-5 Mini' :
+                  options.llm === 'gpt-5-nano' ? 'GPT-5 Nano' :
+                  options.llm === 'grok-3-mini' ? 'Grok 3 Mini' :
+                  options.llm === 'gpt-4.1-mini' ? 'GPT-4.1 Mini' :
+                  options.llm === 'gpt-4.1-nano' ? 'GPT-4.1 Nano' :
+                  options.llm === 'phi-4-mini-reasoning' ? 'Phi-4 Mini Reasoning' :
+                  options.llm === 'o4-mini' ? 'O4 Mini' :
+                  options.llm;
+      } else if (options.llm.startsWith('gemini')) {
         const modelMap: Record<string, string> = {
           'gemini-2.5-flash': 'gemini-2.0-flash-exp',
           'gemini-1.5-pro': 'gemini-1.5-pro',
@@ -76,6 +82,12 @@ export async function executeAgentQuery(
         llmUsed = options.llm === 'gemini-1.5-pro' ? 'Gemini 1.5 Pro' : 
                   options.llm === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 
                   'Gemini 1.5 Flash';
+      } else if (options.llm === 'claude-sonnet-4') {
+        return {
+          success: false,
+          message: 'This LLM is not yet available. Please select an enabled LLM.',
+          error: 'LLM_NOT_AVAILABLE',
+        };
       }
     }
     
@@ -177,21 +189,31 @@ export async function executeAgentQuery(
       let finalMessage: string;
       let extractedData: any = response.data;
       
-      if (options?.llm && options.llm !== 'keyword' && options.llm.startsWith('gemini')) {
-        // Map LLM names for data extraction
-        const modelMap: Record<string, string> = {
-          'gemini-2.5-flash': 'gemini-2.0-flash-exp',
-          'gemini-1.5-pro': 'gemini-1.5-pro',
-          'gemini-1.5-flash': 'gemini-1.5-flash',
-        };
-        const geminiModel = modelMap[options.llm] || 'gemini-2.0-flash-exp';
+      if (options?.llm && options.llm !== 'keyword') {
+        // Determine the model name for data extraction
+        let extractionModelName = 'keyword';
+        
+        if (options.llm.startsWith('gemini')) {
+          // Map LLM names for data extraction
+          const modelMap: Record<string, string> = {
+            'gemini-2.5-flash': 'gemini-2.0-flash-exp',
+            'gemini-1.5-pro': 'gemini-1.5-pro',
+            'gemini-1.5-flash': 'gemini-1.5-flash',
+          };
+          extractionModelName = modelMap[options.llm] || 'gemini-2.0-flash-exp';
+        } else if (options.llm.startsWith('gpt-5') || options.llm.startsWith('grok-3') || 
+                   options.llm.startsWith('gpt-4.1') || options.llm.startsWith('phi-4') ||
+                   options.llm.startsWith('o4-mini')) {
+          // Use GitHub Models directly
+          extractionModelName = options.llm;
+        }
         
         // Extract specific data based on user query
         const extraction = await extractDataWithLLM(
           userQuery,
           response.data,
           selectedApi.name,
-          geminiModel
+          extractionModelName
         );
         
         finalMessage = extraction.formattedResponse;

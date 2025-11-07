@@ -1,9 +1,10 @@
 /**
  * Data Extractor
- * Uses LLM to extract and format specific data from API responses
+ * Uses LLM (Gemini or GitHub Models) to extract and format specific data from API responses
  */
 
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { invokeGitHubModel, isGitHubModel } from './github-models';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -35,6 +36,11 @@ export async function extractDataWithLLM(
   apiName: string,
   modelName: string = 'gemini-2.0-flash-exp'
 ): Promise<ExtractedData> {
+  // Check if this is a GitHub Model
+  if (isGitHubModel(modelName)) {
+    return extractDataWithGitHubModel(userQuery, apiData, apiName, modelName);
+  }
+
   // If no Gemini API key, return raw data
   if (!GEMINI_API_KEY || modelName === 'keyword') {
     return {
@@ -81,6 +87,57 @@ Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
     };
   } catch (error) {
     console.error('Error extracting data with LLM:', error);
+    return {
+      formattedResponse: formatDataFallback(userQuery, apiData, apiName),
+      extractedData: apiData,
+    };
+  }
+}
+
+/**
+ * Extract data with GitHub Models
+ */
+async function extractDataWithGitHubModel(
+  userQuery: string,
+  apiData: any,
+  apiName: string,
+  modelName: string
+): Promise<ExtractedData> {
+  try {
+    // Optimize prompt - shorter and more direct for faster processing
+    // Truncate large API data to avoid token bloat
+    const dataStr = JSON.stringify(apiData);
+    const maxDataLength = 2000; // Limit data size to avoid huge prompts
+    const truncatedData = dataStr.length > maxDataLength 
+      ? dataStr.substring(0, maxDataLength) + '...[truncated]'
+      : dataStr;
+
+    const prompt = `Query: "${userQuery}"
+API: ${apiName}
+Data: ${truncatedData}
+
+Rules: Direct answer only, no intros. Extract what user asked. Brief.`;
+
+    const formattedResponse = await invokeGitHubModel(prompt, modelName, { temperature: 0.1 });
+
+    // Try to extract structured data if possible
+    let extractedData = apiData;
+    try {
+      // Look for JSON in the response (in case LLM provides structured data)
+      const jsonMatch = formattedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        extractedData = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // If no JSON, use original data
+    }
+
+    return {
+      formattedResponse: formattedResponse || formatDataFallback(userQuery, apiData, apiName),
+      extractedData,
+    };
+  } catch (error) {
+    console.error('Error extracting data with GitHub Model:', error);
     return {
       formattedResponse: formatDataFallback(userQuery, apiData, apiName),
       extractedData: apiData,
