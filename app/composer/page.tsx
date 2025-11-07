@@ -43,12 +43,14 @@ export default async function ComposerPage() {
               Create and manage AI agents that can interact with x402-protected APIs
             </p>
           </div>
-          <Link href="/composer/create" className="w-full sm:w-auto">
-            <Button className="bg-zinc-900 hover:bg-zinc-800 text-white w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Agent
-            </Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Link href="/composer/create" className="w-full sm:w-auto">
+              <Button className="bg-zinc-900 hover:bg-zinc-800 text-white w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Agent
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <ComposerClient initialAgents={serializedSummaries} />

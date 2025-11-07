@@ -60,6 +60,16 @@ export const userWallets = pgTable('user_wallets', {
   userWalletsUserIdx: index('user_wallets_user_idx').on(table.userId),
 }));
 
+export const waitlist = pgTable('waitlist', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  email: varchar('email', { length: 255 }).notNull(),
+  apiType: text('api_type'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  waitlistEmailIdx: index('waitlist_email_idx').on(table.email),
+  waitlistCreatedAtIdx: index('waitlist_created_at_idx').on(table.createdAt),
+}));
+
 // Type exports for use in storage functions
 export type Agent = typeof agents.$inferSelect;
 export type NewAgent = typeof agents.$inferInsert;
@@ -69,4 +79,6 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type NewChatMessage = typeof chatMessages.$inferInsert;
 export type UserWallet = typeof userWallets.$inferSelect;
 export type NewUserWallet = typeof userWallets.$inferInsert;
+export type WaitlistEntry = typeof waitlist.$inferSelect;
+export type NewWaitlistEntry = typeof waitlist.$inferInsert;
 
