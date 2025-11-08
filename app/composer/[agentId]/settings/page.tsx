@@ -23,7 +23,6 @@ export default function AgentSettingsPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    imageUrl: '',
     visibility: 'private' as 'public' | 'private',
   });
 
@@ -45,7 +44,6 @@ export default function AgentSettingsPage() {
       setFormData({
         name: data.agent.name || '',
         description: data.agent.description || '',
-        imageUrl: data.agent.imageUrl || '',
         visibility: data.agent.visibility || 'private',
       });
       fetchBalance();
@@ -198,16 +196,6 @@ export default function AgentSettingsPage() {
                 className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-zinc-700 mb-2 block">
-                Image URL
-              </label>
-              <Input
-                value={formData.imageUrl}
-                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
               />
             </div>
 

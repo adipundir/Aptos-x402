@@ -43,8 +43,6 @@ const AVAILABLE_LLMS = [
   { id: 'o4-mini', name: 'O4 Mini', enabled: true },
   // Gemini Models
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', enabled: true },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', enabled: true },
-  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', enabled: true },
   // Other
   { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', enabled: false },
   { id: 'keyword', name: 'Keyword Matching (No LLM)', enabled: true },
@@ -85,7 +83,7 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
   const [initialLoading, setInitialLoading] = useState(true);
   const [showFunding, setShowFunding] = useState(false);
   const [balance, setBalance] = useState<string>('0.00000000');
-  const [selectedLLM, setSelectedLLM] = useState<string>('gpt-5-mini');
+  const [selectedLLM, setSelectedLLM] = useState<string>('gemini-2.5-flash');
   const [selectedAPI, setSelectedAPI] = useState<string>('auto');
   const [availableApis, setAvailableApis] = useState<any[]>([]);
   const [walletInfo, setWalletInfo] = useState<{address: string; type: 'agent' | 'user'; isOwner: boolean}>({
@@ -490,12 +488,22 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                                           <span>{message.metadata.error}</span>
                                         </div>
                                       )}
-                                      {message.metadata?.paymentHash && (
-                                        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-medium text-emerald-600">
-                                          <Wallet className="h-4 w-4" />
-                                          <span>Txn {message.metadata.paymentHash.slice(0, 12)}…</span>
-                                        </div>
-                                      )}
+                                      {message.metadata?.paymentHash && (() => {
+                                        const network = process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet';
+                                        const explorerNetwork = network.replace('aptos-', '');
+                                        const explorerUrl = `https://explorer.aptoslabs.com/txn/${message.metadata.paymentHash}?network=${explorerNetwork}`;
+                                        return (
+                                          <a
+                                            href={explorerUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[11px] font-medium text-emerald-600 transition-colors hover:bg-emerald-100 hover:border-emerald-200 cursor-pointer"
+                                          >
+                                            <Wallet className="h-4 w-4" />
+                                            <span>Txn {message.metadata.paymentHash.slice(0, 12)}…</span>
+                                          </a>
+                                        );
+                                      })()}
                                       <div className="flex items-center gap-1 text-[10px] text-zinc-500">
                                         <Clock className="h-3 w-3" />
                                         <span>{formatTimestamp(message.timestamp)}</span>

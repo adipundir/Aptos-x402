@@ -75,13 +75,9 @@ export async function executeAgentQuery(
       } else if (options.llm.startsWith('gemini')) {
         const modelMap: Record<string, string> = {
           'gemini-2.5-flash': 'gemini-2.0-flash-exp',
-          'gemini-1.5-pro': 'gemini-1.5-pro',
-          'gemini-1.5-flash': 'gemini-1.5-flash',
         };
         modelName = modelMap[options.llm] || 'gemini-2.0-flash-exp';
-        llmUsed = options.llm === 'gemini-1.5-pro' ? 'Gemini 1.5 Pro' : 
-                  options.llm === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 
-                  'Gemini 1.5 Flash';
+        llmUsed = 'Gemini 2.5 Flash';
       } else if (options.llm === 'claude-sonnet-4') {
         return {
           success: false,
@@ -94,6 +90,13 @@ export async function executeAgentQuery(
     // Process query with LLM (unless specific API is manually selected)
     if (!options?.apiId) {
       llmResponse = await processQueryWithLLM(userQuery, availableApis, agent.name || 'Agent', modelName);
+      
+      // Update llmUsed if fallback occurred
+      if (llmResponse?.actualModelUsed) {
+        if (llmResponse.actualModelUsed === 'gemini-2.5-flash') {
+          llmUsed = 'Gemini 2.5 Flash';
+        }
+      }
       
       // If LLM says no API call needed (greeting/casual), return conversational response
       if (llmResponse && !llmResponse.shouldCallAPI) {
@@ -197,8 +200,6 @@ export async function executeAgentQuery(
           // Map LLM names for data extraction
           const modelMap: Record<string, string> = {
             'gemini-2.5-flash': 'gemini-2.0-flash-exp',
-            'gemini-1.5-pro': 'gemini-1.5-pro',
-            'gemini-1.5-flash': 'gemini-1.5-flash',
           };
           extractionModelName = modelMap[options.llm] || 'gemini-2.0-flash-exp';
         } else if (options.llm.startsWith('gpt-5') || options.llm.startsWith('grok-3') || 

@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await getUserId(request);
     const body = await request.json();
-    const { name, description, imageUrl, visibility, apiIds } = body;
+    const { name, description, visibility, apiIds } = body;
 
     if (!name || !apiIds || !Array.isArray(apiIds)) {
       return NextResponse.json(
@@ -59,12 +59,12 @@ export async function POST(request: NextRequest) {
     // Generate wallet for the agent
     const { address, privateKey } = generateAgentWallet();
 
-    // Create agent
+    // Create agent (imageUrl is no longer used - symbols are auto-generated)
     const agent = await createAgent({
       userId,
       name,
       description,
-      imageUrl,
+      imageUrl: undefined, // Symbols are auto-generated based on agent ID
       visibility: visibility || 'private',
       walletAddress: address,
       privateKey,

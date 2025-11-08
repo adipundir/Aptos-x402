@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Wallet, MessageSquare, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
+import { getAgentIcon, getAgentGradient } from '@/lib/utils/agent-symbols';
 
 interface AgentCardProps {
   agent: {
     id: string;
     name: string;
     description?: string;
-    imageUrl?: string;
     visibility: 'public' | 'private';
     walletAddress: string;
     apiIds: string[];
@@ -37,21 +36,14 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-8">
         {/* Left Section: Agent Info */}
         <div className="flex flex-1 items-start gap-4 lg:gap-5">
-          {/* Agent Image */}
+          {/* Agent Icon */}
           <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-zinc-100 transition-transform duration-300 group-hover:scale-105 lg:h-16 lg:w-16">
-            {agent.imageUrl ? (
-              <Image
-                src={agent.imageUrl}
-                alt={agent.name}
-                width={64}
-                height={64}
-                className="rounded-xl object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-xl font-bold text-white shadow-inner lg:text-2xl">
-                {agent.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <div className={`flex h-full w-full items-center justify-center rounded-xl bg-gradient-to-br ${getAgentGradient(agent.id)} text-white shadow-inner`}>
+              {(() => {
+                const IconComponent = getAgentIcon(agent.id);
+                return <IconComponent className="h-7 w-7 lg:h-8 lg:w-8" strokeWidth={2} />;
+              })()}
+            </div>
             {/* Small green dot for active status */}
             <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
           </div>

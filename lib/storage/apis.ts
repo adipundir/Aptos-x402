@@ -56,27 +56,51 @@ const API_METADATA: Omit<ApiMetadata, 'url'>[] = [
     method: 'GET',
   },
   {
-    id: 'stocks',
-    name: 'Stock Prices API',
-    description: 'Get real-time stock market data and prices',
-    category: 'Trading',
-    cost: '1000000', // 0.01 APT
-    method: 'GET',
-  },
-  {
-    id: 'news',
-    name: 'News API',
-    description: 'Get latest news headlines and articles',
-    category: 'AI',
-    cost: '500000', // 0.005 APT
-    method: 'GET',
-  },
-  {
     id: 'random',
     name: 'Random Data API',
     description: 'Get random data for testing purposes',
     category: 'Random',
     cost: '100000', // 0.001 APT
+    method: 'GET',
+  },
+  {
+    id: 'jsonplaceholder',
+    name: 'JSONPlaceholder API',
+    description: 'Get posts, users, todos, and comments from JSONPlaceholder (free API)',
+    category: 'Utility',
+    cost: '50000', // 0.0005 APT
+    method: 'GET',
+  },
+  {
+    id: 'dogs',
+    name: 'Dog API',
+    description: 'Get random dog images and breed information (free API)',
+    category: 'Utility',
+    cost: '30000', // 0.0003 APT
+    method: 'GET',
+  },
+  {
+    id: 'catfacts',
+    name: 'Cat Facts API',
+    description: 'Get random cat facts (free API)',
+    category: 'Utility',
+    cost: '20000', // 0.0002 APT
+    method: 'GET',
+  },
+  {
+    id: 'randomuser',
+    name: 'Random User API',
+    description: 'Get realistic random user profiles (free API)',
+    category: 'Utility',
+    cost: '40000', // 0.0004 APT
+    method: 'GET',
+  },
+  {
+    id: 'countries',
+    name: 'Countries API',
+    description: 'Get country information and data (free API)',
+    category: 'Utility',
+    cost: '60000', // 0.0006 APT
     method: 'GET',
   },
 ];

@@ -27,6 +27,7 @@ export interface LLMResponse {
   shouldCallAPI: boolean;
   apiId?: string | null;
   conversationalResponse?: string;
+  actualModelUsed?: string; // Track which model was actually used (for fallback scenarios)
 }
 
 /**
@@ -77,6 +78,7 @@ JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse
           shouldCallAPI: parsed.shouldCallAPI === true,
           apiId: parsed.apiId || null,
           conversationalResponse: parsed.conversationalResponse || undefined,
+          actualModelUsed: modelName === 'gemini-2.0-flash-exp' ? 'gemini-2.5-flash' : modelName,
         };
       }
     } catch (parseError) {
@@ -134,8 +136,29 @@ JSON only: {"shouldCallAPI":boolean,"apiId":"id-or-null","conversationalResponse
 
     // Fallback if JSON parsing fails
     return processQueryFallback(userQuery, availableApis, agentName);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing query with GitHub Model:', error);
+    
+    // Check if it's a rate limit or token error - fallback to Gemini 2.5 Flash
+    const errorMessage = error.message || String(error);
+    const isRateLimitError = errorMessage.includes('429') || 
+                            errorMessage.includes('Too many requests') ||
+                            errorMessage.includes('rate limit') ||
+                            errorMessage.includes('token') ||
+                            errorMessage.includes('quota');
+    
+    if (isRateLimitError) {
+      console.log('GitHub Model rate limit/token error detected. Falling back to Gemini 2.5 Flash...');
+      // Fallback to Gemini 2.5 Flash
+      const fallbackResponse = await processQueryWithLLM(userQuery, availableApis, agentName, 'gemini-2.0-flash-exp');
+      // Mark that we used Gemini as fallback
+      return {
+        ...fallbackResponse,
+        actualModelUsed: 'gemini-2.5-flash',
+      };
+    }
+    
+    // For other errors, use keyword fallback
     return processQueryFallback(userQuery, availableApis, agentName);
   }
 }

@@ -17,7 +17,6 @@ export default async function ComposerPage() {
       userId: agent.userId,
       name: agent.name,
       description: agent.description ?? null,
-      imageUrl: agent.imageUrl ?? null,
       visibility: agent.visibility as 'public' | 'private',
       walletAddress: agent.walletAddress,
       apiIds: agent.apiIds,

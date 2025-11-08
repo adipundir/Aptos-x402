@@ -14,7 +14,6 @@ interface SerializableAgent {
   userId: string;
   name: string;
   description: string | null;
-  imageUrl: string | null;
   visibility: 'public' | 'private';
   walletAddress: string;
   apiIds: string[];
@@ -144,7 +143,6 @@ export function ComposerClient({ initialAgents }: ComposerClientProps) {
           id: agent.id,
           name: agent.name,
           description: agent.description ?? undefined,
-          imageUrl: agent.imageUrl ?? undefined,
           visibility: agent.visibility,
           walletAddress: agent.walletAddress,
           apiIds: agent.apiIds,

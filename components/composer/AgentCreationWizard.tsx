@@ -14,7 +14,6 @@ type Step = 1 | 2 | 3;
 interface AgentFormData {
   name: string;
   description: string;
-  imageUrl: string;
   visibility: 'public' | 'private';
   apiIds: string[];
 }
@@ -26,7 +25,6 @@ export function AgentCreationWizard() {
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
     description: '',
-    imageUrl: '',
     visibility: 'private',
     apiIds: [],
   });
@@ -153,17 +151,6 @@ export function AgentCreationWizard() {
                     placeholder="Ex. A deep research agent with emailing capabilities"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-zinc-700 mb-2 block">
-                    Image URL (optional)
-                  </label>
-                  <Input
-                    placeholder="https://example.com/image.png"
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   />
                 </div>
 
