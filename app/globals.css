@@ -4,38 +4,38 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: #ffffff;
+  --foreground: #18181b;
   --radius: 0.625rem;
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --chart-1: #18181b;
+  --chart-2: #52525b;
+  --chart-3: #71717a;
+  --chart-4: #a1a1aa;
+  --chart-5: #d4d4d8;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1aa;
 }
 
 @theme inline {
@@ -88,41 +88,34 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #52525b;
+  --sidebar: #18181b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #18181b;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #52525b;
 }
 
 @layer base {
@@ -130,25 +123,33 @@ body {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Force light theme for code blocks while keeping syntax colors */
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* =====================================
+   DOCS PAGE STYLES
+   ===================================== */
+
 .docs-page {
   color-scheme: light !important;
 }
 
-/* Force all text in docs to be dark and visible - EXCEPT code blocks */
 .docs-page .prose > p,
 .docs-page .prose > ul > li,
 .docs-page .prose > ol > li {
-  color: #18181b !important;
+  color: #3f3f46 !important;
 }
 
 .docs-page .prose strong {
@@ -156,7 +157,6 @@ html {
   font-weight: 600 !important;
 }
 
-/* Ensure code blocks don't overflow - AGGRESSIVE */
 .docs-page pre,
 .docs-page .shiki,
 .docs-page code {
@@ -170,24 +170,11 @@ html {
   overflow-x: auto !important;
 }
 
-/* Force all code block containers to stay within bounds */
-.docs-page > div > div > main > article > div > div {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
 .docs-page article {
   max-width: 100% !important;
   overflow-x: hidden !important;
 }
 
-/* Target the shadcn code block specifically */
-.docs-page [class*="border"] {
-  max-width: 100% !important;
-  overflow: hidden !important;
-}
-
-/* Override dark mode completely to use light theme */
 @media (prefers-color-scheme: dark) {
   .docs-page {
     color-scheme: light !important;
@@ -197,23 +184,16 @@ html {
   .docs-page .shiki span {
     color: var(--shiki-light) !important;
     background-color: var(--shiki-light-bg) !important;
-    font-style: var(--shiki-light-font-style) !important;
-    font-weight: var(--shiki-light-font-weight) !important;
-    text-decoration: var(--shiki-light-text-decoration) !important;
   }
 }
 
-/* Ensure dark class doesn't override */
 .dark .docs-page .shiki,
 .dark .docs-page .shiki span {
   color: var(--shiki-light) !important;
   background-color: var(--shiki-light-bg) !important;
-  font-style: var(--shiki-light-font-style) !important;
-  font-weight: var(--shiki-light-font-weight) !important;
-  text-decoration: var(--shiki-light-text-decoration) !important;
 }
 
-/* Custom scrollbar for docs */
+/* Scrollbar */
 .docs-page aside::-webkit-scrollbar {
   width: 6px;
 }
@@ -223,16 +203,21 @@ html {
 }
 
 .docs-page aside::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d4d4d8;
   border-radius: 3px;
 }
 
 .docs-page aside::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #a1a1aa;
 }
 
-/* Enhanced animations for docs */
-@keyframes slideIn {
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -243,362 +228,79 @@ html {
   }
 }
 
-.docs-page article {
-  animation: slideIn 0.3s ease-out;
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
 }
 
-/* Better focus states */
-.docs-page a:focus-visible,
-.docs-page button:focus-visible {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-  border-radius: 0.375rem;
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out;
 }
 
-/* Code block enhancements */
-.docs-page pre {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* Better heading styles */
-.docs-page h1 {
-  color: #18181b;
-}
-
-/* Link hover effects */
-.docs-page a {
-  position: relative;
-  text-decoration: none;
-}
-
-.docs-page a:hover {
-  text-decoration: none;
-}
-
-/* Badge pulse animation */
-@keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* Smooth transitions */
-.docs-page * {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Card hover effects */
-.docs-page [data-slot="card"] {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.docs-page [data-slot="card"]:hover {
-  transform: translateY(-2px);
-}
-
-/* Button hover effects */
-.docs-page [data-slot="button"] {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.docs-page [data-slot="button"]:hover {
-  transform: translateY(-1px);
-}
-
-/* Gradient text animation */
-@keyframes gradient-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.gradient-animate {
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-}
-
-/* Floating animation for hero elements */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.float-animation {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Shimmer effect for loading states */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-.shimmer {
-  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Better selection colors */
-.docs-page ::selection {
-  background-color: rgba(24, 24, 27, 0.1);
+/* Selection */
+::selection {
+  background: rgba(24, 24, 27, 0.1);
   color: inherit;
 }
 
-/* Enhanced focus ring */
-.docs-page *:focus-visible {
-  outline: 2px solid #18181b;
+/* Focus states */
+*:focus-visible {
+  outline: 2px solid #a1a1aa;
   outline-offset: 2px;
-  border-radius: 0.375rem;
 }
 
-/* Smooth page transitions */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Code blocks */
+.docs-page pre {
+  background: #18181b !important;
+  border-radius: 8px;
+  border: 1px solid #27272a;
 }
 
-.fade-in-up {
-  animation: fadeInUp 0.5s ease-out;
-}
-
-/* Back to top button animation */
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.docs-page .fixed.bottom-8 {
-  animation: fadeInScale 0.3s ease-out;
-}
-
-/* Pulse effect on back to top button */
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-  }
-}
-
-.docs-page [aria-label="Back to top"]:hover {
-  animation: pulse-ring 1.5s infinite;
-}
-
-/* Enhanced table styling for docs */
+/* Tables */
 .docs-page table {
   border-collapse: separate;
   border-spacing: 0;
+  border-radius: 8px;
   overflow: hidden;
-  border-radius: 0.75rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  border: 1px solid #e4e4e7;
 }
 
-.docs-page table thead {
-  background: linear-gradient(to bottom, #fafafa, #f4f4f5);
+.docs-page thead {
+  background: #fafafa;
 }
 
-.docs-page table tbody tr:hover {
-  background-color: #fafafa;
-  transition: background-color 0.15s ease;
-}
-
-/* Enhanced code inline styling */
-.docs-page :not(pre) > code {
-  font-size: 0.875em;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-
-/* Professional heading anchors */
-.docs-page h1:hover,
-.docs-page h2:hover,
-.docs-page h3:hover,
-.docs-page h4:hover {
-  position: relative;
-}
-
-/* Improved list styling */
-.docs-page ul li::marker {
+.docs-page th {
+  padding: 0.75rem 1rem;
   font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #52525b;
+  text-align: left;
+  border-bottom: 1px solid #e4e4e7;
 }
 
-.docs-page ol li::marker {
-  font-weight: 700;
-  font-size: 0.9em;
+.docs-page td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f4f4f5;
+  color: #52525b;
 }
 
-/* Enhanced card borders on hover */
-.docs-page [class*="Card"]:hover {
-  border-color: #a1a1aa;
+.docs-page tbody tr:last-child td {
+  border-bottom: none;
 }
 
-/* Subtle shadow for elevated elements */
-.docs-page .shadow-lg {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+.docs-page tbody tr:hover {
+  background: #fafafa;
 }
 
-.docs-page .shadow-xl {
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-/* Professional gradient backgrounds */
-.docs-page .bg-gradient-to-br {
-  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
-}
-
-/* Smooth scroll offset for anchors */
-.docs-page [id] {
-  scroll-margin-top: 6rem;
-}
-
-/* Better spacing for documentation content */
-.docs-page article > div > * + * {
-  margin-top: 1.5rem;
-}
-
-/* Enhanced breadcrumb styling */
-.docs-page nav[class*="breadcrumb"] {
-  backdrop-filter: blur(8px);
-}
-
-/* Professional badge styling */
-.docs-page [class*="badge"] {
-  font-weight: 600;
-  letter-spacing: 0.025em;
-}
-
-/* Improved button states */
-.docs-page button:active {
-  transform: scale(0.98);
-}
-
-/* Enhanced sidebar navigation */
-.docs-page aside nav button:hover {
-  transform: translateX(2px);
-}
-
-/* Professional mobile menu overlay */
-.docs-page .backdrop-blur-sm {
-  backdrop-filter: blur(8px);
-}
-
-/* Better code block header styling */
-.docs-page pre ~ div {
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* Enhanced separator lines */
-.docs-page hr,
-.docs-page [data-slot="separator"] {
-  background: linear-gradient(to right, transparent, #e4e4e7 50%, transparent);
-  height: 1px;
-  border: none;
-}
-
-/* Professional tooltip styling */
-.docs-page [role="tooltip"] {
-  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.2);
-  backdrop-filter: blur(8px);
-}
-
-/* Smooth opacity transitions */
-.docs-page .transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-/* Enhanced focus states for accessibility */
-.docs-page button:focus-visible,
-.docs-page a:focus-visible {
-  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.1);
-}
-
-/* Professional loading states */
-@keyframes skeleton-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.docs-page .skeleton {
-  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
-  background-size: 200% 100%;
-}
-
-/* Enhanced text selection */
-.docs-page pre ::selection {
-  background-color: rgba(59, 130, 246, 0.3);
-}
-
-/* Professional link underlines */
-.docs-page a[href] {
-  text-decoration-thickness: 2px;
-  text-underline-offset: 3px;
-}
-
-/* Better visual hierarchy for nested content */
-.docs-page article > div > div > * + * {
-  margin-top: 1.25rem;
-}
-
-/* Enhanced mobile responsiveness */
-@media (max-width: 1024px) {
-  .docs-page aside {
-    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3);
-  }
-}
-
-/* Professional print styles */
+/* Print styles */
 @media print {
-  .docs-page aside,
-  .docs-page [aria-label="Toggle menu"],
-  .docs-page [aria-label="Toggle table of contents"],
-  .docs-page [aria-label="Back to top"] {
+  .docs-page aside {
     display: none !important;
   }
   
   .docs-page main {
     margin: 0 !important;
-    padding: 0 !important;
+    padding: 2rem !important;
   }
 }
-
