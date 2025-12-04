@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SessionProvider } from "@/components/auth/SessionProvider";
 import Navbar from "./components/Navbar";
 import "./globals.css";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,10 +30,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Navbar />
-        {children}
+        <SessionProvider>
+          <Navbar />
+          {children}
+        </SessionProvider>
         <Analytics />
-        </body>
+      </body>
     </html>
   );
 }

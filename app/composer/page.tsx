@@ -1,15 +1,26 @@
+import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ComposerClient } from '@/components/composer/ComposerClient';
+import { WalletCard } from '@/components/composer/WalletCard';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 import { getAgentSummariesForUser } from '@/lib/services/agent-summary';
-import { getServerUserId } from '@/lib/utils/server-user-id';
+import { getPaymentWalletBalance } from '@/lib/storage/payment-wallets';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ComposerPage() {
-  const userId = await getServerUserId();
+  const session = await auth();
+  
+  // Redirect to sign in if not authenticated
+  if (!session?.user?.id) {
+    redirect('/auth/signin');
+  }
+
+  const userId = session.user.id;
   const agentSummaries = await getAgentSummariesForUser(userId);
+  const walletBalance = await getPaymentWalletBalance(userId);
 
   const serializedSummaries = agentSummaries.map(({ agent, balance, stats }) => ({
     agent: {
@@ -18,7 +29,6 @@ export default async function ComposerPage() {
       name: agent.name,
       description: agent.description ?? null,
       visibility: agent.visibility as 'public' | 'private',
-      walletAddress: agent.walletAddress,
       apiIds: agent.apiIds,
       createdAt: agent.createdAt instanceof Date ? agent.createdAt.toISOString() : agent.createdAt,
       updatedAt: agent.updatedAt instanceof Date ? agent.updatedAt.toISOString() : agent.updatedAt ?? null,
@@ -52,9 +62,14 @@ export default async function ComposerPage() {
           </div>
         </div>
 
+        {/* Payment Wallet Card */}
+        <WalletCard 
+          address={walletBalance.address} 
+          balanceAPT={walletBalance.balanceAPT}
+        />
+
         <ComposerClient initialAgents={serializedSummaries} />
       </div>
     </div>
   );
 }
-

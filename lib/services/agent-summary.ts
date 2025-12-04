@@ -1,7 +1,11 @@
+/**
+ * Agent Summary Service
+ * Provides summaries for agents including balance and stats
+ */
+
 import { getAllAgents, getAgentForClient, type Agent } from '@/lib/storage/agents';
 import { getChatWithMessages } from '@/lib/storage/chats';
-import { getWalletBalance } from '@/lib/agent/wallet';
-import { getOrCreateUserWallet } from '@/lib/storage/user-wallets';
+import { getPaymentWalletBalance } from '@/lib/storage/payment-wallets';
 
 export type ClientAgent = ReturnType<typeof getAgentForClient>;
 
@@ -16,7 +20,7 @@ export interface AgentBalanceSummary {
   balance: string;
   balanceAPT: string;
   address: string;
-  walletType: 'agent' | 'user';
+  walletType: 'shared';
   isOwner: boolean;
 }
 
@@ -75,28 +79,15 @@ export async function getAgentStats(agentId: string, userId: string): Promise<Ag
 
 export async function getAgentBalance(agent: Agent, userId: string): Promise<AgentBalanceSummary> {
   const isOwner = agent.userId === userId;
-  const shouldUseUserWallet = agent.visibility === 'public' && !isOwner;
-
-  let walletAddress = agent.walletAddress;
-  let walletType: 'agent' | 'user' = 'agent';
-
-  if (shouldUseUserWallet) {
-    const userWallet = await getOrCreateUserWallet(userId);
-    walletAddress = userWallet.walletAddress;
-    walletType = 'user';
-  }
-
-  const formattedAddress = walletAddress.startsWith('0x')
-    ? walletAddress
-    : `0x${walletAddress}`;
-
-  const walletInfo = await getWalletBalance(formattedAddress, 'testnet');
+  
+  // All agents use the user's shared payment wallet
+  const walletBalance = await getPaymentWalletBalance(userId);
 
   return {
-    balance: walletInfo.balance,
-    balanceAPT: walletInfo.balanceAPT,
-    address: walletInfo.address,
-    walletType,
+    balance: walletBalance.balanceOctas,
+    balanceAPT: walletBalance.balanceAPT,
+    address: walletBalance.address || '',
+    walletType: 'shared',
     isOwner,
   };
 }
@@ -106,31 +97,28 @@ export async function getAgentSummariesForUser(
   scope?: 'mine' | 'public'
 ): Promise<AgentSummary[]> {
   const agents = await getAllAgents(scope, userId);
+  
+  // Get shared wallet balance once (it's the same for all agents)
+  const walletBalance = await getPaymentWalletBalance(userId);
 
   return Promise.all(
     agents.map(async (agent) => {
       const clientAgent = getAgentForClient(agent);
+      const isOwner = agent.userId === userId;
 
-      const [balance, stats] = await Promise.all([
-        getAgentBalance(agent, userId).catch(() => {
-          const fallbackAddress = clientAgent.walletAddress.startsWith('0x')
-            ? clientAgent.walletAddress
-            : `0x${clientAgent.walletAddress}`;
-
-          return {
-            balance: '0',
-            balanceAPT: '0.00000000',
-            address: fallbackAddress,
-            walletType: 'agent' as const,
-            isOwner: clientAgent.userId === userId,
-          } as AgentBalanceSummary;
-        }),
+      const [stats] = await Promise.all([
         getAgentStats(agent.id, userId).catch(() => ({ ...FALLBACK_STATS })),
       ]);
 
       return {
         agent: clientAgent,
-        balance,
+        balance: {
+          balance: walletBalance.balanceOctas,
+          balanceAPT: walletBalance.balanceAPT,
+          address: walletBalance.address || '',
+          walletType: 'shared' as const,
+          isOwner,
+        },
         stats,
       } as AgentSummary;
     })

@@ -3,6 +3,7 @@
 import { Github, Package, PlayCircle, BookOpen, Bot, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { UserMenu } from '@/components/auth/UserMenu';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -74,6 +75,11 @@ export default function Navbar() {
             <Package className="w-4 h-4 mr-2" />
             NPM
           </Button>
+          
+          {/* User menu */}
+          <div className="ml-2 pl-2 border-l border-zinc-200">
+            <UserMenu />
+          </div>
         </div>
 
         {/* Mobile menu button */}

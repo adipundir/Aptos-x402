@@ -136,9 +136,8 @@ export async function deleteAgent(id: string, userId?: string): Promise<boolean>
 }
 
 /**
- * Client-safe version (without private key)
+ * Client-safe version (all fields are safe now since we use shared payment wallet)
  */
-export function getAgentForClient(agent: Agent): Omit<Agent, 'privateKey'> {
-  const { privateKey, ...clientSafe } = agent;
-  return clientSafe;
+export function getAgentForClient(agent: Agent): Agent {
+  return agent;
 }

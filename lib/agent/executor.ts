@@ -26,7 +26,7 @@ export interface AgentResponse {
  * @param agent - The agent configuration
  * @param userQuery - The user's query/message
  * @param options - Execution options including LLM and API selection
- * @param userPrivateKey - Optional user's private key for payment (required for public agents)
+ * @param paymentPrivateKey - User's payment wallet private key for x402 payments
  */
 export async function executeAgentQuery(
   agent: Agent,
@@ -35,7 +35,7 @@ export async function executeAgentQuery(
     llm?: string;
     apiId?: string | null;
   },
-  userPrivateKey?: string
+  paymentPrivateKey?: string
 ): Promise<AgentResponse> {
   try {
     // Get available APIs for this agent
@@ -147,19 +147,16 @@ export async function executeAgentQuery(
       }
     }
     
-    // Determine which wallet to use for payment:
-    // - If userPrivateKey is provided: user is chatting with someone else's public agent -> use user's wallet
-    // - Otherwise: user owns the agent -> use agent's wallet
-    let paymentPrivateKey: string;
-    if (userPrivateKey) {
-      // User chatting with public agent owned by someone else - use user's wallet
-      paymentPrivateKey = userPrivateKey;
-    } else {
-      // User owns the agent (or it's private) - use agent's wallet
-      paymentPrivateKey = agent.privateKey;
+    // Validate payment private key is provided
+    if (!paymentPrivateKey) {
+      return {
+        success: false,
+        message: 'Payment wallet not configured. Please ensure you are signed in.',
+        error: 'NO_PAYMENT_WALLET',
+      };
     }
     
-    // Call the API using x402axios with appropriate private key
+    // Call the API using x402axios with user's payment wallet
     try {
       const config: any = {
         privateKey: paymentPrivateKey,

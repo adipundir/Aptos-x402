@@ -1,29 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+/**
+ * Agent Balance API
+ * Get the user's shared payment wallet balance
+ */
+
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import { getAgentById } from '@/lib/storage/agents';
-import { getAgentBalance } from '@/lib/services/agent-summary';
-import { USER_ID_COOKIE } from '@/lib/utils/user-id';
+import { getPaymentWalletBalance } from '@/lib/storage/payment-wallets';
 
 export const dynamic = 'force-dynamic';
-
-async function getUserId(request: Request): Promise<string> {
-  // Try cookie first (preferred method), then fall back to header
-  const cookieStore = await cookies();
-  const userIdFromCookie = cookieStore.get(USER_ID_COOKIE)?.value;
-  if (userIdFromCookie) {
-    return userIdFromCookie;
-  }
-  return request.headers.get('x-user-id') || 'default-user';
-}
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
   try {
-    const userId = await getUserId(request);
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const userId = session.user.id;
     const { agentId } = await params;
     const agent = await getAgentById(agentId, userId);
+    
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -31,9 +35,16 @@ export async function GET(
       );
     }
 
-    const balance = await getAgentBalance(agent, userId);
+    // Get the user's shared payment wallet balance
+    const balance = await getPaymentWalletBalance(userId);
 
-    return NextResponse.json(balance);
+    return NextResponse.json({
+      balanceAPT: balance.balanceAPT,
+      balanceOctas: balance.balanceOctas,
+      address: balance.address,
+      walletType: 'shared', // Indicates shared payment wallet
+      isOwner: agent.userId === userId,
+    });
   } catch (error: any) {
     console.error('Error fetching wallet balance:', error);
     return NextResponse.json(
