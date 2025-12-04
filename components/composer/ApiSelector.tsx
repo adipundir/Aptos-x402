@@ -60,6 +60,20 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
     }
   };
 
+  const selectAll = () => {
+    // Select all currently visible/filtered APIs
+    const filteredIds = filteredApis.map(api => api.id);
+    const newSelection = [...new Set([...selectedApiIds, ...filteredIds])];
+    onSelectionChange(newSelection);
+  };
+
+  const clearAll = () => {
+    onSelectionChange([]);
+  };
+
+  const allFilteredSelected = filteredApis.length > 0 && 
+    filteredApis.every(api => selectedApiIds.includes(api.id));
+
   const formatCost = (cost: string) => {
     const costNum = BigInt(cost);
     const apt = Number(costNum) / 100_000_000;
@@ -75,15 +89,38 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
 
   return (
     <div className="space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
-        <Input
-          placeholder="Search tools..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Quick Actions */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400 w-4 h-4" />
+          <Input
+            placeholder="Search tools..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={selectAll}
+            disabled={allFilteredSelected || filteredApis.length === 0}
+            className="text-xs whitespace-nowrap"
+          >
+            Select All {filteredApis.length > 0 && `(${filteredApis.length})`}
+          </Button>
+          {selectedApiIds.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              className="text-xs text-zinc-500 hover:text-zinc-700"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Categories */}
