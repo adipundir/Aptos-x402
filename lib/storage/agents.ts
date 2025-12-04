@@ -1,13 +1,22 @@
 /**
  * Agent Storage
- * Neon PostgreSQL storage for agent configurations
+ * Neon PostgreSQL storage for agent configurations with wallet creation
  */
 
 import { db, agents, type Agent, type NewAgent } from '@/lib/db';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, desc } from 'drizzle-orm';
+import { createAgentWallet, getAgentWalletPublic, deleteAgentWallet } from './agent-wallets';
 
 // Re-export types for compatibility
 export type { Agent };
+
+// Agent with wallet info for client
+export interface AgentWithWallet extends Agent {
+  wallet?: {
+    address: string;
+    publicKey: string;
+  } | null;
+}
 
 // Generate unique ID
 function generateId(): string {
@@ -22,12 +31,20 @@ function generateId(): string {
 export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): Promise<Agent[]> {
   if (scope === 'public') {
     // Return only public agents
-    return await db.select().from(agents).where(eq(agents.visibility, 'public'));
+    return await db
+      .select()
+      .from(agents)
+      .where(eq(agents.visibility, 'public'))
+      .orderBy(desc(agents.createdAt));
   }
   
   if (scope === 'mine' && userId) {
     // Return only user's agents
-    return await db.select().from(agents).where(eq(agents.userId, userId));
+    return await db
+      .select()
+      .from(agents)
+      .where(eq(agents.userId, userId))
+      .orderBy(desc(agents.createdAt));
   }
   
   if (userId) {
@@ -40,11 +57,36 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
           eq(agents.userId, userId),
           eq(agents.visibility, 'public')
         )
-      );
+      )
+      .orderBy(desc(agents.createdAt));
   }
   
   // No userId: return all public agents only
-  return await db.select().from(agents).where(eq(agents.visibility, 'public'));
+  return await db
+    .select()
+    .from(agents)
+    .where(eq(agents.visibility, 'public'))
+    .orderBy(desc(agents.createdAt));
+}
+
+/**
+ * Get agents with wallet info for client
+ */
+export async function getAgentsWithWallets(scope?: 'mine' | 'public', userId?: string): Promise<AgentWithWallet[]> {
+  const agentList = await getAllAgents(scope, userId);
+  
+  // Fetch wallet info for each agent
+  const agentsWithWallets = await Promise.all(
+    agentList.map(async (agent) => {
+      const wallet = await getAgentWalletPublic(agent.id);
+      return {
+        ...agent,
+        wallet,
+      };
+    })
+  );
+  
+  return agentsWithWallets;
 }
 
 /**
@@ -77,11 +119,27 @@ export async function getAgentById(id: string, userId?: string): Promise<Agent |
 }
 
 /**
- * Create a new agent
+ * Get agent by ID with wallet info
+ */
+export async function getAgentByIdWithWallet(id: string, userId?: string): Promise<AgentWithWallet | null> {
+  const agent = await getAgentById(id, userId);
+  
+  if (!agent) return null;
+  
+  const wallet = await getAgentWalletPublic(agent.id);
+  
+  return {
+    ...agent,
+    wallet,
+  };
+}
+
+/**
+ * Create a new agent with its own wallet
  */
 export async function createAgent(
   agentData: Omit<NewAgent, 'id' | 'createdAt' | 'updatedAt'>
-): Promise<Agent> {
+): Promise<AgentWithWallet> {
   const newAgent: NewAgent = {
     ...agentData,
     id: generateId(),
@@ -89,8 +147,18 @@ export async function createAgent(
     updatedAt: new Date(),
   };
 
+  // Create agent in database
   const [created] = await db.insert(agents).values(newAgent).returning();
-  return created;
+  
+  // Create wallet for the agent
+  const wallet = await createAgentWallet(created.id);
+  
+  console.log(`[Agent] Created agent ${created.id} with wallet ${wallet.address}`);
+  
+  return {
+    ...created,
+    wallet,
+  };
 }
 
 /**
@@ -98,7 +166,7 @@ export async function createAgent(
  */
 export async function updateAgent(
   id: string,
-  updates: Partial<Omit<NewAgent, 'id' | 'createdAt' | 'walletAddress' | 'privateKey'>>,
+  updates: Partial<Omit<NewAgent, 'id' | 'createdAt'>>,
   userId?: string
 ): Promise<Agent | null> {
   const updateData = {
@@ -120,24 +188,32 @@ export async function updateAgent(
 }
 
 /**
- * Delete an agent
+ * Delete an agent and its wallet
  */
 export async function deleteAgent(id: string, userId?: string): Promise<boolean> {
+  let result;
+  
   if (userId) {
-    const result = await db
+    result = await db
       .delete(agents)
       .where(and(eq(agents.id, id), eq(agents.userId, userId)))
       .returning();
-    return result.length > 0;
+  } else {
+    result = await db.delete(agents).where(eq(agents.id, id)).returning();
   }
-
-  const result = await db.delete(agents).where(eq(agents.id, id)).returning();
-  return result.length > 0;
+  
+  if (result.length > 0) {
+    // Also delete the agent's wallet
+    await deleteAgentWallet(id);
+    return true;
+  }
+  
+  return false;
 }
 
 /**
- * Client-safe version (all fields are safe now since we use shared payment wallet)
+ * Client-safe version of agent (include wallet public info)
  */
-export function getAgentForClient(agent: Agent): Agent {
-  return agent;
+export function getAgentForClient(agent: Agent | AgentWithWallet): AgentWithWallet {
+  return agent as AgentWithWallet;
 }

@@ -3,7 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogOut, Wallet, User, ChevronDown } from 'lucide-react';
+import { LogOut, User, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { LoginModal } from './LoginModal';
 
@@ -44,11 +44,6 @@ export function UserMenu() {
       </>
     );
   }
-
-  const truncateAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   return (
     <div className="relative" ref={menuRef}>
@@ -99,18 +94,6 @@ export function UserMenu() {
             </div>
           </div>
 
-          {session.user?.paymentWallet && (
-            <div className="px-4 py-3 border-b border-zinc-100">
-              <div className="flex items-center gap-2 text-xs text-zinc-500 mb-1">
-                <Wallet className="w-3.5 h-3.5" />
-                Payment Wallet
-              </div>
-              <p className="text-sm font-mono text-zinc-900">
-                {truncateAddress(session.user.paymentWallet)}
-              </p>
-            </div>
-          )}
-
           <div className="px-2 py-2">
             <Link
               href="/composer"
@@ -133,4 +116,3 @@ export function UserMenu() {
     </div>
   );
 }
-

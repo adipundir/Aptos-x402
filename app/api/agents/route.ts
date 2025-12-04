@@ -5,8 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getAllAgents, createAgent, getAgentForClient } from '@/lib/storage/agents';
-import { getPaymentWalletAddress, getOrCreatePaymentWallet } from '@/lib/storage/payment-wallets';
+import { getAgentsWithWallets, createAgent, getAgentForClient } from '@/lib/storage/agents';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +17,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const scope = searchParams.get('scope') as 'mine' | 'public' | null;
     
-    // Get agents based on scope
-    const agents = await getAllAgents(scope || undefined, userId);
+    // Get agents with wallet info based on scope
+    const agents = await getAgentsWithWallets(scope || undefined, userId);
     
-    // Return client-safe versions (without private keys)
+    // Return client-safe versions
     const clientSafeAgents = agents.map(getAgentForClient);
     
     // Cache public agents for 1 minute
@@ -32,6 +31,7 @@ export async function GET(request: Request) {
     
     return NextResponse.json({ agents: clientSafeAgents }, { headers });
   } catch (error: any) {
+    console.error('Error fetching agents:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch agents' },
       { status: 500 }
@@ -61,10 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure payment wallet exists
-    await getOrCreatePaymentWallet(userId);
-
-    // Create agent (no wallet generation - uses shared payment wallet)
+    // Create agent with wallet
     const agent = await createAgent({
       userId,
       name,
@@ -74,15 +71,9 @@ export async function POST(request: NextRequest) {
       apiIds,
     });
 
-    // Get payment wallet address to include in response
-    const paymentWallet = await getPaymentWalletAddress(userId);
-
-    // Return agent with payment wallet info
+    // Return agent with wallet info
     return NextResponse.json({ 
-      agent: {
-        ...getAgentForClient(agent),
-        paymentWallet,
-      }
+      agent: getAgentForClient(agent)
     }, { status: 201 });
   } catch (error: any) {
     console.error('Error creating agent:', error);

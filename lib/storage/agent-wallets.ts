@@ -1,9 +1,9 @@
 /**
- * Payment Wallet Storage
- * One payment wallet per user (shared across all agents)
+ * Agent Wallet Storage
+ * One wallet per agent with encrypted private key storage
  */
 
-import { db, paymentWallets, type PaymentWallet, type NewPaymentWallet } from '@/lib/db';
+import { db, agentWallets, type AgentWallet, type NewAgentWallet } from '@/lib/db';
 import { eq } from 'drizzle-orm';
 import { Account, Aptos, AptosConfig, Network, AccountAddress } from '@aptos-labs/ts-sdk';
 import { encryptPrivateKey, decryptPrivateKey } from '@/lib/encryption';
@@ -32,21 +32,21 @@ export function generateWallet() {
 }
 
 /**
- * Get or create payment wallet for a user
- * Creates a new wallet on first call, returns existing on subsequent calls
+ * Create a wallet for an agent
+ * Called when creating a new agent
  */
-export async function getOrCreatePaymentWallet(userId: string): Promise<{ address: string; isNew: boolean }> {
-  // Check if wallet exists
+export async function createAgentWallet(agentId: string): Promise<{ address: string; publicKey: string }> {
+  // Check if wallet already exists
   const [existing] = await db
     .select()
-    .from(paymentWallets)
-    .where(eq(paymentWallets.userId, userId))
+    .from(agentWallets)
+    .where(eq(agentWallets.agentId, agentId))
     .limit(1);
 
   if (existing) {
     return {
       address: existing.walletAddress,
-      isNew: false,
+      publicKey: existing.publicKey,
     };
   }
 
@@ -59,63 +59,67 @@ export async function getOrCreatePaymentWallet(userId: string): Promise<{ addres
   // Store in database
   const walletId = `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  await db.insert(paymentWallets).values({
+  await db.insert(agentWallets).values({
     id: walletId,
-    userId: userId,
+    agentId: agentId,
     walletAddress: wallet.address,
+    publicKey: wallet.publicKey,
     privateKeyEncrypted: encrypted.encrypted,
     privateKeyIV: encrypted.iv,
     privateKeyTag: encrypted.tag,
-    isActive: 'true',
   });
 
-  console.log(`[Payment Wallet] Created new wallet for user ${userId}: ${wallet.address}`);
+  console.log(`[Agent Wallet] Created wallet for agent ${agentId}: ${wallet.address}`);
 
   return {
     address: wallet.address,
-    isNew: true,
+    publicKey: wallet.publicKey,
   };
 }
 
 /**
- * Get payment wallet address for a user (public, safe to return to client)
+ * Get agent wallet by agent ID (public info only)
  */
-export async function getPaymentWalletAddress(userId: string): Promise<string | null> {
+export async function getAgentWalletPublic(agentId: string): Promise<{ address: string; publicKey: string } | null> {
   const [wallet] = await db
-    .select({ walletAddress: paymentWallets.walletAddress })
-    .from(paymentWallets)
-    .where(eq(paymentWallets.userId, userId))
+    .select({
+      walletAddress: agentWallets.walletAddress,
+      publicKey: agentWallets.publicKey,
+    })
+    .from(agentWallets)
+    .where(eq(agentWallets.agentId, agentId))
     .limit(1);
 
-  return wallet?.walletAddress || null;
+  if (!wallet) return null;
+  
+  return {
+    address: wallet.walletAddress,
+    publicKey: wallet.publicKey,
+  };
 }
 
 /**
- * Get payment wallet with all details (server-side only)
+ * Get agent wallet with all details (server-side only)
  */
-export async function getPaymentWallet(userId: string): Promise<PaymentWallet | null> {
+export async function getAgentWallet(agentId: string): Promise<AgentWallet | null> {
   const [wallet] = await db
     .select()
-    .from(paymentWallets)
-    .where(eq(paymentWallets.userId, userId))
+    .from(agentWallets)
+    .where(eq(agentWallets.agentId, agentId))
     .limit(1);
 
   return wallet || null;
 }
 
 /**
- * Get payment wallet private key (for API calls - server-side only!)
- * This decrypts the key on-demand and should never be stored
+ * Get agent wallet private key (for API calls - server-side only!)
+ * This decrypts the key on-demand and should never be stored or returned to client
  */
-export async function getPaymentWalletPrivateKey(userId: string): Promise<string> {
-  const wallet = await getPaymentWallet(userId);
+export async function getAgentWalletPrivateKey(agentId: string): Promise<string> {
+  const wallet = await getAgentWallet(agentId);
 
   if (!wallet) {
-    throw new Error('Payment wallet not found. Please sign in to create one.');
-  }
-
-  if (wallet.isActive !== 'true') {
-    throw new Error('Payment wallet is not active.');
+    throw new Error(`Wallet not found for agent: ${agentId}`);
   }
 
   // Decrypt private key
@@ -127,20 +131,22 @@ export async function getPaymentWalletPrivateKey(userId: string): Promise<string
 }
 
 /**
- * Get payment wallet balance
+ * Get agent wallet balance
  */
-export async function getPaymentWalletBalance(userId: string): Promise<{
+export async function getAgentWalletBalance(agentId: string): Promise<{
   balanceAPT: string;
   balanceOctas: string;
   address: string | null;
+  publicKey: string | null;
 }> {
-  const wallet = await getPaymentWallet(userId);
+  const wallet = await getAgentWallet(agentId);
 
   if (!wallet) {
     return {
       balanceAPT: '0.00000000',
       balanceOctas: '0',
       address: null,
+      publicKey: null,
     };
   }
 
@@ -154,14 +160,16 @@ export async function getPaymentWalletBalance(userId: string): Promise<{
       balanceAPT: (balance / 100_000_000).toFixed(8),
       balanceOctas: balance.toString(),
       address: wallet.walletAddress,
+      publicKey: wallet.publicKey,
     };
   } catch (error: any) {
     // Account might not exist on chain yet (no balance)
-    if (error.message?.includes('Account not found')) {
+    if (error.message?.includes('Account not found') || error.message?.includes('not found')) {
       return {
         balanceAPT: '0.00000000',
         balanceOctas: '0',
         address: wallet.walletAddress,
+        publicKey: wallet.publicKey,
       };
     }
     console.error('Error fetching wallet balance:', error);
@@ -169,18 +177,19 @@ export async function getPaymentWalletBalance(userId: string): Promise<{
       balanceAPT: '0.00000000',
       balanceOctas: '0',
       address: wallet.walletAddress,
+      publicKey: wallet.publicKey,
     };
   }
 }
 
 /**
- * Fund wallet from faucet (testnet only)
+ * Fund agent wallet from faucet (testnet only)
  */
-export async function fundWalletFromFaucet(userId: string): Promise<{ success: boolean; txHash?: string; error?: string }> {
-  const wallet = await getPaymentWallet(userId);
+export async function fundAgentWalletFromFaucet(agentId: string): Promise<{ success: boolean; txHash?: string; error?: string }> {
+  const wallet = await getAgentWallet(agentId);
 
   if (!wallet) {
-    return { success: false, error: 'Wallet not found' };
+    return { success: false, error: 'Agent wallet not found' };
   }
 
   if (process.env.APTOS_NETWORK === 'aptos-mainnet') {
@@ -196,7 +205,20 @@ export async function fundWalletFromFaucet(userId: string): Promise<{ success: b
 
     return { success: true };
   } catch (error: any) {
-    console.error('Error funding wallet:', error);
+    console.error('Error funding agent wallet:', error);
     return { success: false, error: error.message || 'Failed to fund wallet' };
   }
 }
+
+/**
+ * Delete agent wallet (called when agent is deleted)
+ */
+export async function deleteAgentWallet(agentId: string): Promise<boolean> {
+  const result = await db
+    .delete(agentWallets)
+    .where(eq(agentWallets.agentId, agentId))
+    .returning();
+  
+  return result.length > 0;
+}
+

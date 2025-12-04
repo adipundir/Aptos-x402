@@ -9,19 +9,24 @@ import { getUserIdHeaders } from '@/lib/utils/user-id';
 import { WaitlistModal } from './WaitlistModal';
 import type { AgentBalanceSummary, AgentStatsSummary } from '@/lib/services/agent-summary';
 
+interface AgentWallet {
+  address: string;
+  publicKey: string;
+}
+
 interface SerializableAgent {
   id: string;
   userId: string;
   name: string;
   description: string | null;
   visibility: 'public' | 'private';
-  walletAddress: string;
+  wallet: AgentWallet | null;
   apiIds: string[];
   createdAt: string;
   updatedAt?: string | null;
 }
 
-interface SerializableAgentSummary {
+export interface SerializableAgentSummary {
   agent: SerializableAgent;
   balance: AgentBalanceSummary;
   stats: AgentStatsSummary;
@@ -144,7 +149,7 @@ export function ComposerClient({ initialAgents }: ComposerClientProps) {
           name: agent.name,
           description: agent.description ?? undefined,
           visibility: agent.visibility,
-          walletAddress: agent.walletAddress,
+          walletAddress: agent.wallet?.address || balance.address || '',
           apiIds: agent.apiIds,
           createdAt: agent.createdAt,
         };

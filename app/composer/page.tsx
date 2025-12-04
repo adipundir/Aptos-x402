@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ComposerClient } from '@/components/composer/ComposerClient';
-import { WalletCard } from '@/components/composer/WalletCard';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { getAgentSummariesForUser } from '@/lib/services/agent-summary';
-import { getPaymentWalletBalance } from '@/lib/storage/payment-wallets';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +18,6 @@ export default async function ComposerPage() {
 
   const userId = session.user.id;
   const agentSummaries = await getAgentSummariesForUser(userId);
-  const walletBalance = await getPaymentWalletBalance(userId);
 
   const serializedSummaries = agentSummaries.map(({ agent, balance, stats }) => ({
     agent: {
@@ -30,6 +27,7 @@ export default async function ComposerPage() {
       description: agent.description ?? null,
       visibility: agent.visibility as 'public' | 'private',
       apiIds: agent.apiIds,
+      wallet: agent.wallet ?? null,
       createdAt: agent.createdAt instanceof Date ? agent.createdAt.toISOString() : agent.createdAt,
       updatedAt: agent.updatedAt instanceof Date ? agent.updatedAt.toISOString() : agent.updatedAt ?? null,
     },
@@ -61,12 +59,6 @@ export default async function ComposerPage() {
             </Link>
           </div>
         </div>
-
-        {/* Payment Wallet Card */}
-        <WalletCard 
-          address={walletBalance.address} 
-          balanceAPT={walletBalance.balanceAPT}
-        />
 
         <ComposerClient initialAgents={serializedSummaries} />
       </div>

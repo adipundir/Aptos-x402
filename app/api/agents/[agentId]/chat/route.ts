@@ -8,7 +8,7 @@ import { auth } from '@/lib/auth';
 import { getAgentById } from '@/lib/storage/agents';
 import { executeAgentQuery } from '@/lib/agent/executor';
 import { addMessage, getChatWithMessages } from '@/lib/storage/chats';
-import { getPaymentWalletPrivateKey } from '@/lib/storage/payment-wallets';
+import { getAgentWalletPrivateKey } from '@/lib/storage/agent-wallets';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,30 +50,25 @@ export async function POST(
     // Check if user owns the agent or if it's public
     const isOwner = agent.userId === userId;
     
-    // Determine which user's payment wallet to use
-    // - If owner: use owner's payment wallet
-    // - If public agent used by someone else: use that user's payment wallet
-    let paymentUserId = isOwner ? userId : userId; // Always use the current user's wallet
-    
     // Start user message write in background (don't wait for it)
     addMessage(agentId, userId, {
       role: 'user',
       content: message,
     }).catch(err => console.error('Failed to save user message:', err));
     
-    // Get payment wallet private key for the current user
+    // Get agent's wallet private key (each agent has its own wallet)
     let paymentPrivateKey: string;
     try {
-      paymentPrivateKey = await getPaymentWalletPrivateKey(paymentUserId);
+      paymentPrivateKey = await getAgentWalletPrivateKey(agentId);
     } catch (error: any) {
       return NextResponse.json({
         success: false,
         error: 'WALLET_NOT_FOUND',
-        message: 'Payment wallet not found. Please ensure you are signed in and have a wallet.',
+        message: 'Agent wallet not found. Please ensure the agent was created properly.',
       }, { status: 400 });
     }
 
-    // Execute agent query with the user's payment wallet
+    // Execute agent query with the agent's wallet
     const response = await executeAgentQuery(agent, message, {
       llm: llm || 'gemini-2.5-flash',
       apiId: apiId || null,

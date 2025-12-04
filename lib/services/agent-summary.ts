@@ -3,9 +3,9 @@
  * Provides summaries for agents including balance and stats
  */
 
-import { getAllAgents, getAgentForClient, type Agent } from '@/lib/storage/agents';
+import { getAgentsWithWallets, getAgentForClient, type Agent, type AgentWithWallet } from '@/lib/storage/agents';
 import { getChatWithMessages } from '@/lib/storage/chats';
-import { getPaymentWalletBalance } from '@/lib/storage/payment-wallets';
+import { getAgentWalletBalance } from '@/lib/storage/agent-wallets';
 
 export type ClientAgent = ReturnType<typeof getAgentForClient>;
 
@@ -20,7 +20,7 @@ export interface AgentBalanceSummary {
   balance: string;
   balanceAPT: string;
   address: string;
-  walletType: 'shared';
+  publicKey: string;
   isOwner: boolean;
 }
 
@@ -80,14 +80,14 @@ export async function getAgentStats(agentId: string, userId: string): Promise<Ag
 export async function getAgentBalance(agent: Agent, userId: string): Promise<AgentBalanceSummary> {
   const isOwner = agent.userId === userId;
   
-  // All agents use the user's shared payment wallet
-  const walletBalance = await getPaymentWalletBalance(userId);
+  // Each agent has its own wallet
+  const walletBalance = await getAgentWalletBalance(agent.id);
 
   return {
     balance: walletBalance.balanceOctas,
     balanceAPT: walletBalance.balanceAPT,
     address: walletBalance.address || '',
-    walletType: 'shared',
+    publicKey: walletBalance.publicKey || '',
     isOwner,
   };
 }
@@ -96,15 +96,15 @@ export async function getAgentSummariesForUser(
   userId: string,
   scope?: 'mine' | 'public'
 ): Promise<AgentSummary[]> {
-  const agents = await getAllAgents(scope, userId);
-  
-  // Get shared wallet balance once (it's the same for all agents)
-  const walletBalance = await getPaymentWalletBalance(userId);
+  const agents = await getAgentsWithWallets(scope, userId);
 
   return Promise.all(
     agents.map(async (agent) => {
       const clientAgent = getAgentForClient(agent);
       const isOwner = agent.userId === userId;
+
+      // Get agent's wallet balance
+      const walletBalance = await getAgentWalletBalance(agent.id);
 
       const [stats] = await Promise.all([
         getAgentStats(agent.id, userId).catch(() => ({ ...FALLBACK_STATS })),
@@ -116,7 +116,7 @@ export async function getAgentSummariesForUser(
           balance: walletBalance.balanceOctas,
           balanceAPT: walletBalance.balanceAPT,
           address: walletBalance.address || '',
-          walletType: 'shared' as const,
+          publicKey: walletBalance.publicKey || '',
           isOwner,
         },
         stats,
