@@ -10,8 +10,8 @@ import { getUserIdHeaders } from '@/lib/utils/user-id';
 interface FundingModalProps {
   agentId: string;
   walletAddress: string;
-  walletType: 'agent' | 'user';
-  isOwner: boolean;
+  walletType?: 'agent' | 'user'; // Kept for backwards compatibility, defaults to 'agent'
+  isOwner?: boolean;
   onClose: () => void;
   onBalanceRefresh?: () => void;
 }
@@ -19,8 +19,8 @@ interface FundingModalProps {
 export function FundingModal({ 
   agentId, 
   walletAddress, 
-  walletType, 
-  isOwner, 
+  walletType = 'agent', 
+  isOwner = true, 
   onClose,
   onBalanceRefresh 
 }: FundingModalProps) {
@@ -34,18 +34,10 @@ export function FundingModal({
 
   const fetchBalance = async () => {
     try {
-      let res;
-      if (walletType === 'user') {
-        // Fetch user's wallet balance directly
-        res = await fetch(`/api/users/wallet/balance`, {
-          headers: getUserIdHeaders(),
-        });
-      } else {
-        // Fetch agent's balance
-        res = await fetch(`/api/agents/${agentId}/balance`, {
-          headers: getUserIdHeaders(),
-        });
-      }
+      // Always fetch agent's balance (each agent has its own wallet)
+      const res = await fetch(`/api/agents/${agentId}/balance`, {
+        headers: getUserIdHeaders(),
+      });
       const data = await res.json();
       if (data.balanceAPT) {
         setBalance(data.balanceAPT);
@@ -73,20 +65,13 @@ export function FundingModal({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Wallet className="w-5 h-5" />
-            {walletType === 'user' ? 'Fund Your Wallet' : 'Fund Agent'}
+            Fund Agent Wallet
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {walletType === 'user' && !isOwner && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-800">
-                💡 This is a public agent. You're using your own wallet to pay for API calls.
-              </p>
-            </div>
-          )}
           <div>
             <label className="text-sm font-medium text-zinc-700 mb-2 block">
-              {walletType === 'user' ? 'Your Wallet Address' : 'Agent Wallet Address'}
+              Agent Wallet Address
             </label>
             <div className="flex items-center gap-2">
               <Input
@@ -130,10 +115,7 @@ export function FundingModal({
 
           <div className="pt-4 border-t border-zinc-200">
             <p className="text-sm text-zinc-600 mb-4">
-              {walletType === 'user' 
-                ? 'To fund your wallet, send APT (testnet) to the address above. This wallet will be used to pay for API calls when using public agents.'
-                : 'To fund this agent, send APT (testnet) to the wallet address above. You can use the Aptos testnet faucet or transfer from another wallet.'
-              }
+              To fund this agent, send APT (testnet) to the wallet address above. You can use the Aptos testnet faucet or transfer from another wallet.
             </p>
             <div className="flex gap-2">
               <Button

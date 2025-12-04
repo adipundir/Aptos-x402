@@ -106,7 +106,7 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
             size="sm"
             onClick={selectAll}
             disabled={allFilteredSelected || filteredApis.length === 0}
-            className="text-xs whitespace-nowrap border-zinc-300 text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-50"
+            className="text-xs whitespace-nowrap border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 disabled:opacity-50 disabled:bg-white disabled:text-zinc-700"
           >
             Select All {filteredApis.length > 0 && `(${filteredApis.length})`}
           </Button>
@@ -115,7 +115,7 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
               variant="ghost"
               size="sm"
               onClick={clearAll}
-              className="text-xs text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+              className="text-xs bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
             >
               Clear
             </Button>

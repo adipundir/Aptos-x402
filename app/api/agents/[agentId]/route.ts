@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getAgentById, updateAgent, deleteAgent, getAgentForClient } from '@/lib/storage/agents';
+import { getAgentByIdWithWallet, updateAgent, deleteAgent, getAgentForClient } from '@/lib/storage/agents';
 import { USER_ID_COOKIE } from '@/lib/utils/user-id';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,8 @@ export async function GET(
   try {
     const userId = await getUserId(request);
     const { agentId } = await params;
-    const agent = await getAgentById(agentId, userId);
+    // Use getAgentByIdWithWallet to include wallet info
+    const agent = await getAgentByIdWithWallet(agentId, userId);
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },

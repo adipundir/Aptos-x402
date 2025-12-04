@@ -51,7 +51,7 @@ export default function AgentChatPage() {
             <ChatInterface
               agentId={agent.id}
               agentName={agent.name}
-              walletAddress={agent.walletAddress}
+              walletAddress={agent.wallet?.address || ''}
               agentApiIds={agent.apiIds}
             />
           </div>

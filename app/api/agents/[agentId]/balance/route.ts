@@ -43,6 +43,7 @@ export async function GET(
       balanceOctas: balance.balanceOctas,
       address: balance.address,
       publicKey: balance.publicKey,
+      walletType: 'agent', // Each agent has its own wallet
       isOwner: agent.userId === userId,
     });
   } catch (error: any) {
