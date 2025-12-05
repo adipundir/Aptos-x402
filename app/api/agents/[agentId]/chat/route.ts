@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: { agentId: string } }
 ) {
   try {
     const session = await auth();
@@ -27,7 +27,7 @@ export async function POST(
     }
 
     const userId = session.user.id;
-    const { agentId } = await params;
+    const { agentId } = params;
     const agent = await getAgentById(agentId, userId);
     
     if (!agent) {
@@ -168,7 +168,7 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: { agentId: string } }
 ) {
   try {
     const session = await auth();
@@ -181,7 +181,7 @@ export async function GET(
     }
 
     const userId = session.user.id;
-    const { agentId } = await params;
+    const { agentId } = params;
     const agent = await getAgentById(agentId, userId);
     
     if (!agent) {

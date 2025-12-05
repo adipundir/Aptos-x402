@@ -17,11 +17,11 @@ async function getUserId(request: Request): Promise<string> {
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: { agentId: string } }
 ) {
   try {
     const userId = await getUserId(request);
-    const { agentId } = await params;
+    const { agentId } = params;
     // Use getAgentByIdWithWallet to include wallet info
     const agent = await getAgentByIdWithWallet(agentId, userId);
     if (!agent) {
@@ -41,11 +41,11 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ agentId: string }> }
+  { params }: { params: { agentId: string } }
 ) {
   try {
     const userId = await getUserId(request);
-    const { agentId } = await params;
+    const { agentId } = params;
     const body = await request.json();
     const updated = await updateAgent(agentId, body, userId);
     
