@@ -1,11 +1,14 @@
 /**
  * Agent Storage
  * Neon PostgreSQL storage for agent configurations with wallet creation
+ * Includes ARC-8004 identity registration
  */
 
 import { db, agents, type Agent, type NewAgent } from '@/lib/db';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { createAgentWallet, getAgentWalletPublic, deleteAgentWallet } from './agent-wallets';
+import { IdentityRegistry, createAgentCard } from '@/lib/arc8004';
+import type { AgentIdentity } from '@/lib/arc8004/types';
 
 // Re-export types for compatibility
 export type { Agent };
@@ -16,6 +19,7 @@ export interface AgentWithWallet extends Agent {
     address: string;
     publicKey: string;
   } | null;
+  identity?: AgentIdentity | null;
 }
 
 // Generate unique ID
@@ -119,7 +123,7 @@ export async function getAgentById(id: string, userId?: string): Promise<Agent |
 }
 
 /**
- * Get agent by ID with wallet info
+ * Get agent by ID with wallet info and identity
  */
 export async function getAgentByIdWithWallet(id: string, userId?: string): Promise<AgentWithWallet | null> {
   const agent = await getAgentById(id, userId);
@@ -128,14 +132,24 @@ export async function getAgentByIdWithWallet(id: string, userId?: string): Promi
   
   const wallet = await getAgentWalletPublic(agent.id);
   
+  // Also fetch identity if available
+  let identity: AgentIdentity | null = null;
+  try {
+    const registry = new IdentityRegistry();
+    identity = await registry.resolveIdentity(agent.id);
+  } catch (error) {
+    // Silently fail if identity lookup fails
+  }
+  
   return {
     ...agent,
     wallet,
+    identity,
   };
 }
 
 /**
- * Create a new agent with its own wallet
+ * Create a new agent with its own wallet and ARC-8004 identity
  */
 export async function createAgent(
   agentData: Omit<NewAgent, 'id' | 'createdAt' | 'updatedAt'>
@@ -155,9 +169,40 @@ export async function createAgent(
   
   console.log(`[Agent] Created agent ${created.id} with wallet ${wallet.address}`);
   
+  // Auto-register ARC-8004 identity if enabled
+  let identity: AgentIdentity | null = null;
+  const arc8004Enabled = process.env.ARC8004_AUTO_REGISTER !== 'false';
+  
+  if (arc8004Enabled && wallet) {
+    try {
+      const registry = new IdentityRegistry();
+      const agentCard = createAgentCard({
+        name: created.name,
+        description: created.description || `AI Agent: ${created.name}`,
+        ownerAddress: wallet.address,
+        ownerPublicKey: wallet.publicKey,
+        capabilities: ['payment', 'data-fetch', 'llm-interaction'],
+        protocols: ['x402', 'http'],
+        supportedNetworks: ['aptos-testnet'],
+      });
+      
+      const result = await registry.registerIdentity({
+        agentId: created.id,
+        agentCard,
+      });
+      
+      identity = result.identity;
+      console.log(`[Agent] Registered ARC-8004 identity for agent ${created.id}`);
+    } catch (error) {
+      // Log but don't fail agent creation if identity registration fails
+      console.warn(`[Agent] Failed to register ARC-8004 identity for agent ${created.id}:`, error);
+    }
+  }
+  
   return {
     ...created,
     wallet,
+    identity,
   };
 }
 
@@ -188,7 +233,7 @@ export async function updateAgent(
 }
 
 /**
- * Delete an agent and its wallet
+ * Delete an agent, its wallet, and ARC-8004 identity
  */
 export async function deleteAgent(id: string, userId?: string): Promise<boolean> {
   let result;
@@ -205,6 +250,16 @@ export async function deleteAgent(id: string, userId?: string): Promise<boolean>
   if (result.length > 0) {
     // Also delete the agent's wallet
     await deleteAgentWallet(id);
+    
+    // Also delete the agent's ARC-8004 identity
+    try {
+      const registry = new IdentityRegistry();
+      await registry.deleteIdentity(id);
+    } catch (error) {
+      // Silently fail if identity deletion fails
+      console.warn(`[Agent] Failed to delete ARC-8004 identity for agent ${id}:`, error);
+    }
+    
     return true;
   }
   

@@ -1,0 +1,28 @@
+[package]
+name = "ARC8004"
+version = "1.0.0"
+authors = ["Aptos-x402 Team"]
+
+[addresses]
+arc8004 = "_"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies.AptosStdlib]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-stdlib"
+
+[dependencies.AptosTokenObjects]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-token-objects"
+
+[dev-addresses]
+arc8004 = "0xCAFE"
+
+[dev-dependencies]
+
