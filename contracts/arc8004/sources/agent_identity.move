@@ -7,7 +7,7 @@ module arc8004::agent_identity {
     use std::signer;
     use std::vector;
     use std::option::{Self, Option};
-    use aptos_framework::object::{Self, Object};
+    use aptos_framework::object::{Self};
     use aptos_framework::timestamp;
     use aptos_framework::event;
     use aptos_token_objects::collection;
@@ -101,7 +101,7 @@ module arc8004::agent_identity {
         name: String,
         metadata_uri: String,
         capabilities_json: String,
-    ) acquires IdentityRegistry {
+    ) {
         let creator_addr = signer::address_of(creator);
         
         // Parse capabilities from JSON string (simplified - just store as single element)
@@ -122,6 +122,9 @@ module arc8004::agent_identity {
         let token_addr = signer::address_of(&token_signer);
         
         let now = timestamp::now_seconds();
+        
+        // Copy agent_id for event before moving into struct
+        let agent_id_copy = agent_id;
 
         // Create and store the identity resource
         let identity = AgentIdentity {
@@ -139,7 +142,7 @@ module arc8004::agent_identity {
 
         // Emit event
         event::emit(IdentityCreated {
-            agent_id: identity.agent_id,
+            agent_id: agent_id_copy,
             owner: creator_addr,
             token_address: token_addr,
             timestamp: now,
