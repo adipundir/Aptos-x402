@@ -16,6 +16,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
+  let agentId: string | undefined;
+  let userId: string | undefined;
   try {
     const session = await auth();
     
@@ -26,8 +28,9 @@ export async function POST(
       );
     }
 
-    const userId = session.user.id;
-    const { agentId } = await params;
+    userId = session.user.id;
+    const resolved = await params;
+    agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
     
     if (!agent) {
@@ -140,8 +143,8 @@ export async function POST(
     console.error('[Agent Chat] Error processing chat message:', error);
     console.error('[Agent Chat] Error stack:', error.stack);
     console.error('[Agent Chat] Error details:', {
-      agentId,
-      userId,
+      agentId: agentId ?? 'unknown',
+      userId: userId ?? 'unknown',
       errorType: error.constructor?.name,
       errorMessage: error.message,
     });
@@ -170,6 +173,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
+  let agentId: string | undefined;
+  let userId: string | undefined;
   try {
     const session = await auth();
     
@@ -180,8 +185,9 @@ export async function GET(
       );
     }
 
-    const userId = session.user.id;
-    const { agentId } = await params;
+    userId = session.user.id;
+    const resolved = await params;
+    agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
     
     if (!agent) {
@@ -221,7 +227,10 @@ export async function GET(
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch chat' },
+      { 
+        error: error.message || 'Failed to fetch chat',
+        details: process.env.NODE_ENV === 'development' ? { agentId, userId } : undefined,
+      },
       { status: 500 }
     );
   }
