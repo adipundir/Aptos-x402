@@ -19,7 +19,7 @@ export default async function ComposerPage() {
   const userId = session.user.id;
   const agentSummaries = await getAgentSummariesForUser(userId);
 
-  const serializedSummaries = agentSummaries.map(({ agent, balance, stats }) => ({
+  const serializedSummaries = agentSummaries.map(({ agent, balance, stats, trust, identity }) => ({
     agent: {
       id: agent.id,
       userId: agent.userId,
@@ -33,6 +33,16 @@ export default async function ComposerPage() {
     },
     balance,
     stats,
+    trust: trust
+      ? {
+          ...trust,
+        }
+      : undefined,
+    identity: identity
+      ? {
+          ...identity,
+        }
+      : undefined,
   }));
 
   return (

@@ -3,9 +3,11 @@
  * Provides summaries for agents including balance and stats
  */
 
-import { getAgentsWithWallets, getAgentForClient, type Agent, type AgentWithWallet } from '@/lib/storage/agents';
+import { getAgentsWithWallets, getAgentForClient, type Agent } from '@/lib/storage/agents';
 import { getChatWithMessages } from '@/lib/storage/chats';
 import { getAgentWalletBalance } from '@/lib/storage/agent-wallets';
+import { ReputationRegistry } from '@/lib/arc8004/reputation/registry';
+import { getTrustLevelLabel, getTrustLevelColor } from '@/lib/arc8004/reputation/scoring';
 
 export type ClientAgent = ReturnType<typeof getAgentForClient>;
 
@@ -28,6 +30,23 @@ export interface AgentSummary {
   agent: ClientAgent;
   balance: AgentBalanceSummary;
   stats: AgentStatsSummary;
+  trust?: AgentTrustSummary;
+  identity?: AgentIdentitySummary;
+}
+
+export interface AgentIdentitySummary {
+  verified: boolean;
+  tokenAddress?: string;
+  ownerAddress?: string;
+  capabilities?: string[];
+}
+
+export interface AgentTrustSummary {
+  trustLevel: number;
+  trustLabel: string;
+  trustColor: string;
+  averageScore: number;
+  feedbackCount: number;
 }
 
 const FALLBACK_STATS: AgentStatsSummary = {
@@ -110,6 +129,33 @@ export async function getAgentSummariesForUser(
         getAgentStats(agent.id, userId).catch(() => ({ ...FALLBACK_STATS })),
       ]);
 
+      // Trust data from reputation registry (best-effort)
+      let trust: AgentTrustSummary | undefined;
+      try {
+        const repRegistry = new ReputationRegistry();
+        const rep = await repRegistry.getReputation(agent.id);
+        if (rep) {
+          trust = {
+            trustLevel: rep.trustLevel,
+            trustLabel: getTrustLevelLabel(rep.trustLevel),
+            trustColor: getTrustLevelColor(rep.trustLevel),
+            averageScore: rep.averageScore,
+            feedbackCount: rep.totalFeedback,
+          };
+        }
+      } catch (err) {
+        // ignore reputation errors
+      }
+
+      const identity: AgentIdentitySummary | undefined = (agent as any).identity
+        ? {
+            verified: !!(agent as any).identity?.verified,
+            tokenAddress: (agent as any).identity?.tokenAddress || undefined,
+            ownerAddress: (agent as any).identity?.agentCard?.owner?.address,
+            capabilities: (agent as any).identity?.agentCard?.capabilities,
+          }
+        : undefined;
+
       return {
         agent: clientAgent,
         balance: {
@@ -120,6 +166,8 @@ export async function getAgentSummariesForUser(
           isOwner,
         },
         stats,
+        trust,
+        identity,
       } as AgentSummary;
     })
   );

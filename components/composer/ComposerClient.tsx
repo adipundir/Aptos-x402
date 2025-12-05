@@ -30,6 +30,19 @@ export interface SerializableAgentSummary {
   agent: SerializableAgent;
   balance: AgentBalanceSummary;
   stats: AgentStatsSummary;
+  trust?: {
+    trustLevel: number;
+    trustLabel: string;
+    trustColor: string;
+    averageScore: number;
+    feedbackCount: number;
+  };
+  identity?: {
+    verified: boolean;
+    tokenAddress?: string;
+    ownerAddress?: string;
+    capabilities?: string[];
+  };
 }
 
 interface ComposerClientProps {
@@ -143,7 +156,7 @@ export function ComposerClient({ initialAgents }: ComposerClientProps) {
               Get Your API Listed - Join the Waitlist
             </Button>
       </div>
-      {agents.map(({ agent, balance, stats }) => {
+      {agents.map(({ agent, balance, stats, trust, identity }) => {
         const normalizedAgent = {
           id: agent.id,
           name: agent.name,
@@ -152,6 +165,8 @@ export function ComposerClient({ initialAgents }: ComposerClientProps) {
           walletAddress: agent.wallet?.address || balance.address || '',
           apiIds: agent.apiIds,
           createdAt: agent.createdAt,
+          identity,
+          trust,
         };
 
         return (

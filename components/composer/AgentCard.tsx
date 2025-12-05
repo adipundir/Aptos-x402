@@ -16,6 +16,19 @@ interface AgentCardProps {
     walletAddress: string;
     apiIds: string[];
     createdAt: string;
+    identity?: {
+      verified: boolean;
+      tokenAddress?: string;
+      ownerAddress?: string;
+      capabilities?: string[];
+    };
+    trust?: {
+      trustLevel: number;
+      trustLabel: string;
+      trustColor: string;
+      averageScore: number;
+      feedbackCount: number;
+    };
   };
   balance?: string;
   stats?: {
@@ -60,6 +73,19 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
               >
                 {agent.visibility}
               </Badge>
+              {agent.identity?.verified && (
+                <Badge className="rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold">
+                  Verified
+                </Badge>
+              )}
+              {agent.trust && (
+                <Badge
+                  style={{ backgroundColor: agent.trust.trustColor + '20', color: agent.trust.trustColor }}
+                  className="rounded-md px-2 py-0.5 text-[10px] font-semibold"
+                >
+                  {agent.trust.trustLabel} • {agent.trust.averageScore.toFixed(1)} / 5 ({agent.trust.feedbackCount})
+                </Badge>
+              )}
             </div>
             
             {agent.description && (
