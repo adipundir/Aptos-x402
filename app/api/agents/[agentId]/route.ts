@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { auth } from '@/lib/auth';
 import { getAgentByIdWithWallet, updateAgent, deleteAgent, getAgentForClient } from '@/lib/storage/agents';
 import { USER_ID_COOKIE } from '@/lib/utils/user-id';
 
 export const dynamic = 'force-dynamic';
 
 async function getUserId(request: Request): Promise<string> {
-  // Try cookie first (preferred method), then fall back to header
+  // Prefer authenticated user
+  try {
+    const session = await auth();
+    if (session?.user?.id) {
+      return session.user.id;
+    }
+  } catch {
+    // ignore auth errors and fallback
+  }
+
+  // Fallback to cookie/header
   const cookieStore = await cookies();
   const userIdFromCookie = cookieStore.get(USER_ID_COOKIE)?.value;
   if (userIdFromCookie) {
