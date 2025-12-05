@@ -122,12 +122,27 @@ export async function getAgentWalletPrivateKey(agentId: string): Promise<string>
     throw new Error(`Wallet not found for agent: ${agentId}`);
   }
 
-  // Decrypt private key
-  return decryptPrivateKey(
-    wallet.privateKeyEncrypted,
-    wallet.privateKeyIV,
-    wallet.privateKeyTag
-  );
+  try {
+    // Decrypt private key
+    const decrypted = decryptPrivateKey(
+      wallet.privateKeyEncrypted,
+      wallet.privateKeyIV,
+      wallet.privateKeyTag
+    );
+    console.log(`[Agent Wallet] Successfully decrypted wallet for agent ${agentId}`);
+    return decrypted;
+  } catch (error: any) {
+    console.error(`[Agent Wallet] Failed to decrypt wallet for agent ${agentId}:`, error);
+    console.error(`[Agent Wallet] Error details:`, {
+      agentId,
+      hasEncrypted: !!wallet.privateKeyEncrypted,
+      hasIV: !!wallet.privateKeyIV,
+      hasTag: !!wallet.privateKeyTag,
+      encryptionKeySet: !!process.env.ENCRYPTION_KEY,
+      errorMessage: error.message,
+    });
+    throw new Error(`Failed to decrypt wallet: ${error.message || 'Unknown decryption error'}`);
+  }
 }
 
 /**

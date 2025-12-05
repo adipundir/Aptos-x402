@@ -60,11 +60,13 @@ export async function POST(
     let paymentPrivateKey: string;
     try {
       paymentPrivateKey = await getAgentWalletPrivateKey(agentId);
+      console.log(`[Agent Chat] Retrieved wallet private key for agent ${agentId}`);
     } catch (error: any) {
+      console.error(`[Agent Chat] Failed to get wallet for agent ${agentId}:`, error);
       return NextResponse.json({
         success: false,
         error: 'WALLET_NOT_FOUND',
-        message: 'Agent wallet not found. Please ensure the agent was created properly.',
+        message: `Agent wallet not found. Error: ${error.message || 'Unknown error'}. Please ensure the agent was created properly.`,
       }, { status: 400 });
     }
 
@@ -135,19 +137,31 @@ export async function POST(
 
     return NextResponse.json(responsePayload);
   } catch (error: any) {
-    console.error('Error processing chat message:', error);
+    console.error('[Agent Chat] Error processing chat message:', error);
+    console.error('[Agent Chat] Error stack:', error.stack);
+    console.error('[Agent Chat] Error details:', {
+      agentId,
+      userId,
+      errorType: error.constructor?.name,
+      errorMessage: error.message,
+    });
     
     const errorMessage = error.message || String(error);
     const isBalanceError = errorMessage.includes('INSUFFICIENT_BALANCE') || 
                           errorMessage.includes('insufficient');
+    const isWalletError = errorMessage.includes('WALLET_NOT_FOUND') ||
+                         errorMessage.includes('wallet not found') ||
+                         errorMessage.includes('ENCRYPTION_KEY');
     
     return NextResponse.json(
       { 
         success: false,
-        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' : 'EXECUTION_ERROR',
-        message: errorMessage 
+        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' : 
+               isWalletError ? 'WALLET_ERROR' : 'EXECUTION_ERROR',
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
-      { status: isBalanceError ? 400 : 500 }
+      { status: isBalanceError || isWalletError ? 400 : 500 }
     );
   }
 }
