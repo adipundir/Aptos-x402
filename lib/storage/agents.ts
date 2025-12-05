@@ -79,13 +79,21 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
 export async function getAgentsWithWallets(scope?: 'mine' | 'public', userId?: string): Promise<AgentWithWallet[]> {
   const agentList = await getAllAgents(scope, userId);
   
-  // Fetch wallet info for each agent
+  // Fetch wallet + identity for each agent
   const agentsWithWallets = await Promise.all(
     agentList.map(async (agent) => {
       const wallet = await getAgentWalletPublic(agent.id);
+      let identity: AgentIdentity | null = null;
+      try {
+        const registry = new IdentityRegistry();
+        identity = await registry.resolveIdentity(agent.id);
+      } catch (error) {
+        // ignore identity errors
+      }
       return {
         ...agent,
         wallet,
+        identity,
       };
     })
   );
