@@ -17,6 +17,7 @@
 
 * [AI IDE Integration](guides/ai-ide-integration.md)
 * [Setting Up Your Own Facilitator](guides/facilitator-setup.md)
+* [ARC-8004 Trust Layer](guides/arc8004.md)
 
 ## API Reference
 
