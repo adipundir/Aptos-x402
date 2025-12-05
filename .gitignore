@@ -19,6 +19,7 @@
 
 # production
 /build
+contracts/arc8004/build/
 
 # misc
 .DS_Store
