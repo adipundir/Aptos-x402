@@ -20,6 +20,11 @@
 
 Built for **machine-to-machine micropayments**, this SDK provides zero-friction payment integration for Next.js applications with automatic payment handling, cryptographic verification, and **sub-second settlement times** (optimized from 2-3s to 200-500ms).
 
+### What’s new in 2.0.0
+- 🛡️ **ARC-8004 Agent Trust Layer** (Aptos-native, inspired by ERC-8004): agent identities, reputation, and task validation.
+- ✅ Frontend badges for Verified + Trust, with a verify API.
+- 📚 Docs and API routes for ARC-8004 (identity, reputation, validation).
+
 > ⚡ **Performance:** Latest optimizations deliver **5-10x faster** payments with verification caching, async confirmation, and smart deduplication. See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for details.
 
 <!-- ## Key Features
