@@ -1,9 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, MessageSquare, Settings, Trash2 } from 'lucide-react';
+import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { getAgentIcon, getAgentGradient } from '@/lib/utils/agent-symbols';
 
@@ -41,6 +42,31 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(agent.identity?.verified ?? false);
+
+  const handleVerify = async () => {
+    if (verifying) return;
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/arc8004/identity/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId: agent.id }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to verify identity');
+      }
+      setVerified(true);
+    } catch (err) {
+      console.error('Verify identity failed', err);
+      alert(err instanceof Error ? err.message : 'Failed to verify identity');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <Card className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm transition-all duration-300 hover:border-zinc-300 hover:shadow-lg lg:p-8">
       {/* Subtle gradient background on hover */}
@@ -73,8 +99,9 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
               >
                 {agent.visibility}
               </Badge>
-              {agent.identity?.verified && (
-                <Badge className="rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold">
+              {(verified || agent.identity?.verified) && (
+                <Badge className="rounded-md bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" />
                   Verified
                 </Badge>
               )}
@@ -113,6 +140,18 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                   Settings
                 </Button>
               </Link>
+              {!(verified || agent.identity?.verified) && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-9 border-emerald-200 bg-white px-4 font-medium text-emerald-700 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50"
+                  onClick={handleVerify}
+                  disabled={verifying}
+                >
+                  <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                  {verifying ? 'Verifying…' : 'Verify'}
+                </Button>
+              )}
               {onDelete && (
                 <Button
                   size="sm"
