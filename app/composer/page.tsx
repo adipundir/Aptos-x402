@@ -4,7 +4,7 @@ import { ComposerClient } from '@/components/composer/ComposerClient';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
-import { getAgentSummariesForUser } from '@/lib/services/agent-summary';
+import { getAgentSummariesForUser, type AgentSummary } from '@/lib/services/agent-summary';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,15 @@ export default async function ComposerPage() {
   }
 
   const userId = session.user.id;
-  const agentSummaries = await getAgentSummariesForUser(userId);
+  let agentSummaries: AgentSummary[] = [];
+  let initialError: string | null = null;
+
+  try {
+    agentSummaries = await getAgentSummariesForUser(userId);
+  } catch (error) {
+    console.error('[ComposerPage] Failed to load agent summaries', error);
+    initialError = 'Unable to load agents. Verify DATABASE_URL and database connectivity.';
+  }
 
   const serializedSummaries = agentSummaries.map(({ agent, balance, stats, trust, identity }) => ({
     agent: {
@@ -70,7 +78,7 @@ export default async function ComposerPage() {
           </div>
         </div>
 
-        <ComposerClient initialAgents={serializedSummaries} />
+        <ComposerClient initialAgents={serializedSummaries} initialError={initialError ?? undefined} />
       </div>
     </div>
   );

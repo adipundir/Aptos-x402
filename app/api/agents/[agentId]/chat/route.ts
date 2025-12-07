@@ -52,6 +52,16 @@ export async function POST(
 
     // Check if user owns the agent or if it's public
     const isOwner = agent.userId === userId;
+    const messagePreview = message.length > 180 ? `${message.slice(0, 180)}…` : message;
+    console.log('[Agent Chat] Incoming message', {
+      agentId,
+      agentName: agent.name,
+      userId,
+      isOwner,
+      llmRequested: llm || 'gemini-2.5-flash',
+      apiOverride: apiId || null,
+      messagePreview,
+    });
     
     // Start user message write in background (don't wait for it)
     addMessage(agentId, userId, {
@@ -78,6 +88,16 @@ export async function POST(
       llm: llm || 'gemini-2.5-flash',
       apiId: apiId || null,
     }, paymentPrivateKey);
+    
+    console.log('[Agent Chat] Agent execution result', {
+      agentId,
+      success: response.success,
+      apiCalled: response.apiCalled || null,
+      paymentHash: response.paymentHash || null,
+      paymentAmount: response.paymentAmount || null,
+      error: response.error || null,
+      llmUsed: response.llmUsed || null,
+    });
 
     // Format agent response message
     let agentMessage = response.message;

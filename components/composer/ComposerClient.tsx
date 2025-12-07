@@ -47,12 +47,13 @@ export interface SerializableAgentSummary {
 
 interface ComposerClientProps {
   initialAgents: SerializableAgentSummary[];
+  initialError?: string | null;
 }
 
-export function ComposerClient({ initialAgents }: ComposerClientProps) {
+export function ComposerClient({ initialAgents, initialError }: ComposerClientProps) {
   const [agents, setAgents] = useState<SerializableAgentSummary[]>(initialAgents);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
