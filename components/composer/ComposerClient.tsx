@@ -9,32 +9,51 @@ import { getUserIdHeaders } from '@/lib/utils/user-id';
 import { WaitlistModal } from './WaitlistModal';
 import type { AgentBalanceSummary, AgentStatsSummary } from '@/lib/services/agent-summary';
 
+interface AgentWallet {
+  address: string;
+  publicKey: string;
+}
+
 interface SerializableAgent {
   id: string;
   userId: string;
   name: string;
   description: string | null;
   visibility: 'public' | 'private';
-  walletAddress: string;
+  wallet: AgentWallet | null;
   apiIds: string[];
   createdAt: string;
   updatedAt?: string | null;
 }
 
-interface SerializableAgentSummary {
+export interface SerializableAgentSummary {
   agent: SerializableAgent;
   balance: AgentBalanceSummary;
   stats: AgentStatsSummary;
+  trust?: {
+    trustLevel: number;
+    trustLabel: string;
+    trustColor: string;
+    averageScore: number;
+    feedbackCount: number;
+  };
+  identity?: {
+    verified: boolean;
+    tokenAddress?: string;
+    ownerAddress?: string;
+    capabilities?: string[];
+  };
 }
 
 interface ComposerClientProps {
   initialAgents: SerializableAgentSummary[];
+  initialError?: string | null;
 }
 
-export function ComposerClient({ initialAgents }: ComposerClientProps) {
+export function ComposerClient({ initialAgents, initialError }: ComposerClientProps) {
   const [agents, setAgents] = useState<SerializableAgentSummary[]>(initialAgents);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError || null);
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
@@ -138,15 +157,17 @@ export function ComposerClient({ initialAgents }: ComposerClientProps) {
               Get Your API Listed - Join the Waitlist
             </Button>
       </div>
-      {agents.map(({ agent, balance, stats }) => {
+      {agents.map(({ agent, balance, stats, trust, identity }) => {
         const normalizedAgent = {
           id: agent.id,
           name: agent.name,
           description: agent.description ?? undefined,
           visibility: agent.visibility,
-          walletAddress: agent.walletAddress,
+          walletAddress: agent.wallet?.address || balance.address || '',
           apiIds: agent.apiIds,
           createdAt: agent.createdAt,
+          identity,
+          trust,
         };
 
         return (

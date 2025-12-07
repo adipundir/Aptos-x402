@@ -31,6 +31,8 @@ const docsStructure: DocItem[] = [
     children: [
       { title: 'AI IDE Integration', path: 'guides/ai-ide-integration.md' },
       { title: 'Facilitator Setup', path: 'guides/facilitator-setup.md' },
+      { title: 'ARC-8004 Trust Layer', path: 'guides/arc8004.md' },
+      { title: 'ARC-8004 Use Cases', path: 'guides/arc8004-use-cases.md' },
     ],
   },
   {

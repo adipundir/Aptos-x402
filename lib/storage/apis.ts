@@ -8,10 +8,11 @@ export interface ApiMetadata {
   url: string;
   name: string;
   description: string;
-  category: 'AI' | 'Trading' | 'Utility' | 'Weather' | 'Search' | 'Random';
+  category: 'AI' | 'Trading' | 'Utility' | 'Weather' | 'Search' | 'Random' | 'Conversion' | 'SEO' | 'Text';
   cost: string; // Cost in Octas
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   requiresAuth?: boolean;
+  isExternal?: boolean; // True if API is hosted externally (absolute URL)
 }
 
 // Base URL - computed dynamically at runtime to handle Vercel serverless environment
@@ -45,8 +46,11 @@ function getBaseUrl(): string {
   return `http://localhost:${port}`;
 }
 
-// Base API metadata without URLs (URLs computed dynamically)
-const API_METADATA: Omit<ApiMetadata, 'url'>[] = [
+// DonaLabs API base URL
+const DONALABS_BASE_URL = 'https://donalabs-apis.vercel.app';
+
+// Local API metadata (URLs computed dynamically based on environment)
+const LOCAL_API_METADATA: Omit<ApiMetadata, 'url'>[] = [
   {
     id: 'weather',
     name: 'Weather API',
@@ -105,6 +109,151 @@ const API_METADATA: Omit<ApiMetadata, 'url'>[] = [
   },
 ];
 
+// DonaLabs External APIs (x402-powered, hosted at donalabs-apis.vercel.app)
+// Pricing: Simple 0.001 APT, Medium 0.005 APT, Complex 0.01 APT (testnet)
+const DONALABS_APIS: ApiMetadata[] = [
+  {
+    id: 'donalabs-translate',
+    url: `${DONALABS_BASE_URL}/api/translate`,
+    name: 'Translator',
+    description: 'Multi-language translation with context awareness',
+    category: 'Text',
+    cost: '500000', // 0.005 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-prompt',
+    url: `${DONALABS_BASE_URL}/api/prompt`,
+    name: 'Prompt Enhancer',
+    description: 'Supercharge your AI prompts for better results',
+    category: 'AI',
+    cost: '100000', // 0.001 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-markdown',
+    url: `${DONALABS_BASE_URL}/api/markdown`,
+    name: 'Markdown Converter',
+    description: 'Transform Markdown to HTML, PDF or images',
+    category: 'Conversion',
+    cost: '500000', // 0.005 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-yamljson',
+    url: `${DONALABS_BASE_URL}/api/yamljson`,
+    name: 'Config Converter',
+    description: 'Convert between YAML, JSON, and TOML formats',
+    category: 'Conversion',
+    cost: '100000', // 0.001 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-htmlpdf',
+    url: `${DONALABS_BASE_URL}/api/htmlpdf`,
+    name: 'HTML to PDF',
+    description: 'Render any HTML page as a perfect PDF document',
+    category: 'Conversion',
+    cost: '1000000', // 0.01 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-pdfword',
+    url: `${DONALABS_BASE_URL}/api/pdfword`,
+    name: 'PDF & Word Converter',
+    description: 'Convert PDF to DOCX and back seamlessly',
+    category: 'Conversion',
+    cost: '1000000', // 0.01 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-ebook',
+    url: `${DONALABS_BASE_URL}/api/ebook`,
+    name: 'E-Book Converter',
+    description: 'EPUB ↔ MOBI ↔ PDF conversions with high fidelity',
+    category: 'Conversion',
+    cost: '1000000', // 0.01 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-latex',
+    url: `${DONALABS_BASE_URL}/api/latex`,
+    name: 'LaTeX Processor',
+    description: 'Tables to LaTeX, compile beautiful PDFs',
+    category: 'Conversion',
+    cost: '1000000', // 0.01 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-seo-keywords',
+    url: `${DONALABS_BASE_URL}/api/seo/keywords`,
+    name: 'SEO Keywords',
+    description: 'Analyze keyword density and optimization for any text',
+    category: 'SEO',
+    cost: '500000', // 0.005 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-seo-domain',
+    url: `${DONALABS_BASE_URL}/api/seo/domain`,
+    name: 'Domain Analytics',
+    description: 'Get comprehensive SEO metrics for any domain',
+    category: 'SEO',
+    cost: '500000', // 0.005 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-podcast',
+    url: `${DONALABS_BASE_URL}/api/podcast`,
+    name: 'Podcast Chapters',
+    description: 'Auto-generate chapters from podcast transcripts',
+    category: 'AI',
+    cost: '1000000', // 0.01 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-git-diff',
+    url: `${DONALABS_BASE_URL}/api/git/diff`,
+    name: 'Git Diff Analyzer',
+    description: 'Analyze git diffs with AI-powered insights',
+    category: 'AI',
+    cost: '500000', // 0.005 APT
+    method: 'POST',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-health',
+    url: `${DONALABS_BASE_URL}/api/health`,
+    name: 'Health Check',
+    description: 'Check DonaLabs API service status',
+    category: 'Utility',
+    cost: '100000', // 0.001 APT
+    method: 'GET',
+    isExternal: true,
+  },
+  {
+    id: 'donalabs-text',
+    url: `${DONALABS_BASE_URL}/api/text`,
+    name: 'Text Operations',
+    description: 'Various text manipulation and analysis operations',
+    category: 'Text',
+    cost: '100000', // 0.001 APT
+    method: 'POST',
+    isExternal: true,
+  },
+];
+
 // Helper to get API registry with dynamically computed URLs
 function getApiRegistry(baseUrlOverride?: string): ApiMetadata[] {
   const baseUrl = baseUrlOverride || getBaseUrl();
@@ -118,12 +267,17 @@ function getApiRegistry(baseUrlOverride?: string): ApiMetadata[] {
     baseUrlOverride: baseUrlOverride || 'none',
   });
   
-  const registry = API_METADATA.map(api => ({
+  // Build local APIs with dynamic base URL
+  const localApis: ApiMetadata[] = LOCAL_API_METADATA.map(api => ({
     ...api,
     url: `${baseUrl}/api/protected/${api.id}`,
+    isExternal: false,
   }));
   
-  console.log('[API Registry] Generated URLs:', registry.map(api => ({ id: api.id, url: api.url })));
+  // Combine local APIs with external DonaLabs APIs
+  const registry = [...localApis, ...DONALABS_APIS];
+  
+  console.log('[API Registry] Generated URLs:', registry.map(api => ({ id: api.id, url: api.url, isExternal: api.isExternal })));
   
   return registry;
 }

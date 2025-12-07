@@ -1,31 +1,38 @@
+/**
+ * Agent Chat API
+ * Handle chat messages and agent execution with NextAuth authentication
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
+import { auth } from '@/lib/auth';
 import { getAgentById } from '@/lib/storage/agents';
 import { executeAgentQuery } from '@/lib/agent/executor';
 import { addMessage, getChatWithMessages } from '@/lib/storage/chats';
-import { getOrCreateUserWallet } from '@/lib/storage/user-wallets';
-import { USER_ID_COOKIE } from '@/lib/utils/user-id';
+import { getAgentWalletPrivateKey } from '@/lib/storage/agent-wallets';
 
 export const dynamic = 'force-dynamic';
-
-async function getUserId(request: Request): Promise<string> {
-  // Try cookie first (preferred method), then fall back to header
-  const cookieStore = await cookies();
-  const userIdFromCookie = cookieStore.get(USER_ID_COOKIE)?.value;
-  if (userIdFromCookie) {
-    return userIdFromCookie;
-  }
-  return request.headers.get('x-user-id') || 'default-user';
-}
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
+  let agentId: string | undefined;
+  let userId: string | undefined;
   try {
-    const userId = await getUserId(request);
-    const { agentId } = await params;
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Please sign in to chat with agents.' },
+        { status: 401 }
+      );
+    }
+
+    userId = session.user.id;
+    const resolved = await params;
+    agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
+    
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -43,62 +50,70 @@ export async function POST(
       );
     }
 
-    // Determine which wallet to use for payment (do this in parallel with user message write)
-    // - If user owns the agent (userId matches): use agent's wallet (even if public)
-    // - If public agent used by someone else: use user's wallet
-    // - If private agent: always use agent's wallet (only owner can access)
-    let userPrivateKey: string | undefined;
+    // Check if user owns the agent or if it's public
     const isOwner = agent.userId === userId;
-    
-    // Start user message write in background (don't wait for it)
-    const userMessagePromise = addMessage(agentId, userId, {
-      role: 'user',
-      content: message,
+    const messagePreview = message.length > 180 ? `${message.slice(0, 180)}…` : message;
+    console.log('[Agent Chat] Incoming message', {
+      agentId,
+      agentName: agent.name,
+      userId,
+      isOwner,
+      llmRequested: llm || 'gemini-2.5-flash',
+      apiOverride: apiId || null,
+      messagePreview,
     });
     
-    // Fetch user wallet in parallel if needed
-    let walletPromise: Promise<void> | undefined;
-    if (agent.visibility === 'public' && !isOwner) {
-      walletPromise = getOrCreateUserWallet(userId).then(wallet => {
-        userPrivateKey = wallet.privateKey;
-      });
-    }
+    // Start user message write in background (don't wait for it)
+    addMessage(agentId, userId, {
+      role: 'user',
+      content: message,
+    }).catch(err => console.error('Failed to save user message:', err));
     
-    // Wait for wallet if needed, then execute query
-    if (walletPromise) {
-      await walletPromise;
+    // Get agent's wallet private key (each agent has its own wallet)
+    let paymentPrivateKey: string;
+    try {
+      paymentPrivateKey = await getAgentWalletPrivateKey(agentId);
+      console.log(`[Agent Chat] Retrieved wallet private key for agent ${agentId}`);
+    } catch (error: any) {
+      console.error(`[Agent Chat] Failed to get wallet for agent ${agentId}:`, error);
+      return NextResponse.json({
+        success: false,
+        error: 'WALLET_NOT_FOUND',
+        message: `Agent wallet not found. Error: ${error.message || 'Unknown error'}. Please ensure the agent was created properly.`,
+      }, { status: 400 });
     }
-    // If owner or private agent: userPrivateKey stays undefined, executor will use agent's wallet
 
-    // Execute agent query with LLM and API options (this is the main bottleneck)
+    // Execute agent query with the agent's wallet
     const response = await executeAgentQuery(agent, message, {
-      llm: llm || 'gpt-5-mini',
+      llm: llm || 'gemini-2.5-flash',
       apiId: apiId || null,
-    }, userPrivateKey);
+    }, paymentPrivateKey);
+    
+    console.log('[Agent Chat] Agent execution result', {
+      agentId,
+      success: response.success,
+      apiCalled: response.apiCalled || null,
+      paymentHash: response.paymentHash || null,
+      paymentAmount: response.paymentAmount || null,
+      error: response.error || null,
+      llmUsed: response.llmUsed || null,
+    });
 
     // Format agent response message
     let agentMessage = response.message;
     
-    // If LLM was used for extraction, don't append raw JSON - LLM already formatted it
-    // Only append raw JSON if:
-    // 1. No LLM was used (keyword fallback mode)
-    // 2. Message looks like a generic fallback message
-    // 3. Message is very short and doesn't contain the actual answer
+    // If LLM was used for extraction, don't append raw JSON
     if (response.success && response.data && response.apiCalled && !response.llmUsed) {
       const messageLower = response.message.toLowerCase();
       const isGenericMessage = messageLower.includes('successfully retrieved') ||
                                messageLower.includes('here\'s the data') ||
                                messageLower.includes('data from');
       
-      // Only append JSON for keyword fallback mode when message is generic
       if (isGenericMessage || response.message.length < 50) {
         agentMessage = `${response.message}\n\n${JSON.stringify(response.data, null, 2)}`;
       }
     }
-    // If LLM was used, trust its extraction - don't append raw data
 
-    // Return response immediately, save agent message in background
-    // This significantly improves perceived performance
     const responsePayload = {
       success: response.success,
       message: agentMessage,
@@ -109,9 +124,8 @@ export async function POST(
       llmUsed: response.llmUsed,
     };
 
-    // If there's an error (like insufficient balance), return it immediately
+    // If there's an error, return it immediately
     if (!response.success && response.error) {
-      // Still save the agent message in background for history
       addMessage(agentId, userId, {
         role: 'agent',
         content: agentMessage,
@@ -131,8 +145,8 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Save agent message in background (don't wait for it)
-    const agentMessagePromise = addMessage(agentId, userId, {
+    // Save agent message in background
+    addMessage(agentId, userId, {
       role: 'agent',
       content: agentMessage,
       metadata: {
@@ -142,26 +156,35 @@ export async function POST(
         error: response.error,
         llmUsed: response.llmUsed,
       },
-    });
+    }).catch(err => console.error('Failed to save agent message:', err));
 
-    // Return response immediately - chat history can be fetched separately via GET
-    // This reduces response time by ~100-500ms (depending on DB latency)
     return NextResponse.json(responsePayload);
   } catch (error: any) {
-    console.error('Error processing chat message:', error);
+    console.error('[Agent Chat] Error processing chat message:', error);
+    console.error('[Agent Chat] Error stack:', error.stack);
+    console.error('[Agent Chat] Error details:', {
+      agentId: agentId ?? 'unknown',
+      userId: userId ?? 'unknown',
+      errorType: error.constructor?.name,
+      errorMessage: error.message,
+    });
     
-    // Check if it's a balance-related error
     const errorMessage = error.message || String(error);
     const isBalanceError = errorMessage.includes('INSUFFICIENT_BALANCE') || 
                           errorMessage.includes('insufficient');
+    const isWalletError = errorMessage.includes('WALLET_NOT_FOUND') ||
+                         errorMessage.includes('wallet not found') ||
+                         errorMessage.includes('ENCRYPTION_KEY');
     
     return NextResponse.json(
       { 
         success: false,
-        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' : 'EXECUTION_ERROR',
-        message: errorMessage 
+        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' : 
+               isWalletError ? 'WALLET_ERROR' : 'EXECUTION_ERROR',
+        message: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
-      { status: isBalanceError ? 400 : 500 }
+      { status: isBalanceError || isWalletError ? 400 : 500 }
     );
   }
 }
@@ -170,10 +193,23 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ agentId: string }> }
 ) {
+  let agentId: string | undefined;
+  let userId: string | undefined;
   try {
-    const userId = await getUserId(request);
-    const { agentId } = await params;
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    userId = session.user.id;
+    const resolved = await params;
+    agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
+    
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -211,9 +247,11 @@ export async function GET(
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch chat' },
+      { 
+        error: error.message || 'Failed to fetch chat',
+        details: process.env.NODE_ENV === 'development' ? { agentId, userId } : undefined,
+      },
       { status: 500 }
     );
   }
 }
-

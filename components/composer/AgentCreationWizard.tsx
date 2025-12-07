@@ -18,10 +18,16 @@ interface AgentFormData {
   apiIds: string[];
 }
 
+interface FormErrors {
+  name?: string;
+  apiIds?: string;
+}
+
 export function AgentCreationWizard() {
   const router = useRouter();
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
     description: '',
@@ -30,15 +36,17 @@ export function AgentCreationWizard() {
   });
 
   const handleNext = () => {
+    setErrors({});
+    
     if (step === 1) {
       if (!formData.name.trim()) {
-        alert('Please enter an agent name');
+        setErrors({ name: 'Please enter an agent name' });
         return;
       }
     }
     if (step === 2) {
       if (formData.apiIds.length === 0) {
-        alert('Please select at least one API');
+        setErrors({ apiIds: 'Please select at least one API' });
         return;
       }
     }
@@ -48,6 +56,7 @@ export function AgentCreationWizard() {
   };
 
   const handleBack = () => {
+    setErrors({});
     if (step > 1) {
       setStep((step - 1) as Step);
     } else {
@@ -55,8 +64,11 @@ export function AgentCreationWizard() {
     }
   };
 
+  const [createError, setCreateError] = useState<string | null>(null);
+
   const handleCreate = async () => {
     setLoading(true);
+    setCreateError(null);
     try {
       const { getUserIdHeaders } = await import('@/lib/utils/user-id');
       const res = await fetch('/api/agents', {
@@ -65,7 +77,11 @@ export function AgentCreationWizard() {
           'Content-Type': 'application/json',
           ...getUserIdHeaders(),
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -76,7 +92,7 @@ export function AgentCreationWizard() {
       const data = await res.json();
       router.push(`/composer/${data.agent.id}`);
     } catch (error: any) {
-      alert(`Failed to create agent: ${error.message}`);
+      setCreateError(error.message);
     } finally {
       setLoading(false);
     }
@@ -133,18 +149,26 @@ export function AgentCreationWizard() {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-zinc-700 mb-2 block">
-                    Name (optional)
+                    Name <span className="text-red-500">*</span>
                   </label>
                   <Input
                     placeholder="Ex. Deep Research Agent"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      setFormData({ ...formData, name: e.target.value });
+                      if (errors.name) setErrors({ ...errors, name: undefined });
+                    }}
+                    className={errors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    required
                   />
+                  {errors.name && (
+                    <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium text-zinc-700 mb-2 block">
-                    Description (optional)
+                    Description <span className="text-zinc-400 font-normal">(optional)</span>
                   </label>
                   <textarea
                     className="w-full min-h-[100px] rounded-md border border-input bg-transparent px-3 py-2 text-sm"
@@ -201,12 +225,18 @@ export function AgentCreationWizard() {
           {step === 2 && (
             <div className="space-y-4">
               <p className="text-sm text-zinc-600">
-                Select which x402 resources you want your agent to have access to.
+                Select which x402 resources you want your agent to have access to. <span className="text-red-500">*</span>
               </p>
               <ApiSelector
                 selectedApiIds={formData.apiIds}
-                onSelectionChange={(apiIds) => setFormData({ ...formData, apiIds })}
+                onSelectionChange={(apiIds) => {
+                  setFormData({ ...formData, apiIds });
+                  if (errors.apiIds) setErrors({ ...errors, apiIds: undefined });
+                }}
               />
+              {errors.apiIds && (
+                <p className="text-sm text-red-500">{errors.apiIds}</p>
+              )}
             </div>
           )}
 
@@ -216,21 +246,34 @@ export function AgentCreationWizard() {
               <div>
                 <h3 className="font-semibold mb-2">Agent Details</h3>
                 <div className="space-y-2 text-sm">
-                  <div><strong>Name:</strong> {formData.name || 'Unnamed'}</div>
+                  <div><strong>Name:</strong> {formData.name}</div>
                   {formData.description && (
                     <div><strong>Description:</strong> {formData.description}</div>
                   )}
-                  <div><strong>Visibility:</strong> <Badge>{formData.visibility}</Badge></div>
+                  <div className="flex items-center gap-2">
+                    <strong>Visibility:</strong> 
+                    <Badge variant={formData.visibility === 'public' ? 'default' : 'secondary'}>
+                      {formData.visibility}
+                    </Badge>
+                  </div>
                   <div><strong>APIs:</strong> {formData.apiIds.length} selected</div>
                 </div>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-900">
-                  A new Aptos wallet will be generated for this agent. You'll need to fund it with APT (testnet) 
+                  <strong>Note:</strong> A new Aptos wallet will be generated for this agent. You'll need to fund it with APT (testnet) 
                   before the agent can make API calls.
                 </p>
               </div>
+
+              {createError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-700">
+                    <strong>Error:</strong> {createError}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

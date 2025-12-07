@@ -87,3 +87,52 @@ export {
   signAndSubmitPayment,
   getAccountBalance,
 } from "./aptos-utils";
+
+// ============================================
+// ARC-8004: AGENT TRUST LAYER 🛡️
+// ============================================
+
+/**
+ * ARC-8004 Agent Trust Layer
+ * Provides identity, reputation, and validation registries for AI agents
+ */
+export {
+  // Main exports
+  ARC8004_VERSION,
+  ARC8004_PROTOCOL,
+  
+  // Identity Registry
+  IdentityRegistry,
+  createAgentCard,
+  validateAgentCard,
+  
+  // Reputation Registry
+  ReputationRegistry,
+  calculateTrustLevel,
+  getTrustLevelLabel,
+  
+  // Validation Registry
+  ValidationRegistry,
+  
+  // Types
+  TrustLevel,
+} from "./arc8004";
+
+/**
+ * ARC-8004 type exports
+ */
+export type {
+  AgentCard,
+  AgentIdentity,
+  RegisterIdentityRequest,
+  RegisterIdentityResponse,
+  FeedbackSubmission,
+  FeedbackRecord,
+  AgentReputationScore,
+  TaskValidationRequest,
+  TaskValidation,
+  ValidationResult,
+  ValidationType,
+  ValidationStatus,
+  ARC8004Config,
+} from "./arc8004";

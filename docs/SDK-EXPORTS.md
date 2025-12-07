@@ -207,6 +207,60 @@ const txHash = await signAndSubmitPayment(
 
 ---
 
+## ARC-8004 Trust Layer (Identity, Reputation, Validation)
+
+Available directly from `aptos-x402`:
+
+```typescript
+import {
+  // Identity
+  IdentityRegistry,
+  createAgentCard,
+  validateAgentCard,
+
+  // Reputation
+  ReputationRegistry,
+  calculateTrustLevel,
+  getTrustLevelLabel,
+
+  // Validation
+  ValidationRegistry,
+
+  // Types
+  TrustLevel,
+} from 'aptos-x402';
+```
+
+Quick examples:
+
+```typescript
+// Register identity
+await new IdentityRegistry({ network: 'testnet' }).registerIdentity({
+  agentId: 'agent_123',
+  agentCard: createAgentCard({
+    name: 'WeatherBot',
+    description: 'Fetches weather',
+    ownerAddress: '0x...',
+    ownerPublicKey: '0x...',
+  }),
+});
+
+// Submit feedback (reputation)
+await new ReputationRegistry({ network: 'testnet' }).submitFeedback({
+  agentId: 'agent_123',
+  clientAddress: '0xclient',
+  overallScore: 5,
+  paymentHash: '0xPAYMENT_TX',
+});
+
+// Check validation before payment release
+const result = await new ValidationRegistry({ network: 'testnet' })
+  .verifyTaskForPayment('task-1', 'agent_123');
+if (!result.isValid) throw new Error('Task not validated');
+```
+
+---
+
 ## Complete Export List
 
 ### **Buyer Functions**
@@ -224,6 +278,12 @@ const txHash = await signAndSubmitPayment(
 - `getAccountFromPrivateKey` - Create account from key
 - `signAndSubmitPayment` - Sign and submit transactions
 - `getAccountBalance` - Check account balance
+
+### **ARC-8004 (Trust Layer)**
+- `IdentityRegistry`, `createAgentCard`, `validateAgentCard`
+- `ReputationRegistry`, `calculateTrustLevel`, `getTrustLevelLabel`
+- `ValidationRegistry`
+- `TrustLevel`
 
 ### **Types**
 - `WithPaymentInterceptorOptions` - Options for buyer requests

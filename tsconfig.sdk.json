@@ -31,7 +31,12 @@
     "examples",
     "tests",
     "**/*.test.ts",
-    "**/*.spec.ts"
+    "**/*.spec.ts",
+    "lib/auth.ts",
+    "lib/db/**",
+    "lib/storage/**",
+    "lib/services/**",
+    "lib/agent/**",
+    "lib/encryption.ts"
   ]
 }
-

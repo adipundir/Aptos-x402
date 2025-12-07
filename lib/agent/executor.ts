@@ -26,7 +26,7 @@ export interface AgentResponse {
  * @param agent - The agent configuration
  * @param userQuery - The user's query/message
  * @param options - Execution options including LLM and API selection
- * @param userPrivateKey - Optional user's private key for payment (required for public agents)
+ * @param paymentPrivateKey - User's payment wallet private key for x402 payments
  */
 export async function executeAgentQuery(
   agent: Agent,
@@ -35,15 +35,28 @@ export async function executeAgentQuery(
     llm?: string;
     apiId?: string | null;
   },
-  userPrivateKey?: string
+  paymentPrivateKey?: string
 ): Promise<AgentResponse> {
+  const startedAt = Date.now();
+  const queryPreview = userQuery.length > 180 ? `${userQuery.slice(0, 180)}…` : userQuery;
+  
   try {
     // Get available APIs for this agent
     // Use relative URLs or detect from environment - will be resolved by x402axios
     const allApis = getAllApis();
     const availableApis = allApis.filter(api => agent.apiIds.includes(api.id));
     
+    console.log('[Agent Executor] Start', {
+      agentId: agent.id,
+      agentName: agent.name,
+      queryPreview,
+      llmRequested: options?.llm || 'keyword',
+      apiOverride: options?.apiId || null,
+      availableApis: availableApis.map(api => ({ id: api.id, name: api.name, method: api.method })),
+    });
+    
     if (availableApis.length === 0) {
+      console.warn('[Agent Executor] No APIs configured for agent', { agentId: agent.id });
       return {
         success: false,
         message: 'This agent has no APIs configured. Please add APIs to the agent.',
@@ -90,6 +103,14 @@ export async function executeAgentQuery(
     // Process query with LLM (unless specific API is manually selected)
     if (!options?.apiId) {
       llmResponse = await processQueryWithLLM(userQuery, availableApis, agent.name || 'Agent', modelName);
+      console.log('[Agent Executor] LLM decision', {
+        agentId: agent.id,
+        modelRequested: options?.llm || 'keyword',
+        modelUsed: llmResponse?.actualModelUsed || modelName,
+        shouldCallAPI: llmResponse?.shouldCallAPI,
+        suggestedApiId: llmResponse?.apiId,
+        conversational: llmResponse?.conversationalResponse ? llmResponse.conversationalResponse.slice(0, 120) : null,
+      });
       
       // Update llmUsed if fallback occurred
       if (llmResponse?.actualModelUsed) {
@@ -100,6 +121,10 @@ export async function executeAgentQuery(
       
       // If LLM says no API call needed (greeting/casual), return conversational response
       if (llmResponse && !llmResponse.shouldCallAPI) {
+        console.log('[Agent Executor] LLM chose conversational response', {
+          agentId: agent.id,
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: true,
           message: llmResponse.conversationalResponse || `Hello! I'm ${agent.name || 'your agent'}. How can I help you today?`,
@@ -114,6 +139,12 @@ export async function executeAgentQuery(
       
       // If no API found, return error
       if (!selectedApi) {
+        console.warn('[Agent Executor] No matching API found from LLM', {
+          agentId: agent.id,
+          suggestedApiId: llmResponse?.apiId,
+          availableApiIds: availableApis.map(a => a.id),
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: false,
           message: llmResponse?.conversationalResponse || 'I couldn\'t determine which API to use for your query. Please try rephrasing or select a specific API.',
@@ -130,6 +161,11 @@ export async function executeAgentQuery(
       
       if (greetings.some(g => lowerQuery === g || lowerQuery.startsWith(g + ' ')) ||
           casual.some(c => lowerQuery === c || lowerQuery.startsWith(c + ' '))) {
+        console.log('[Agent Executor] Greeting detected; skipping API call', {
+          agentId: agent.id,
+          apiOverride: options.apiId,
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: true,
           message: `Hello! I'm ${agent.name || 'your agent'}. How can I help you today?`,
@@ -139,6 +175,11 @@ export async function executeAgentQuery(
       
       selectedApi = availableApis.find(api => api.id === options.apiId) || null;
       if (!selectedApi) {
+        console.warn('[Agent Executor] Requested API not available for agent', {
+          agentId: agent.id,
+          requestedApiId: options.apiId,
+          availableApiIds: availableApis.map(a => a.id),
+        });
         return {
           success: false,
           message: `The requested API "${options.apiId}" is not available for this agent.`,
@@ -147,25 +188,34 @@ export async function executeAgentQuery(
       }
     }
     
-    // Determine which wallet to use for payment:
-    // - If userPrivateKey is provided: user is chatting with someone else's public agent -> use user's wallet
-    // - Otherwise: user owns the agent -> use agent's wallet
-    let paymentPrivateKey: string;
-    if (userPrivateKey) {
-      // User chatting with public agent owned by someone else - use user's wallet
-      paymentPrivateKey = userPrivateKey;
-    } else {
-      // User owns the agent (or it's private) - use agent's wallet
-      paymentPrivateKey = agent.privateKey;
+    // Validate payment private key is provided
+    if (!paymentPrivateKey) {
+      console.error('[Agent Executor] Missing payment wallet for agent', {
+        agentId: agent.id,
+        durationMs: Date.now() - startedAt,
+      });
+      return {
+        success: false,
+        message: 'Payment wallet not configured. Please ensure you are signed in.',
+        error: 'NO_PAYMENT_WALLET',
+      };
     }
     
-    // Call the API using x402axios with appropriate private key
+    // Call the API using x402axios with user's payment wallet
     try {
       const config: any = {
         privateKey: paymentPrivateKey,
       };
       
       let response;
+      console.log('[Agent Executor] Calling API', {
+        agentId: agent.id,
+        apiId: selectedApi.id,
+        apiName: selectedApi.name,
+        method: selectedApi.method,
+        url: selectedApi.url,
+        hasPaymentKey: !!paymentPrivateKey,
+      });
       
       if (selectedApi.method === 'GET') {
         response = await x402axios.get(selectedApi.url, config);
@@ -225,6 +275,14 @@ export async function executeAgentQuery(
                       `Successfully retrieved data from ${selectedApi.name}`;
       }
       
+      console.log('[Agent Executor] Success', {
+        agentId: agent.id,
+        apiName: selectedApi.name,
+        apiId: selectedApi.id,
+        llmUsed: options?.llm || 'keyword',
+        durationMs: Date.now() - startedAt,
+      });
+      
       return {
         success: true,
         message: finalMessage,
@@ -237,6 +295,12 @@ export async function executeAgentQuery(
     } catch (apiError: any) {
       // Handle x402 payment errors
       if (apiError.response?.status === 402) {
+        console.error('[Agent Executor] Payment required / insufficient funds', {
+          agentId: agent.id,
+          apiName: selectedApi.name,
+          status: apiError.response?.status,
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: false,
           message: 'Payment required but could not be processed. Please ensure the agent has sufficient funds.',
@@ -246,6 +310,12 @@ export async function executeAgentQuery(
       }
       
       if (apiError.message?.includes('funds') || apiError.message?.includes('balance')) {
+        console.error('[Agent Executor] Insufficient funds detected', {
+          agentId: agent.id,
+          apiName: selectedApi.name,
+          message: apiError.message,
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: false,
           message: 'Insufficient funds. Please add more APT to this agent\'s wallet.',
@@ -261,6 +331,12 @@ export async function executeAgentQuery(
                             errorMessage.includes('Failed to fetch');
       
       if (isNetworkError) {
+        console.error('[Agent Executor] Network error calling API', {
+          agentId: agent.id,
+          apiName: selectedApi.name,
+          errorMessage,
+          durationMs: Date.now() - startedAt,
+        });
         return {
           success: false,
           message: `Unable to reach ${selectedApi.name}. The API may be unavailable or the URL is incorrect.`,
@@ -270,6 +346,12 @@ export async function executeAgentQuery(
         };
       }
       
+      console.error('[Agent Executor] API error', {
+        agentId: agent.id,
+        apiName: selectedApi.name,
+        errorMessage,
+        durationMs: Date.now() - startedAt,
+      });
       return {
         success: false,
         message: `Error calling ${selectedApi.name}: ${errorMessage}`,
@@ -279,6 +361,11 @@ export async function executeAgentQuery(
       };
     }
   } catch (error: any) {
+    console.error('[Agent Executor] Unhandled execution error', {
+      agentId: agent.id,
+      errorMessage: error?.message,
+      durationMs: Date.now() - startedAt,
+    });
     return {
       success: false,
       message: `An error occurred: ${error.message || 'Unknown error'}`,
