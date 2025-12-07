@@ -42,3 +42,10 @@ ARC-8004 enables verifiable agent identity, reputation, and task validation on A
   - Reputation: `4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f::reputation`  
   - Validation: `4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f::validation`
 
+
+
+
+
+
+
+
