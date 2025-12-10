@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, apiType } = body;
+    const { email, apiType, name } = body;
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
           subject: 'New API Waitlist Submission',
           html: `
             <h2>New API Waitlist Submission</h2>
+            <p><strong>Name:</strong> ${normalizedName || 'Not provided'}</p>
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>API Type:</strong> ${apiType.trim()}</p>
             <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
