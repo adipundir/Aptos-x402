@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck, CheckCircle2, ExternalLink, Copy, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getAgentIcon, getAgentGradient } from '@/lib/utils/agent-symbols';
 
@@ -44,6 +45,14 @@ interface AgentCardProps {
 export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(agent.identity?.verified ?? false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogContent, setDialogContent] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+    mintTxHash?: string;
+    verifyTxHash?: string;
+  } | null>(null);
 
   const handleVerify = async () => {
     if (verifying) return;
@@ -58,13 +67,47 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to verify identity');
       }
+      const data = await res.json();
       setVerified(true);
+      
+      // Show success dialog with transaction hashes if on-chain operations happened
+      if (data.mintTxHash || data.verifyTxHash) {
+        setDialogContent({
+          type: 'success',
+          title: 'Identity Verified On-Chain',
+          message: 'Your agent identity has been successfully verified on the Aptos blockchain.',
+          mintTxHash: data.mintTxHash,
+          verifyTxHash: data.verifyTxHash,
+        });
+      } else {
+        setDialogContent({
+          type: 'success',
+          title: 'Identity Verified',
+          message: data.message || 'Identity verified in database only. On-chain verification not available.',
+        });
+      }
+      setShowDialog(true);
     } catch (err) {
       console.error('Verify identity failed', err);
-      alert(err instanceof Error ? err.message : 'Failed to verify identity');
+      setDialogContent({
+        type: 'error',
+        title: 'Verification Failed',
+        message: err instanceof Error ? err.message : 'Failed to verify identity',
+      });
+      setShowDialog(true);
     } finally {
       setVerifying(false);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const getExplorerUrl = (txHash: string) => {
+    const network = process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet';
+    const explorerNetwork = network.replace('aptos-', '');
+    return `https://explorer.aptoslabs.com/txn/${txHash}?network=${explorerNetwork}`;
   };
 
   return (
@@ -209,6 +252,102 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Verification Result Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[525px] bg-white text-zinc-900">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              {dialogContent?.type === 'success' ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  {dialogContent.title}
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  {dialogContent?.title || 'Verification Result'}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription className="pt-1 text-sm text-zinc-600">
+              {dialogContent?.message}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {(dialogContent?.mintTxHash || dialogContent?.verifyTxHash) && (
+            <div className="space-y-3 py-2">
+              {dialogContent.mintTxHash && (
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 max-w-[477px]">
+                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Mint Transaction
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded bg-white px-3 py-2 text-[13px] font-mono text-zinc-800 shadow-inner">
+                      {dialogContent.mintTxHash}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => copyToClipboard(dialogContent.mintTxHash!)}
+                      title="Copy transaction hash"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => window.open(getExplorerUrl(dialogContent.mintTxHash!), '_blank')}
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {dialogContent.verifyTxHash && (
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 max-w-[477px]">
+                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Verify Transaction
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded bg-white px-3 py-2 text-[13px] font-mono text-zinc-800 shadow-inner">
+                      {dialogContent.verifyTxHash}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => copyToClipboard(dialogContent.verifyTxHash!)}
+                      title="Copy transaction hash"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => window.open(getExplorerUrl(dialogContent.verifyTxHash!), '_blank')}
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

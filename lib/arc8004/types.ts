@@ -3,10 +3,6 @@
  * Aptos Agent Trust Layer Protocol Types
  */
 
-// ============================================
-// Identity Registry Types
-// ============================================
-
 /**
  * Agent Card - Off-chain metadata linked to on-chain identity
  * Similar to ERC-8004's Agent Card concept
@@ -85,10 +81,6 @@ export interface RegisterIdentityResponse {
   tokenAddress?: string;
   transactionHash?: string;
 }
-
-// ============================================
-// Reputation Registry Types
-// ============================================
 
 /**
  * Feedback submission
@@ -172,10 +164,6 @@ export enum TrustLevel {
   EXCELLENT = 95,
 }
 
-// ============================================
-// Validation Registry Types
-// ============================================
-
 /**
  * Validation types supported
  */
@@ -223,67 +211,6 @@ export interface TaskValidation extends TaskValidationRequest {
 }
 
 /**
- * Validation result
- */
-export interface ValidationResult {
-  /** Task ID */
-  taskId: string;
-  /** Is valid */
-  isValid: boolean;
-  /** Validator ID */
-  validatorId: string;
-  /** Proof */
-  proof?: string;
-  /** Attestation hash */
-  attestationHash?: string;
-  /** Timestamp */
-  timestamp: number;
-}
-
-// ============================================
-// On-Chain Types (Move contract interfaces)
-// ============================================
-
-/**
- * On-chain identity resource structure
- */
-export interface OnChainAgentIdentity {
-  agent_id: string;
-  name: string;
-  metadata_uri: string;
-  capabilities: string[];
-  created_at: number;
-  verified: boolean;
-}
-
-/**
- * On-chain reputation attestation
- */
-export interface OnChainReputationAttestation {
-  agent_id: string;
-  client_address: string;
-  score: number;
-  payment_hash: string;
-  timestamp: number;
-}
-
-/**
- * On-chain task validation
- */
-export interface OnChainTaskValidation {
-  task_id: string;
-  agent_id: string;
-  validator_id: string;
-  is_valid: boolean;
-  proof: string;
-  timestamp: number;
-}
-
-// ============================================
-// Configuration Types
-// ============================================
-
-/**
  * ARC-8004 configuration
  */
 export interface ARC8004Config {
@@ -300,20 +227,22 @@ export interface ARC8004Config {
 }
 
 /**
- * Default configuration
+ * Default configuration from environment variables
  */
 export const DEFAULT_ARC8004_CONFIG: ARC8004Config = {
-  moduleAddress: '',
-  network: 'testnet',
-  onChainEnabled: false,
-  autoRegisterIdentity: true,
+  moduleAddress: process.env.ARC8004_MODULE_ADDRESS || '',
+  network: process.env.APTOS_NETWORK || process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet',
+  onChainEnabled: process.env.ARC8004_ONCHAIN_ENABLED === 'true',
+  autoRegisterIdentity: process.env.ARC8004_AUTO_REGISTER === 'true',
   autoUpdateReputation: true,
 };
 
-
-
-
-
-
-
-
+/**
+ * Resolve ARC-8004 configuration by merging partial config with defaults
+ */
+export function resolveARC8004Config(config?: Partial<ARC8004Config>): ARC8004Config {
+  return {
+    ...DEFAULT_ARC8004_CONFIG,
+    ...config,
+  };
+}

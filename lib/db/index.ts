@@ -32,8 +32,15 @@ if (isHttpProtocol || looksLikeNeonApiHost) {
   );
 }
 
-const sql = neon(DATABASE_URL);
+// Create Neon client with increased timeout and fetch options
+const sql = neon(DATABASE_URL, {
+  fetchOptions: {
+    cache: 'no-store',
+  },
+});
+
 export const db = drizzle(sql, { schema });
+export { sql };
 
 export * from './schema';
 

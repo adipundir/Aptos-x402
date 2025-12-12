@@ -4,7 +4,9 @@ version = "1.0.0"
 authors = ["Aptos-x402 Team"]
 
 [addresses]
-arc8004 = "4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f"
+# Module address - set to admin address for fresh deployments
+# If redeploying, this will be the admin account address: 0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323
+arc8004 = "0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"

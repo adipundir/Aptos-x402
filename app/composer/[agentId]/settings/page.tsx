@@ -130,13 +130,16 @@ export default function AgentSettingsPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-6 py-24 max-w-4xl">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Link href="/composer">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Agents
             </Button>
           </Link>
+          <Badge className="rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide">
+            Beta
+          </Badge>
         </div>
 
       <div className="space-y-6">

@@ -14,7 +14,7 @@ export function NavLinks() {
   };
 
   const navItems = [
-    { href: '/composer', label: 'Composer', icon: Bot },
+    { href: '/composer', label: 'Composer', icon: Bot, beta: true },
     { href: '/demo', label: 'Demo', icon: PlayCircle },
     { href: '/docs', label: 'Docs', icon: BookOpen },
   ];
@@ -38,7 +38,14 @@ export function NavLinks() {
               `}
             >
               <Icon className="w-4 h-4 mr-2" />
-              {item.label}
+              <span className="flex items-center gap-2">
+                {item.label}
+                {item.beta && (
+                  <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                    Beta
+                  </span>
+                )}
+              </span>
             </Button>
           </Link>
         );

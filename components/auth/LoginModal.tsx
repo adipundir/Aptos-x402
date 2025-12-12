@@ -39,7 +39,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
             Sign in
           </DialogTitle>
           <DialogDescription className="text-sm text-zinc-500">
-            Continue to Agent Composer
+            Continue to Agent Composer (Beta)
           </DialogDescription>
         </DialogHeader>
 
