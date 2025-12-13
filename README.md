@@ -449,6 +449,78 @@ import type {
 
 ---
 
+## 🛡️ ARC-8004: Agent Trust Layer
+
+ARC-8004 provides identity, reputation, and validation for AI agents on Aptos. It integrates with x402 payments to build trust signals from paid interactions.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Identity Registry** | Agent Cards with metadata, capabilities, and verification status |
+| **Reputation Registry** | Trust scores based on feedback from interactions |
+| **Validation Registry** | Task completion verification before payments |
+
+### Quick Start
+
+```typescript
+import { 
+  IdentityRegistry, 
+  ReputationRegistry, 
+  createAgentCard,
+  getTrustLevelLabel 
+} from 'aptos-x402';
+
+// Register agent identity
+const identity = new IdentityRegistry();
+await identity.registerIdentity({
+  agentId: 'my-agent',
+  agentCard: createAgentCard({
+    name: 'WeatherBot',
+    description: 'Provides weather data',
+    ownerAddress: '0x...',
+    ownerPublicKey: '0x...',
+    capabilities: ['payment', 'data-fetch'],
+  }),
+});
+
+// Submit feedback after payment
+const reputation = new ReputationRegistry();
+await reputation.submitFeedback({
+  agentId: 'my-agent',
+  clientAddress: '0xclient',
+  overallScore: 5,
+  paymentHash: '0xPAYMENT_TX',
+});
+
+// Get trust score
+const score = await reputation.getReputation('my-agent');
+console.log(getTrustLevelLabel(score.trustLevel)); // "Excellent"
+```
+
+### Configuration
+
+```bash
+# .env.local
+ARC8004_AUTO_REGISTER=true        # Auto-register agents on creation
+ARC8004_ONCHAIN_ENABLED=false     # DB-only mode (recommended)
+```
+
+For on-chain NFT minting (optional):
+```bash
+ARC8004_MODULE_ADDRESS=0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323
+ARC8004_ONCHAIN_ENABLED=true
+```
+
+### Documentation
+
+- [ARC-8004 Integration Guide](./docs/guides/arc8004.md) - Full SDK usage
+- [ARC-8004 Core Concepts](./docs/core-concepts/arc8004.md) - Architecture overview
+- [ARC-8004 Use Cases](./docs/guides/arc8004-use-cases.md) - Practical examples
+- [Self-Hosting Guide](./docs/guides/arc8004-self-hosting.md) - Deploy your own contracts
+
+---
+
 ## Advanced Usage
 
 ### Manual Payment Flow
@@ -540,8 +612,8 @@ Try the complete payment flow: **[aptos-x402.vercel.app](https://aptos-x402.verc
 ### CLI Demo
 
 ```bash
-git clone https://github.com/adipundir/aptos-x402
-cd aptos-x402
+git clone https://github.com/adipundir/Aptos-x402
+cd Aptos-x402
 npm install
 npm run dev  # In one terminal
 
@@ -690,13 +762,13 @@ APTOS_PRIVATE_KEY=0x... npx tsx scripts/benchmark-payment-flow.ts
 - [Performance Guide](./PERFORMANCE_OPTIMIZATIONS.md)
 
 ### Links
-- [GitHub Repository](https://github.com/adipundir/aptos-x402)
+- [GitHub Repository](https://github.com/adipundir/Aptos-x402)
 - [NPM Package](https://www.npmjs.com/package/aptos-x402)
 - [Aptos Developer Docs](https://aptos.dev)
 
 ### Support
-- [Report Issues](https://github.com/adipundir/aptos-x402/issues)
-- [Discussions](https://github.com/adipundir/aptos-x402/discussions)
+- [Report Issues](https://github.com/adipundir/Aptos-x402/issues)
+- [Discussions](https://github.com/adipundir/Aptos-x402/discussions)
 - [Twitter: @aptos-x402](https://x.com/aptosx402)
 
 ## Contributing
@@ -709,7 +781,7 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 
 **Built for the Aptos Ecosystem**
 
-[Documentation](https://aptos-x402.vercel.app) • [GitHub](https://github.com/adipundir/aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
+[Documentation](https://aptos-x402.vercel.app) • [GitHub](https://github.com/adipundir/Aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
 
 </div>
 

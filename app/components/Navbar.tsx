@@ -43,7 +43,7 @@ export default async function Navbar() {
 
               {/* External Links */}
               <a 
-                href="https://github.com/adipundir/aptos-x402" 
+                href="https://github.com/adipundir/Aptos-x402" 
                 target="_blank" 
                 rel="noopener noreferrer"
               >

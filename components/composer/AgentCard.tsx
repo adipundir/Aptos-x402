@@ -43,7 +43,6 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
-  const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(agent.identity?.verified ?? false);
   const [showDialog, setShowDialog] = useState(false);
   const [dialogContent, setDialogContent] = useState<{
@@ -53,52 +52,6 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
     mintTxHash?: string;
     verifyTxHash?: string;
   } | null>(null);
-
-  const handleVerify = async () => {
-    if (verifying) return;
-    setVerifying(true);
-    try {
-      const res = await fetch('/api/arc8004/identity/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId: agent.id }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to verify identity');
-      }
-      const data = await res.json();
-      setVerified(true);
-      
-      // Show success dialog with transaction hashes if on-chain operations happened
-      if (data.mintTxHash || data.verifyTxHash) {
-        setDialogContent({
-          type: 'success',
-          title: 'Identity Verified On-Chain',
-          message: 'Your agent identity has been successfully verified on the Aptos blockchain.',
-          mintTxHash: data.mintTxHash,
-          verifyTxHash: data.verifyTxHash,
-        });
-      } else {
-        setDialogContent({
-          type: 'success',
-          title: 'Identity Verified',
-          message: data.message || 'Identity verified in database only. On-chain verification not available.',
-        });
-      }
-      setShowDialog(true);
-    } catch (err) {
-      console.error('Verify identity failed', err);
-      setDialogContent({
-        type: 'error',
-        title: 'Verification Failed',
-        message: err instanceof Error ? err.message : 'Failed to verify identity',
-      });
-      setShowDialog(true);
-    } finally {
-      setVerifying(false);
-    }
-  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -184,16 +137,23 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                 </Button>
               </Link>
               {!(verified || agent.identity?.verified) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 border-emerald-200 bg-white px-4 font-medium text-emerald-700 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50"
-                  onClick={handleVerify}
-                  disabled={verifying}
-                >
-                  <ShieldCheck className="mr-2 h-3.5 w-3.5" />
-                  {verifying ? 'Verifying…' : 'Verify'}
-                </Button>
+                <div className="group/verify relative">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 border-zinc-200 bg-zinc-50 px-4 font-medium text-zinc-500 shadow-sm cursor-not-allowed"
+                    disabled={true}
+                    title="On-chain verification requires admin authorization"
+                  >
+                    <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                    Verify
+                  </Button>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 text-white text-xs rounded-lg opacity-0 group-hover/verify:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    <div className="font-medium">Admin Verification Required</div>
+                    <div className="text-zinc-400 text-[10px] mt-0.5">On-chain verification is performed by platform admins</div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+                  </div>
+                </div>
               )}
               {onDelete && (
                 <Button

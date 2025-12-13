@@ -3,6 +3,9 @@ import { join } from 'path';
 import { notFound } from 'next/navigation';
 import DocsClient from './docs-client';
 
+// Allow dynamic params so new docs work without rebuild
+export const dynamicParams = true;
+
 interface DocItem {
   title: string;
   path?: string;
@@ -24,6 +27,7 @@ const docsStructure: DocItem[] = [
       { title: 'HTTP 402 Protocol', path: 'core-concepts/http-402.md' },
       { title: 'Facilitator', path: 'core-concepts/facilitator.md' },
       { title: 'Client / Server', path: 'core-concepts/client-server.md' },
+      { title: 'ARC-8004 Agent Trust Layer', path: 'core-concepts/arc8004.md' },
     ],
   },
   {
@@ -31,7 +35,8 @@ const docsStructure: DocItem[] = [
     children: [
       { title: 'AI IDE Integration', path: 'guides/ai-ide-integration.md' },
       { title: 'Facilitator Setup', path: 'guides/facilitator-setup.md' },
-      { title: 'ARC-8004 Trust Layer', path: 'guides/arc8004.md' },
+      { title: 'ARC-8004 Integration', path: 'guides/arc8004.md' },
+      { title: 'ARC-8004 Self-Hosting', path: 'guides/arc8004-self-hosting.md' },
       { title: 'ARC-8004 Use Cases', path: 'guides/arc8004-use-cases.md' },
     ],
   },

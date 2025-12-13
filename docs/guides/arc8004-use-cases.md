@@ -36,11 +36,12 @@ ARC-8004 enables verifiable agent identity, reputation, and task validation on A
 - **Validation Gate:** Before expensive actions, call `/api/arc8004/validation?taskId=...` and block if not validated.
 
 ## References
-- Guide: `docs/guides/arc8004.md`
+- Guide: [ARC-8004 Integration](/docs/guides/arc8004)
 - Modules (testnet):  
-  - Identity: `4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f::agent_identity`  
-  - Reputation: `4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f::reputation`  
-  - Validation: `4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f::validation`
+  - Identity: `0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323::agent_identity`  
+  - Reputation: `0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323::reputation`  
+  - Validation: `0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323::validation`
+
 
 
 

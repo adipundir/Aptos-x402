@@ -295,8 +295,8 @@ const data = await x402axios.get(apiUrl, {
 
 **Resources:**
 -  [Full Documentation](https://aptos-x402.vercel.app)
--  [Report Issues](https://github.com/adipundir/aptos-x402/issues)
--  [Discussions](https://github.com/adipundir/aptos-x402/discussions)
+-  [Report Issues](https://github.com/adipundir/Aptos-x402/issues)
+-  [Discussions](https://github.com/adipundir/Aptos-x402/discussions)
 -  [Twitter: @adipundir](https://x.com/adipundir)
 
 **Additional:**

@@ -113,7 +113,7 @@ export function MobileMenu() {
             Resources
           </p>
           <a 
-            href="https://github.com/adipundir/aptos-x402" 
+            href="https://github.com/adipundir/Aptos-x402" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-3 rounded-lg text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
