@@ -145,6 +145,60 @@ const LOCAL_API_METADATA: Omit<ApiMetadata, 'url'>[] = [
     method: 'GET',
     available: true,
   },
+  {
+    id: 'exchangerate',
+    name: 'Exchange Rates',
+    description: 'Get real-time currency exchange rates (free source, no API key)',
+    category: 'Utility',
+    cost: '30000', // 0.0003 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'jokes',
+    name: 'Jokes API',
+    description: 'Get random programming jokes and puns (free source, no API key)',
+    category: 'Random',
+    cost: '15000', // 0.00015 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'quotes',
+    name: 'Quotes API',
+    description: 'Get inspirational quotes from famous authors (free source, no API key)',
+    category: 'Text',
+    cost: '20000', // 0.0002 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'dictionary',
+    name: 'Dictionary API',
+    description: 'Get word definitions, pronunciations, and examples (free source, no API key)',
+    category: 'Text',
+    cost: '25000', // 0.00025 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'ipgeolocation',
+    name: 'IP Geolocation',
+    description: 'Get location and ISP info from IP address (free source, no API key)',
+    category: 'Utility',
+    cost: '30000', // 0.0003 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'holidays',
+    name: 'Public Holidays',
+    description: 'Get public holidays for any country and year (free source, no API key)',
+    category: 'Utility',
+    cost: '25000', // 0.00025 APT
+    method: 'GET',
+    available: true,
+  },
 ];
 
 // DonaLabs External APIs (x402-powered, hosted at donalabs-apis.vercel.app)

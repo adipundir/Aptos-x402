@@ -289,6 +289,86 @@ export function formatDataSmart(userQuery: string, apiData: any, apiName: string
     return `Stock: ${apiData.symbol || 'Unknown'}\nPrice: $${apiData.price}\nChange: ${apiData.change || '0'}%`;
   }
   
+  // Exchange Rates API formatting
+  if (lowerApiName.includes('exchangerate') || lowerApiName.includes('exchange')) {
+    if (apiData.conversion) {
+      const conv = apiData.conversion;
+      return `💱 **Currency Conversion**\n\n${conv.example}\n\n📊 Rate: 1 ${conv.from} = ${conv.rate} ${conv.to}\n📅 Date: ${apiData.date || 'Latest'}`;
+    }
+    if (apiData.rates) {
+      const topRates = Object.entries(apiData.rates).slice(0, 10);
+      return `💱 **Exchange Rates (Base: ${apiData.base})**\n\n${topRates.map(([currency, rate]: [string, any]) => `${currency}: ${rate}`).join('\n')}\n\n📅 Date: ${apiData.date || 'Latest'}`;
+    }
+  }
+  
+  // Jokes API formatting
+  if (lowerApiName.includes('joke')) {
+    if (apiData.jokes && Array.isArray(apiData.jokes)) {
+      return apiData.jokes.map((joke: any, idx: number) => 
+        `😄 **Joke ${idx + 1}** (${joke.type})\n\n${joke.setup}\n\n${joke.punchline}`
+      ).join('\n\n---\n\n');
+    }
+    if (apiData.setup) {
+      return `😄 **${apiData.type || 'Joke'}**\n\n${apiData.setup}\n\n${apiData.punchline}`;
+    }
+  }
+  
+  // Quotes API formatting
+  if (lowerApiName.includes('quote')) {
+    if (apiData.quotes && Array.isArray(apiData.quotes)) {
+      return apiData.quotes.map((quote: any, idx: number) => 
+        `💬 "${quote.content}"\n\n— ${quote.author}${quote.tags && quote.tags.length > 0 ? `\n🏷️ ${quote.tags.join(', ')}` : ''}`
+      ).join('\n\n---\n\n');
+    }
+    if (apiData.content) {
+      return `💬 "${apiData.content}"\n\n— ${apiData.author}`;
+    }
+  }
+  
+  // Dictionary API formatting
+  if (lowerApiName.includes('dictionary') || lowerApiName.includes('dictionary')) {
+    if (apiData.meanings && apiData.meanings.length > 0) {
+      let result = `📖 **${apiData.word}**`;
+      if (apiData.phonetic) result += ` (${apiData.phonetic})`;
+      result += `\n\n`;
+      
+      apiData.meanings.forEach((meaning: any, idx: number) => {
+        result += `**${meaning.partOfSpeech}**\n`;
+        meaning.definitions.slice(0, 3).forEach((def: any, defIdx: number) => {
+          result += `${defIdx + 1}. ${def.definition}\n`;
+          if (def.example) result += `   Example: "${def.example}"\n`;
+        });
+        if (meaning.synonyms && meaning.synonyms.length > 0) {
+          result += `   Synonyms: ${meaning.synonyms.slice(0, 5).join(', ')}\n`;
+        }
+        result += `\n`;
+      });
+      
+      return result.trim();
+    }
+  }
+  
+  // IP Geolocation API formatting
+  if (lowerApiName.includes('ipgeolocation') || lowerApiName.includes('ip')) {
+    if (apiData.city) {
+      return `🌍 **IP Geolocation**\n\n📍 Location: ${apiData.city}, ${apiData.region}, ${apiData.country}\n🌐 IP: ${apiData.ip}\n📮 Postal: ${apiData.postal || 'N/A'}\n🕐 Timezone: ${apiData.timezone || 'N/A'}\n💻 ISP: ${apiData.isp || 'N/A'}\n💱 Currency: ${apiData.currency || 'N/A'} (${apiData.currencyName || 'N/A'})`;
+    }
+  }
+  
+  // Public Holidays API formatting
+  if (lowerApiName.includes('holiday')) {
+    if (apiData.holidays && Array.isArray(apiData.holidays)) {
+      const upcoming = apiData.holidays.filter((h: any) => new Date(h.date) >= new Date()).slice(0, 10);
+      let result = `🎉 **Public Holidays - ${apiData.country} (${apiData.year})**\n\n`;
+      result += `Total: ${apiData.count} holidays\n\n`;
+      result += `**Upcoming Holidays:**\n\n`;
+      result += upcoming.map((h: any) => 
+        `📅 ${new Date(h.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })} - ${h.name}${h.localName && h.localName !== h.name ? ` (${h.localName})` : ''}`
+      ).join('\n');
+      return result;
+    }
+  }
+  
   // If it's an array, show first few items
   if (Array.isArray(apiData)) {
     const items = apiData.slice(0, 5);

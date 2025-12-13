@@ -89,6 +89,48 @@ export const middleware = paymentMiddleware(
         description: "Access to GitHub public repo metadata API (0.0004 APT)",
       },
     },
+    "/api/protected/exchangerate": {
+      price: "30000",   // 0.0003 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Exchange Rates API - currency conversion (0.0003 APT)",
+      },
+    },
+    "/api/protected/jokes": {
+      price: "15000",   // 0.00015 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Jokes API - random programming jokes (0.00015 APT)",
+      },
+    },
+    "/api/protected/quotes": {
+      price: "20000",   // 0.0002 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Quotes API - inspirational quotes (0.0002 APT)",
+      },
+    },
+    "/api/protected/dictionary": {
+      price: "25000",   // 0.00025 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Dictionary API - word definitions (0.00025 APT)",
+      },
+    },
+    "/api/protected/ipgeolocation": {
+      price: "30000",   // 0.0003 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to IP Geolocation API - IP address lookup (0.0003 APT)",
+      },
+    },
+    "/api/protected/holidays": {
+      price: "25000",   // 0.00025 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Public Holidays API - country holidays (0.00025 APT)",
+      },
+    },
   },
   {
     // Facilitator URL is REQUIRED for x402 protocol

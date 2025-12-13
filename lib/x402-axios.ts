@@ -352,20 +352,25 @@ async function x402axiosMain<T = any>(
       accountAddress: aptosAccount.accountAddress,
     });
     
+    // getAccountAPTAmount returns Octas as a number (e.g., 10000000 for 0.1 APT)
+    const balanceOctas = BigInt(Math.floor(accountBalance));
+    
     const amountBigInt = BigInt(amount);
     const estimatedFee = BigInt(1000); // Conservative estimate: 0.00001 APT
     const totalRequired = amountBigInt + estimatedFee;
     
     console.log('[x402-axios] Balance check:', {
-      available: `${accountBalance} Octas (${accountBalance / 100_000_000} APT)`,
+      accountAddress: aptosAccount.accountAddress.toString(),
+      availableRaw: accountBalance,
+      available: `${balanceOctas} Octas (${Number(balanceOctas) / 100_000_000} APT)`,
       required: `${totalRequired} Octas (${Number(totalRequired) / 100_000_000} APT)`,
       amount: `${amountBigInt} Octas (${Number(amountBigInt) / 100_000_000} APT)`,
       fee: `${estimatedFee} Octas (${Number(estimatedFee) / 100_000_000} APT)`,
     });
     
-    if (BigInt(accountBalance) < totalRequired) {
-      const missingAmount = totalRequired - BigInt(accountBalance);
-      const errorMsg = `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE: Available ${accountBalance / 100_000_000} APT, Required ${Number(totalRequired) / 100_000_000} APT (amount: ${Number(amountBigInt) / 100_000_000} APT + fee: ${Number(estimatedFee) / 100_000_000} APT), Missing ${Number(missingAmount) / 100_000_000} APT`;
+    if (balanceOctas < totalRequired) {
+      const missingAmount = totalRequired - balanceOctas;
+      const errorMsg = `INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE: Available ${Number(balanceOctas) / 100_000_000} APT, Required ${Number(totalRequired) / 100_000_000} APT (amount: ${Number(amountBigInt) / 100_000_000} APT + fee: ${Number(estimatedFee) / 100_000_000} APT), Missing ${Number(missingAmount) / 100_000_000} APT`;
       console.error(`[x402-axios] ❌ ${errorMsg}`);
       throw new Error(errorMsg);
     }
