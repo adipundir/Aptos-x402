@@ -12,7 +12,7 @@
  */
 
 import { config } from 'dotenv';
-import { Aptos, Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
+import { Aptos, AptosConfig, Account, Ed25519PrivateKey, Network } from '@aptos-labs/ts-sdk';
 
 // Load environment variables from .env file
 config();
@@ -35,16 +35,17 @@ const privateKey = new Ed25519PrivateKey(cleanKey);
 const adminAccount = Account.fromPrivateKey({ privateKey });
 
 // Map network to Aptos SDK Network enum
-let aptosNetwork: 'testnet' | 'mainnet' | 'devnet';
-if (NETWORK_ENV.includes('testnet')) {
-  aptosNetwork = 'testnet';
-} else if (NETWORK_ENV.includes('mainnet')) {
-  aptosNetwork = 'mainnet';
+let aptosNetwork: Network;
+if (NETWORK_ENV.includes('mainnet')) {
+  aptosNetwork = Network.MAINNET;
+} else if (NETWORK_ENV.includes('devnet')) {
+  aptosNetwork = Network.DEVNET;
 } else {
-  aptosNetwork = 'devnet';
+  aptosNetwork = Network.TESTNET;
 }
 
-const aptos = new Aptos({ network: aptosNetwork });
+const aptosConfig = new AptosConfig({ network: aptosNetwork });
+const aptos = new Aptos(aptosConfig);
 
 async function initializeModule(moduleName: string, functionName: string) {
   console.log(`\n🔧 Initializing ${moduleName} module...`);
@@ -94,7 +95,7 @@ async function main() {
   console.log(`Admin Address: ${adminAccount.accountAddress.toString()}`);
   
   // Check if admin address matches module address
-  if (MODULE_ADDRESS.toLowerCase() !== adminAccount.accountAddress.toString().toLowerCase()) {
+  if (MODULE_ADDRESS!.toLowerCase() !== adminAccount.accountAddress.toString().toLowerCase()) {
     console.log('\n⚠️  Warning: Module address does not match admin address.');
     console.log('   The admin will be set to:', adminAccount.accountAddress.toString());
     console.log('   Make sure this is intentional.\n');

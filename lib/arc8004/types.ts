@@ -211,6 +211,24 @@ export interface TaskValidation extends TaskValidationRequest {
 }
 
 /**
+ * Validation result returned when verifying task for payment
+ */
+export interface ValidationResult {
+  /** Task ID */
+  taskId: string;
+  /** Whether the task is valid */
+  isValid: boolean;
+  /** ID of the validator */
+  validatorId: string;
+  /** Timestamp of validation */
+  timestamp: number;
+  /** Optional proof data */
+  proof?: string;
+  /** Optional on-chain attestation hash */
+  attestationHash?: string;
+}
+
+/**
  * ARC-8004 configuration
  */
 export interface ARC8004Config {

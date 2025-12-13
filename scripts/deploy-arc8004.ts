@@ -10,7 +10,7 @@
  */
 
 import { config } from 'dotenv';
-import { Aptos, Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
+import { Aptos, AptosConfig, Account, Ed25519PrivateKey, Network } from '@aptos-labs/ts-sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
@@ -18,7 +18,8 @@ import { execSync } from 'child_process';
 // Load environment variables from .env file
 config();
 
-const NETWORK = process.env.APTOS_NETWORK || 'aptos-testnet';
+const NETWORK_STR = process.env.APTOS_NETWORK || 'aptos-testnet';
+const NETWORK = NETWORK_STR.includes('mainnet') ? Network.MAINNET : Network.TESTNET;
 const ADMIN_PRIVATE_KEY = process.env.ARC8004_ADMIN_PRIVATE_KEY;
 
 if (!ADMIN_PRIVATE_KEY) {
@@ -30,11 +31,12 @@ const cleanKey = ADMIN_PRIVATE_KEY.replace(/^0x/, '');
 const privateKey = new Ed25519PrivateKey(cleanKey);
 const adminAccount = Account.fromPrivateKey({ privateKey });
 
-const NODE_URL = NETWORK === 'aptos-testnet' 
+const NODE_URL = NETWORK_STR === 'aptos-testnet' 
   ? process.env.APTOS_TESTNET_NODE_URL || 'https://fullnode.testnet.aptoslabs.com/v1'
   : process.env.APTOS_MAINNET_NODE_URL || 'https://fullnode.mainnet.aptoslabs.com/v1';
 
-const aptos = new Aptos({ network: NETWORK });
+const aptosConfig = new AptosConfig({ network: NETWORK });
+const aptos = new Aptos(aptosConfig);
 
 async function checkAccountBalance(address: string): Promise<bigint> {
   try {

@@ -187,7 +187,7 @@ export class IdentityRegistry {
           // Find the change that created the AgentIdentity resource
           const identityChange = txDetails.changes.find((change: any) => {
             return change.data?.type?.includes('agent_identity::AgentIdentity');
-          });
+          }) as { address?: string; data?: { type?: string } } | undefined;
           
           if (identityChange && identityChange.address) {
             tokenAddress = identityChange.address;
