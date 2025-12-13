@@ -61,6 +61,34 @@ export const middleware = paymentMiddleware(
         description: "Access to REST Countries API - country information (0.0006 APT)",
       },
     },
+    "/api/protected/openmeteo": {
+      price: "25000",   // 0.00025 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Open-Meteo weather forecast API (0.00025 APT)",
+      },
+    },
+    "/api/protected/hackernews": {
+      price: "25000",   // 0.00025 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to Hacker News search API (Algolia) (0.00025 APT)",
+      },
+    },
+    "/api/protected/worldtime": {
+      price: "20000",   // 0.0002 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to WorldTime API - timezone time data (0.0002 APT)",
+      },
+    },
+    "/api/protected/github": {
+      price: "40000",   // 0.0004 APT
+      network: process.env.APTOS_NETWORK!,
+      config: {
+        description: "Access to GitHub public repo metadata API (0.0004 APT)",
+      },
+    },
   },
   {
     // Facilitator URL is REQUIRED for x402 protocol

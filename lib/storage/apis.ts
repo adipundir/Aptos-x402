@@ -13,6 +13,7 @@ export interface ApiMetadata {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   requiresAuth?: boolean;
   isExternal?: boolean; // True if API is hosted externally (absolute URL)
+  available?: boolean; // True if API is currently available, false if unavailable
 }
 
 // Base URL - computed dynamically at runtime to handle Vercel serverless environment
@@ -58,6 +59,16 @@ const LOCAL_API_METADATA: Omit<ApiMetadata, 'url'>[] = [
     category: 'Weather',
     cost: '10', // 0.00000001 APT in Octas
     method: 'GET',
+    available: true,
+  },
+  {
+    id: 'openmeteo',
+    name: 'Open-Meteo Forecast',
+    description: 'Real forecast + current conditions from Open-Meteo (free source, no API key)',
+    category: 'Weather',
+    cost: '25000', // 0.00025 APT
+    method: 'GET',
+    available: true,
   },
   {
     id: 'random',
@@ -107,10 +118,38 @@ const LOCAL_API_METADATA: Omit<ApiMetadata, 'url'>[] = [
     cost: '60000', // 0.0006 APT
     method: 'GET',
   },
+  {
+    id: 'hackernews',
+    name: 'Hacker News Search',
+    description: 'Search Hacker News stories via Algolia (free source, no API key)',
+    category: 'Search',
+    cost: '25000', // 0.00025 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'worldtime',
+    name: 'World Time',
+    description: 'Get timezone-based time data from WorldTime API (free source, no API key)',
+    category: 'Utility',
+    cost: '20000', // 0.0002 APT
+    method: 'GET',
+    available: true,
+  },
+  {
+    id: 'github',
+    name: 'GitHub Repo Info',
+    description: 'Fetch public GitHub repository metadata (free source; rate-limited by GitHub)',
+    category: 'Utility',
+    cost: '40000', // 0.0004 APT
+    method: 'GET',
+    available: true,
+  },
 ];
 
 // DonaLabs External APIs (x402-powered, hosted at donalabs-apis.vercel.app)
 // Pricing: Simple 0.001 APT, Medium 0.005 APT, Complex 0.01 APT (testnet)
+// NOTE: Currently unavailable - marked as unavailable in UI
 const DONALABS_APIS: ApiMetadata[] = [
   {
     id: 'donalabs-translate',
@@ -121,6 +160,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '500000', // 0.005 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-prompt',
@@ -131,6 +171,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '100000', // 0.001 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-markdown',
@@ -141,6 +182,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '500000', // 0.005 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-yamljson',
@@ -151,6 +193,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '100000', // 0.001 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-htmlpdf',
@@ -161,6 +204,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '1000000', // 0.01 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-pdfword',
@@ -171,6 +215,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '1000000', // 0.01 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-ebook',
@@ -181,6 +226,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '1000000', // 0.01 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-latex',
@@ -191,6 +237,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '1000000', // 0.01 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-seo-keywords',
@@ -201,6 +248,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '500000', // 0.005 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-seo-domain',
@@ -211,6 +259,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '500000', // 0.005 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-podcast',
@@ -221,6 +270,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '1000000', // 0.01 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-git-diff',
@@ -231,6 +281,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '500000', // 0.005 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-health',
@@ -241,6 +292,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '100000', // 0.001 APT
     method: 'GET',
     isExternal: true,
+    available: false,
   },
   {
     id: 'donalabs-text',
@@ -251,6 +303,7 @@ const DONALABS_APIS: ApiMetadata[] = [
     cost: '100000', // 0.001 APT
     method: 'POST',
     isExternal: true,
+    available: false,
   },
 ];
 

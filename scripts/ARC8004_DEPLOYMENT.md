@@ -50,3 +50,5 @@ After initialization, you can verify agent identities on-chain. The verification
 - **"RESOURCE_ALREADY_EXISTS"**: Modules already initialized. This is OK.
 - **"E_NOT_AUTHORIZED"**: Admin account doesn't match the one set during initialization.
 
+
+

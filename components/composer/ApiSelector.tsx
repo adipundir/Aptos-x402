@@ -16,6 +16,7 @@ interface ApiMetadata {
   category: string;
   cost: string;
   method: string;
+  available?: boolean;
 }
 
 interface ApiSelectorProps {
@@ -185,6 +186,16 @@ export function ApiSelector({ selectedApiIds, onSelectionChange }: ApiSelectorPr
                         <Badge variant="outline" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 border-zinc-300">
                           {api.category}
                         </Badge>
+                        {api.available === true && (
+                          <Badge className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-green-100 text-green-800 border border-green-200">
+                            Available
+                          </Badge>
+                        )}
+                        {api.available === false && (
+                          <Badge className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 bg-red-100 text-red-800 border border-red-200">
+                            Unavailable
+                          </Badge>
+                        )}
                         <span className="text-xs sm:text-sm font-medium text-zinc-700">
                           {formatCost(api.cost)}
                         </span>
