@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Include extra files in the serverless output trace (needed for /docs markdown files on Vercel)
+  // Note: Next 15 expects this at the top-level, not under `experimental`.
+  // @ts-ignore
+  outputFileTracingIncludes: {
+    "/docs": ["./docs/**/*"],
+    "/docs/**": ["./docs/**/*"],
+  },
   // Increase timeout for external API calls during build
   experimental: {
     // @ts-ignore
@@ -15,6 +23,17 @@ const nextConfig: NextConfig = {
   },
   // Fix for Aptos SDK keyv dynamic imports
   webpack: (config, { isServer }) => {
+    // Work around packages that only export ESM "import" (e.g. @splinetool/react-spline@4.x)
+    // by aliasing to the actual dist entry, while keeping app code unchanged.
+    config.resolve = config.resolve || {};
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      "@splinetool/react-spline$": path.resolve(
+        process.cwd(),
+        "node_modules/@splinetool/react-spline/dist/react-spline.js"
+      ),
+    };
+
     // Handle keyv adapter dynamic imports - set all to false to ignore
     if (!isServer) {
       config.resolve.fallback = {

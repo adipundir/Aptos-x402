@@ -84,7 +84,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@shikijs/transformers": "^3.14.0",
-    "@splinetool/react-spline": "3.0.0",
+    "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.12.6",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.12.2",
