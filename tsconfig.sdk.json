@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./lib",
+    "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -19,14 +19,28 @@
     "removeComments": false,
     "preserveConstEnums": true,
     "noEmit": false,
-    "emitDeclarationOnly": false
+    "emitDeclarationOnly": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": ["lib/**/*"],
+  "include": [
+    "src/**/*",
+    "lib/index.ts",
+    "lib/utils.ts",
+    "lib/x402-axios.ts",
+    "lib/x402-middleware.ts",
+    "lib/x402-types.ts",
+    "lib/x402-protocol-types.ts",
+    "lib/facilitator-client.ts",
+    "lib/aptos-utils.ts",
+    "lib/arc8004/**/*"
+  ],
   "exclude": [
     "node_modules",
     "dist",
     "app",
-    "src",
     "scripts",
     "examples",
     "tests",

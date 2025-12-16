@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck, CheckCircle2, ExternalLink, Copy, AlertCircle } from 'lucide-react';
+import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck, CheckCircle2, ExternalLink, Copy, AlertCircle, Link2, Star } from 'lucide-react';
 import Link from 'next/link';
 import { getAgentIcon, getAgentGradient } from '@/lib/utils/agent-symbols';
 
@@ -30,6 +30,15 @@ interface AgentCardProps {
       trustColor: string;
       averageScore: number;
       feedbackCount: number;
+    };
+    onChainScore?: {
+      hasOnChainScore: boolean;
+      trustLevel: number;
+      trustLabel: string;
+      trustColor: string;
+      averageScore: number;
+      feedbackCount: number;
+      lastUpdated?: string;
     };
   };
   balance?: string;
@@ -101,14 +110,24 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                   Verified
                 </Badge>
               )}
-              {agent.trust && (
+              {/* On-Chain Score Badge (prioritized if available) */}
+              {agent.onChainScore?.hasOnChainScore ? (
+                <Badge
+                  style={{ backgroundColor: agent.onChainScore.trustColor + '20', color: agent.onChainScore.trustColor }}
+                  className="rounded-md px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1"
+                  title={`On-Chain Score: ${agent.onChainScore.feedbackCount} attestations`}
+                >
+                  <Link2 className="h-3 w-3" />
+                  {agent.onChainScore.trustLabel} • {agent.onChainScore.averageScore.toFixed(1)} / 5
+                </Badge>
+              ) : agent.trust ? (
                 <Badge
                   style={{ backgroundColor: agent.trust.trustColor + '20', color: agent.trust.trustColor }}
                   className="rounded-md px-2 py-0.5 text-[10px] font-semibold"
                 >
                   {agent.trust.trustLabel} • {agent.trust.averageScore.toFixed(1)} / 5 ({agent.trust.feedbackCount})
                 </Badge>
-              )}
+              ) : null}
             </div>
             
             {agent.description && (
@@ -170,8 +189,36 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
         </div>
 
         {/* Right Section: Metrics */}
-        <div className="w-full lg:w-auto lg:min-w-[360px]">
+        <div className="w-full lg:w-auto lg:min-w-[420px]">
           <div className="flex overflow-hidden rounded-xl border border-zinc-200/80 bg-gradient-to-br from-white to-zinc-50/50 shadow-sm">
+            {/* Score */}
+            <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <Star className="h-3 w-3 text-zinc-400" />
+                Score
+              </span>
+              {agent.onChainScore?.hasOnChainScore ? (
+                <div className="flex items-baseline gap-1" title="On-chain verified score">
+                  <span className="text-2xl font-bold leading-none" style={{ color: agent.onChainScore.trustColor }}>
+                    {agent.onChainScore.averageScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-zinc-500">/ 5</span>
+                  <Link2 className="h-3 w-3 ml-1 text-zinc-400" />
+                </div>
+              ) : agent.trust ? (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold leading-none" style={{ color: agent.trust.trustColor }}>
+                    {agent.trust.averageScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-zinc-500">/ 5</span>
+                </div>
+              ) : (
+                <span className="text-2xl font-bold leading-none text-zinc-300">—</span>
+              )}
+            </div>
+
+            <div className="w-px bg-zinc-200/60" />
+
             {/* Requests */}
             <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
               <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">

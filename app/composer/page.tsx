@@ -28,7 +28,7 @@ export default async function ComposerPage() {
     initialError = 'Unable to load agents. Verify DATABASE_URL and database connectivity.';
   }
 
-  const serializedSummaries = agentSummaries.map(({ agent, balance, stats, trust, identity }) => ({
+  const serializedSummaries = agentSummaries.map(({ agent, balance, stats, trust, identity, onChainScore }) => ({
     agent: {
       id: agent.id,
       userId: agent.userId,
@@ -50,6 +50,14 @@ export default async function ComposerPage() {
     identity: identity
       ? {
           ...identity,
+        }
+      : undefined,
+    onChainScore: onChainScore
+      ? {
+          ...onChainScore,
+          lastUpdated: onChainScore.lastUpdated instanceof Date 
+            ? onChainScore.lastUpdated.toISOString() 
+            : onChainScore.lastUpdated,
         }
       : undefined,
   }));

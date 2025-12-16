@@ -209,54 +209,103 @@ const txHash = await signAndSubmitPayment(
 
 ## ARC-8004 Trust Layer (Identity, Reputation, Validation)
 
-Available directly from `aptos-x402`:
+ARC-8004 is available via a dedicated subpath export with a flexible client SDK:
+
+```typescript
+import { createARC8004Client } from 'aptos-x402/arc8004';
+```
+
+### Quick Start (Zero Config)
+
+```typescript
+import { createARC8004Client } from 'aptos-x402/arc8004';
+
+// Create client with memory storage (no database required!)
+const client = await createARC8004Client();
+
+// Register an agent identity
+const { identity } = await client.identity.register({
+  agentId: 'my-agent-123',
+  agentCard: {
+    name: 'My Weather Agent',
+    description: 'Provides real-time weather data',
+    version: '1.0.0',
+    capabilities: ['data-fetch', 'payment'],
+    protocols: ['x402'],
+    supportedNetworks: ['aptos-testnet'],
+    owner: { address: '0x...', publicKey: '0x...' },
+  },
+});
+
+// Submit reputation feedback
+await client.reputation.submitFeedback({
+  agentId: 'my-agent-123',
+  clientAddress: '0xclient...',
+  overallScore: 5,
+  paymentHash: '0xtx...',
+  feedback: { comment: 'Fast response!' },
+});
+
+// Get agent reputation
+const reputation = await client.reputation.getReputation('my-agent-123');
+console.log('Trust Level:', reputation?.trustLevel);
+```
+
+### Storage Options
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `memory` | In-memory (default) | SDK consumers, testing, stateless |
+| `database` | PostgreSQL | Production deployments |
+| `custom` | User-provided | Other databases |
+
+```typescript
+// Memory mode (default - no setup required)
+const client = await createARC8004Client({
+  config: { storageType: 'memory', skipAgentValidation: true },
+});
+
+// Database mode (requires DATABASE_URL env var)
+const client = await createARC8004Client({
+  config: { storageType: 'database', skipAgentValidation: false },
+});
+```
+
+### On-Chain Integration (Optional)
+
+Enable on-chain to mint identity NFTs on Aptos:
+
+```typescript
+import { createARC8004Client, AptosOnChainProvider } from 'aptos-x402/arc8004';
+
+const client = await createARC8004Client({
+  config: {
+    storageType: 'memory',
+    moduleAddress: '0xYOUR_CONTRACT_ADDRESS',
+    network: 'aptos-testnet',
+  },
+  onChain: new AptosOnChainProvider('aptos-testnet', '0xMODULE'),
+});
+
+// Now register will also mint an NFT
+const { identity, onChainResult } = await client.identity.register({...});
+console.log('NFT minted:', onChainResult?.tokenAddress);
+```
+
+### Legacy Direct Registry Access
+
+For advanced use cases, the low-level registries are still available:
 
 ```typescript
 import {
-  // Identity
   IdentityRegistry,
-  createAgentCard,
-  validateAgentCard,
-
-  // Reputation
   ReputationRegistry,
+  ValidationRegistry,
+  createAgentCard,
   calculateTrustLevel,
   getTrustLevelLabel,
-
-  // Validation
-  ValidationRegistry,
-
-  // Types
   TrustLevel,
 } from 'aptos-x402';
-```
-
-Quick examples:
-
-```typescript
-// Register identity
-await new IdentityRegistry({ network: 'testnet' }).registerIdentity({
-  agentId: 'agent_123',
-  agentCard: createAgentCard({
-    name: 'WeatherBot',
-    description: 'Fetches weather',
-    ownerAddress: '0x...',
-    ownerPublicKey: '0x...',
-  }),
-});
-
-// Submit feedback (reputation)
-await new ReputationRegistry({ network: 'testnet' }).submitFeedback({
-  agentId: 'agent_123',
-  clientAddress: '0xclient',
-  overallScore: 5,
-  paymentHash: '0xPAYMENT_TX',
-});
-
-// Check validation before payment release
-const result = await new ValidationRegistry({ network: 'testnet' })
-  .verifyTaskForPayment('task-1', 'agent_123');
-if (!result.isValid) throw new Error('Task not validated');
 ```
 
 ---
@@ -279,7 +328,16 @@ if (!result.isValid) throw new Error('Task not validated');
 - `signAndSubmitPayment` - Sign and submit transactions
 - `getAccountBalance` - Check account balance
 
-### **ARC-8004 (Trust Layer)**
+### **ARC-8004 Client SDK** (NEW - Recommended)
+- `createARC8004Client` - Factory function for full client
+- `ARC8004Client` - Main client class
+- `IdentityClient` - Identity operations
+- `ReputationClient` - Reputation operations  
+- `ValidationClient` - Validation operations
+- `InMemoryIdentityStorage`, `InMemoryReputationStorage`, `InMemoryValidationStorage`
+- `AptosOnChainProvider`, `NullOnChainProvider`
+
+### **ARC-8004 (Legacy Registry Access)**
 - `IdentityRegistry`, `createAgentCard`, `validateAgentCard`
 - `ReputationRegistry`, `calculateTrustLevel`, `getTrustLevelLabel`
 - `ValidationRegistry`

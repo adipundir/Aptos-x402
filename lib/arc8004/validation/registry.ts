@@ -37,8 +37,8 @@ export class ValidationRegistry {
 
   constructor(config?: Partial<ARC8004Config>) {
     this.config = resolveARC8004Config(config);
-    this.network = this.config.network;
-    this.moduleAddress = this.config.moduleAddress;
+    this.network = this.config.network || 'aptos-testnet';
+    this.moduleAddress = this.config.moduleAddress || '';
     this.aptos = getAptosClient(this.network);
   }
 

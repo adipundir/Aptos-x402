@@ -229,18 +229,101 @@ export interface ValidationResult {
 }
 
 /**
+ * Storage type for ARC-8004 data
+ */
+export type StorageType = 'memory' | 'database' | 'custom';
+
+/**
  * ARC-8004 configuration
+ * 
+ * @example Minimal configuration (memory storage, no on-chain)
+ * ```typescript
+ * const config: ARC8004Config = {
+ *   storageType: 'memory',
+ *   onChainEnabled: false,
+ * };
+ * ```
+ * 
+ * @example Full production configuration
+ * ```typescript
+ * const config: ARC8004Config = {
+ *   storageType: 'database',
+ *   onChainEnabled: true,
+ *   moduleAddress: '0x...',
+ *   network: 'mainnet',
+ * };
+ * ```
  */
 export interface ARC8004Config {
-  /** Move module address */
-  moduleAddress: string;
-  /** Network (testnet/mainnet) */
-  network: string;
-  /** Enable on-chain operations */
+  // ============================================
+  // Storage Configuration
+  // ============================================
+  
+  /**
+   * Storage type to use for ARC-8004 data
+   * - 'memory': In-memory storage (lost on restart, good for SDK/testing)
+   * - 'database': PostgreSQL via Drizzle ORM (requires DATABASE_URL)
+   * - 'custom': User-provided storage providers
+   * @default 'memory'
+   */
+  storageType: StorageType;
+
+  /**
+   * Whether to skip agent existence validation
+   * Set to true when using memory storage without a full agent database
+   * @default true for memory mode, false for database mode
+   */
+  skipAgentValidation?: boolean;
+
+  // ============================================
+  // On-Chain Configuration
+  // ============================================
+
+  /**
+   * Enable on-chain operations (minting, attestations)
+   * When false, all data is stored off-chain only
+   * @default false
+   */
   onChainEnabled: boolean;
-  /** Auto-register identity on agent creation */
+
+  /**
+   * Move module address for ARC-8004 contracts
+   * Required when onChainEnabled is true
+   */
+  moduleAddress?: string;
+
+  /**
+   * Aptos network to use
+   * @default 'aptos-testnet'
+   */
+  network?: string;
+
+  // ============================================
+  // Behavior Configuration
+  // ============================================
+
+  /**
+   * Auto-register identity when agent is created
+   * @default false
+   */
+  autoRegisterIdentity?: boolean;
+
+  /**
+   * Auto-update reputation after successful payments
+   * @default true
+   */
+  autoUpdateReputation?: boolean;
+}
+
+/**
+ * Legacy configuration type for backward compatibility
+ * @deprecated Use ARC8004Config instead
+ */
+export interface LegacyARC8004Config {
+  moduleAddress: string;
+  network: string;
+  onChainEnabled: boolean;
   autoRegisterIdentity: boolean;
-  /** Auto-update reputation on payment */
   autoUpdateReputation: boolean;
 }
 
@@ -248,19 +331,63 @@ export interface ARC8004Config {
  * Default configuration from environment variables
  */
 export const DEFAULT_ARC8004_CONFIG: ARC8004Config = {
-  moduleAddress: process.env.ARC8004_MODULE_ADDRESS || '',
+  // Storage defaults to memory for SDK use (no database required)
+  storageType: (process.env.ARC8004_STORAGE_TYPE as StorageType) || 'memory',
+  skipAgentValidation: process.env.ARC8004_SKIP_AGENT_VALIDATION !== 'false',
+  
+  // On-chain defaults
+  moduleAddress: process.env.ARC8004_MODULE_ADDRESS || undefined,
   network: process.env.APTOS_NETWORK || process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet',
   onChainEnabled: process.env.ARC8004_ONCHAIN_ENABLED === 'true',
+  
+  // Behavior defaults
   autoRegisterIdentity: process.env.ARC8004_AUTO_REGISTER === 'true',
-  autoUpdateReputation: true,
+  autoUpdateReputation: process.env.ARC8004_AUTO_UPDATE_REPUTATION !== 'false',
 };
 
 /**
  * Resolve ARC-8004 configuration by merging partial config with defaults
+ * 
+ * @param config - Partial configuration to merge with defaults
+ * @returns Complete ARC8004Config
+ * 
+ * @example
+ * ```typescript
+ * // Use defaults
+ * const config = resolveARC8004Config();
+ * 
+ * // Override specific settings
+ * const config = resolveARC8004Config({
+ *   storageType: 'database',
+ *   onChainEnabled: true,
+ * });
+ * ```
  */
 export function resolveARC8004Config(config?: Partial<ARC8004Config>): ARC8004Config {
-  return {
+  const merged = {
     ...DEFAULT_ARC8004_CONFIG,
     ...config,
+  };
+
+  // Auto-set skipAgentValidation based on storage type if not explicitly set
+  if (config?.skipAgentValidation === undefined) {
+    merged.skipAgentValidation = merged.storageType === 'memory';
+  }
+
+  return merged;
+}
+
+/**
+ * Convert legacy config to new format
+ * @deprecated For backward compatibility only
+ */
+export function fromLegacyConfig(legacy: Partial<LegacyARC8004Config>): Partial<ARC8004Config> {
+  return {
+    storageType: 'database', // Legacy always used database
+    moduleAddress: legacy.moduleAddress,
+    network: legacy.network,
+    onChainEnabled: legacy.onChainEnabled,
+    autoRegisterIdentity: legacy.autoRegisterIdentity,
+    autoUpdateReputation: legacy.autoUpdateReputation,
   };
 }

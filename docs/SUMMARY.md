@@ -18,7 +18,8 @@
 
 * [AI IDE Integration](guides/ai-ide-integration.md)
 * [Setting Up Your Own Facilitator](guides/facilitator-setup.md)
-* [ARC-8004 Integration](guides/arc8004.md)
+* [ARC-8004 SDK Integration](guides/arc8004-integration.md)
+* [ARC-8004 Overview](guides/arc8004.md)
 * [ARC-8004 Self-Hosting](guides/arc8004-self-hosting.md)
 * [ARC-8004 Use Cases](guides/arc8004-use-cases.md)
 

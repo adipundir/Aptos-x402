@@ -34,23 +34,27 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     },
     "./server": {
-      "types": "./dist/server/index.d.ts",
-      "default": "./dist/server/index.js"
+      "types": "./dist/src/server/index.d.ts",
+      "default": "./dist/src/server/index.js"
     },
     "./types": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/types/index.js"
+      "types": "./dist/src/types/index.d.ts",
+      "default": "./dist/src/types/index.js"
+    },
+    "./arc8004": {
+      "types": "./dist/src/arc8004/index.d.ts",
+      "default": "./dist/src/arc8004/index.js"
     }
   },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "npm run build:sdk && npm run build:demo",
     "build:sdk": "tsc -p tsconfig.sdk.json",
-    "build:demo": "next build --turbopack",
+    "build:demo": "next build",
     "start": "next start",
     "demo": "tsx scripts/demo-agent.ts",
     "test:payment": "tsx scripts/test-payment-flow.ts",
@@ -67,8 +71,6 @@
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": ">=1.26.0",
-    "@aptos-labs/wallet-adapter-ant-design": "^5.3.6",
-    "@aptos-labs/wallet-adapter-react": "^7.2.6",
     "@auth/drizzle-adapter": "^1.11.1",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@langchain/core": "^0.3.0",
