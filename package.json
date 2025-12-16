@@ -1,6 +1,6 @@
 {
   "name": "aptos-x402",
-  "version": "2.0.2",
+  "version": "2.2.0",
   "description": "HTTP 402 Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection and zero fallbacks",
   "author": "Aditya Pundir",
   "license": "MIT",
@@ -71,6 +71,7 @@
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": ">=1.26.0",
+    "@aptos-labs/wallet-adapter-react": "^7.2.6",
     "@auth/drizzle-adapter": "^1.11.1",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@langchain/core": "^0.3.0",
