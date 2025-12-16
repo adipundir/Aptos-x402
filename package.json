@@ -66,8 +66,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "peerDependencies": {
-    "@aptos-labs/ts-sdk": ">=1.26.0",
-    "next": ">=15.0.0"
+    "@aptos-labs/ts-sdk": ">=1.26.0"
   },
   "dependencies": {
     "@aptos-labs/ts-sdk": ">=1.26.0",
@@ -94,7 +93,7 @@
     "got": "^14.6.5",
     "langchain": "^0.3.0",
     "lucide-react": "^0.548.0",
-    "next": ">=15.0.0",
+    "next": "^16.0.10",
     "next-auth": "^5.0.0-beta.30",
     "openai": "^6.8.1",
     "react": "19.1.0",
