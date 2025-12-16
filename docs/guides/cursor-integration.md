@@ -183,11 +183,11 @@ If you find issues with the MDC file or want to add new patterns:
 - [Quick Start Guide](/docs/getting-started/quickstart-buyers)
 - [API Reference](/docs/api-reference)
 - [Examples](/docs/examples)
-- [GitHub Repository](https://github.com/adipundir/aptos-x402)
+- [GitHub Repository](https://github.com/adipundir/Aptos-x402)
 
 ## Support
 
 For issues with the Cursor integration:
 - Check the [FAQ](/docs/faq)
-- Open an issue on [GitHub](https://github.com/adipundir/aptos-x402/issues)
+- Open an issue on [GitHub](https://github.com/adipundir/Aptos-x402/issues)
 - Join our community discussions

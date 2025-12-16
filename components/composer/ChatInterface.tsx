@@ -404,9 +404,14 @@ export function ChatInterface({ agentId, agentName, walletAddress, agentApiIds =
                   <p className="text-xs text-zinc-500">Direct exchange with {agentName}</p>
                 </div>
               </div>
-              <Badge className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
-                Live Session
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className="rounded-full bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide">
+                  Beta
+                </Badge>
+                <Badge className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-[10px] font-medium uppercase tracking-wide text-zinc-600">
+                  Live Session
+                </Badge>
+              </div>
             </div>
 
             <div className="flex-1 min-h-0 overflow-hidden bg-zinc-50">

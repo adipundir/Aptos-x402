@@ -16,7 +16,7 @@ import type {
   ValidationStatus,
   ARC8004Config,
 } from '../types';
-import { DEFAULT_ARC8004_CONFIG } from '../types';
+import { resolveARC8004Config } from '../types';
 
 /**
  * Generate unique ID for validation records
@@ -36,9 +36,9 @@ export class ValidationRegistry {
   private config: ARC8004Config;
 
   constructor(config?: Partial<ARC8004Config>) {
-    this.config = { ...DEFAULT_ARC8004_CONFIG, ...config };
-    this.network = this.config.network;
-    this.moduleAddress = this.config.moduleAddress || process.env.ARC8004_MODULE_ADDRESS || '';
+    this.config = resolveARC8004Config(config);
+    this.network = this.config.network || 'aptos-testnet';
+    this.moduleAddress = this.config.moduleAddress || '';
     this.aptos = getAptosClient(this.network);
   }
 

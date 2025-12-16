@@ -3,10 +3,6 @@
  * Aptos Agent Trust Layer Protocol Types
  */
 
-// ============================================
-// Identity Registry Types
-// ============================================
-
 /**
  * Agent Card - Off-chain metadata linked to on-chain identity
  * Similar to ERC-8004's Agent Card concept
@@ -85,10 +81,6 @@ export interface RegisterIdentityResponse {
   tokenAddress?: string;
   transactionHash?: string;
 }
-
-// ============================================
-// Reputation Registry Types
-// ============================================
 
 /**
  * Feedback submission
@@ -172,10 +164,6 @@ export enum TrustLevel {
   EXCELLENT = 95,
 }
 
-// ============================================
-// Validation Registry Types
-// ============================================
-
 /**
  * Validation types supported
  */
@@ -223,99 +211,183 @@ export interface TaskValidation extends TaskValidationRequest {
 }
 
 /**
- * Validation result
+ * Validation result returned when verifying task for payment
  */
 export interface ValidationResult {
   /** Task ID */
   taskId: string;
-  /** Is valid */
+  /** Whether the task is valid */
   isValid: boolean;
-  /** Validator ID */
+  /** ID of the validator */
   validatorId: string;
-  /** Proof */
+  /** Timestamp of validation */
+  timestamp: number;
+  /** Optional proof data */
   proof?: string;
-  /** Attestation hash */
+  /** Optional on-chain attestation hash */
   attestationHash?: string;
-  /** Timestamp */
-  timestamp: number;
-}
-
-// ============================================
-// On-Chain Types (Move contract interfaces)
-// ============================================
-
-/**
- * On-chain identity resource structure
- */
-export interface OnChainAgentIdentity {
-  agent_id: string;
-  name: string;
-  metadata_uri: string;
-  capabilities: string[];
-  created_at: number;
-  verified: boolean;
 }
 
 /**
- * On-chain reputation attestation
+ * Storage type for ARC-8004 data
  */
-export interface OnChainReputationAttestation {
-  agent_id: string;
-  client_address: string;
-  score: number;
-  payment_hash: string;
-  timestamp: number;
-}
-
-/**
- * On-chain task validation
- */
-export interface OnChainTaskValidation {
-  task_id: string;
-  agent_id: string;
-  validator_id: string;
-  is_valid: boolean;
-  proof: string;
-  timestamp: number;
-}
-
-// ============================================
-// Configuration Types
-// ============================================
+export type StorageType = 'memory' | 'database' | 'custom';
 
 /**
  * ARC-8004 configuration
+ * 
+ * @example Minimal configuration (memory storage, no on-chain)
+ * ```typescript
+ * const config: ARC8004Config = {
+ *   storageType: 'memory',
+ *   onChainEnabled: false,
+ * };
+ * ```
+ * 
+ * @example Full production configuration
+ * ```typescript
+ * const config: ARC8004Config = {
+ *   storageType: 'database',
+ *   onChainEnabled: true,
+ *   moduleAddress: '0x...',
+ *   network: 'mainnet',
+ * };
+ * ```
  */
 export interface ARC8004Config {
-  /** Move module address */
-  moduleAddress: string;
-  /** Network (testnet/mainnet) */
-  network: string;
-  /** Enable on-chain operations */
+  // ============================================
+  // Storage Configuration
+  // ============================================
+  
+  /**
+   * Storage type to use for ARC-8004 data
+   * - 'memory': In-memory storage (lost on restart, good for SDK/testing)
+   * - 'database': PostgreSQL via Drizzle ORM (requires DATABASE_URL)
+   * - 'custom': User-provided storage providers
+   * @default 'memory'
+   */
+  storageType: StorageType;
+
+  /**
+   * Whether to skip agent existence validation
+   * Set to true when using memory storage without a full agent database
+   * @default true for memory mode, false for database mode
+   */
+  skipAgentValidation?: boolean;
+
+  // ============================================
+  // On-Chain Configuration
+  // ============================================
+
+  /**
+   * Enable on-chain operations (minting, attestations)
+   * When false, all data is stored off-chain only
+   * @default false
+   */
   onChainEnabled: boolean;
-  /** Auto-register identity on agent creation */
+
+  /**
+   * Move module address for ARC-8004 contracts
+   * Required when onChainEnabled is true
+   */
+  moduleAddress?: string;
+
+  /**
+   * Aptos network to use
+   * @default 'aptos-testnet'
+   */
+  network?: string;
+
+  // ============================================
+  // Behavior Configuration
+  // ============================================
+
+  /**
+   * Auto-register identity when agent is created
+   * @default false
+   */
+  autoRegisterIdentity?: boolean;
+
+  /**
+   * Auto-update reputation after successful payments
+   * @default true
+   */
+  autoUpdateReputation?: boolean;
+}
+
+/**
+ * Legacy configuration type for backward compatibility
+ * @deprecated Use ARC8004Config instead
+ */
+export interface LegacyARC8004Config {
+  moduleAddress: string;
+  network: string;
+  onChainEnabled: boolean;
   autoRegisterIdentity: boolean;
-  /** Auto-update reputation on payment */
   autoUpdateReputation: boolean;
 }
 
 /**
- * Default configuration
+ * Default configuration from environment variables
  */
 export const DEFAULT_ARC8004_CONFIG: ARC8004Config = {
-  moduleAddress: '',
-  network: 'testnet',
-  onChainEnabled: false,
-  autoRegisterIdentity: true,
-  autoUpdateReputation: true,
+  // Storage defaults to memory for SDK use (no database required)
+  storageType: (process.env.ARC8004_STORAGE_TYPE as StorageType) || 'memory',
+  skipAgentValidation: process.env.ARC8004_SKIP_AGENT_VALIDATION !== 'false',
+  
+  // On-chain defaults
+  moduleAddress: process.env.ARC8004_MODULE_ADDRESS || undefined,
+  network: process.env.APTOS_NETWORK || process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet',
+  onChainEnabled: process.env.ARC8004_ONCHAIN_ENABLED === 'true',
+  
+  // Behavior defaults
+  autoRegisterIdentity: process.env.ARC8004_AUTO_REGISTER === 'true',
+  autoUpdateReputation: process.env.ARC8004_AUTO_UPDATE_REPUTATION !== 'false',
 };
 
+/**
+ * Resolve ARC-8004 configuration by merging partial config with defaults
+ * 
+ * @param config - Partial configuration to merge with defaults
+ * @returns Complete ARC8004Config
+ * 
+ * @example
+ * ```typescript
+ * // Use defaults
+ * const config = resolveARC8004Config();
+ * 
+ * // Override specific settings
+ * const config = resolveARC8004Config({
+ *   storageType: 'database',
+ *   onChainEnabled: true,
+ * });
+ * ```
+ */
+export function resolveARC8004Config(config?: Partial<ARC8004Config>): ARC8004Config {
+  const merged = {
+    ...DEFAULT_ARC8004_CONFIG,
+    ...config,
+  };
 
+  // Auto-set skipAgentValidation based on storage type if not explicitly set
+  if (config?.skipAgentValidation === undefined) {
+    merged.skipAgentValidation = merged.storageType === 'memory';
+  }
 
+  return merged;
+}
 
-
-
-
-
-
-
+/**
+ * Convert legacy config to new format
+ * @deprecated For backward compatibility only
+ */
+export function fromLegacyConfig(legacy: Partial<LegacyARC8004Config>): Partial<ARC8004Config> {
+  return {
+    storageType: 'database', // Legacy always used database
+    moduleAddress: legacy.moduleAddress,
+    network: legacy.network,
+    onChainEnabled: legacy.onChainEnabled,
+    autoRegisterIdentity: legacy.autoRegisterIdentity,
+    autoUpdateReputation: legacy.autoUpdateReputation,
+  };
+}

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Wallet, MessageSquare, Settings, Trash2, ShieldCheck, CheckCircle2, ExternalLink, Copy, AlertCircle, Link2, Star } from 'lucide-react';
 import Link from 'next/link';
 import { getAgentIcon, getAgentGradient } from '@/lib/utils/agent-symbols';
 
@@ -30,6 +31,15 @@ interface AgentCardProps {
       averageScore: number;
       feedbackCount: number;
     };
+    onChainScore?: {
+      hasOnChainScore: boolean;
+      trustLevel: number;
+      trustLabel: string;
+      trustColor: string;
+      averageScore: number;
+      feedbackCount: number;
+      lastUpdated?: string;
+    };
   };
   balance?: string;
   stats?: {
@@ -42,29 +52,24 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
-  const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(agent.identity?.verified ?? false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogContent, setDialogContent] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+    mintTxHash?: string;
+    verifyTxHash?: string;
+  } | null>(null);
 
-  const handleVerify = async () => {
-    if (verifying) return;
-    setVerifying(true);
-    try {
-      const res = await fetch('/api/arc8004/identity/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agentId: agent.id }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to verify identity');
-      }
-      setVerified(true);
-    } catch (err) {
-      console.error('Verify identity failed', err);
-      alert(err instanceof Error ? err.message : 'Failed to verify identity');
-    } finally {
-      setVerifying(false);
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const getExplorerUrl = (txHash: string) => {
+    const network = process.env.NEXT_PUBLIC_APTOS_NETWORK || 'aptos-testnet';
+    const explorerNetwork = network.replace('aptos-', '');
+    return `https://explorer.aptoslabs.com/txn/${txHash}?network=${explorerNetwork}`;
   };
 
   return (
@@ -105,14 +110,24 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                   Verified
                 </Badge>
               )}
-              {agent.trust && (
+              {/* On-Chain Score Badge (prioritized if available) */}
+              {agent.onChainScore?.hasOnChainScore ? (
+                <Badge
+                  style={{ backgroundColor: agent.onChainScore.trustColor + '20', color: agent.onChainScore.trustColor }}
+                  className="rounded-md px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1"
+                  title={`On-Chain Score: ${agent.onChainScore.feedbackCount} attestations`}
+                >
+                  <Link2 className="h-3 w-3" />
+                  {agent.onChainScore.trustLabel} • {agent.onChainScore.averageScore.toFixed(1)} / 5
+                </Badge>
+              ) : agent.trust ? (
                 <Badge
                   style={{ backgroundColor: agent.trust.trustColor + '20', color: agent.trust.trustColor }}
                   className="rounded-md px-2 py-0.5 text-[10px] font-semibold"
                 >
                   {agent.trust.trustLabel} • {agent.trust.averageScore.toFixed(1)} / 5 ({agent.trust.feedbackCount})
                 </Badge>
-              )}
+              ) : null}
             </div>
             
             {agent.description && (
@@ -141,16 +156,23 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
                 </Button>
               </Link>
               {!(verified || agent.identity?.verified) && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-9 border-emerald-200 bg-white px-4 font-medium text-emerald-700 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50"
-                  onClick={handleVerify}
-                  disabled={verifying}
-                >
-                  <ShieldCheck className="mr-2 h-3.5 w-3.5" />
-                  {verifying ? 'Verifying…' : 'Verify'}
-                </Button>
+                <div className="group/verify relative">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9 border-zinc-200 bg-zinc-50 px-4 font-medium text-zinc-500 shadow-sm cursor-not-allowed"
+                    disabled={true}
+                    title="On-chain verification requires admin authorization"
+                  >
+                    <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                    Verify
+                  </Button>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 text-white text-xs rounded-lg opacity-0 group-hover/verify:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                    <div className="font-medium">Admin Verification Required</div>
+                    <div className="text-zinc-400 text-[10px] mt-0.5">On-chain verification is performed by platform admins</div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+                  </div>
+                </div>
               )}
               {onDelete && (
                 <Button
@@ -167,8 +189,36 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
         </div>
 
         {/* Right Section: Metrics */}
-        <div className="w-full lg:w-auto lg:min-w-[360px]">
+        <div className="w-full lg:w-auto lg:min-w-[420px]">
           <div className="flex overflow-hidden rounded-xl border border-zinc-200/80 bg-gradient-to-br from-white to-zinc-50/50 shadow-sm">
+            {/* Score */}
+            <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                <Star className="h-3 w-3 text-zinc-400" />
+                Score
+              </span>
+              {agent.onChainScore?.hasOnChainScore ? (
+                <div className="flex items-baseline gap-1" title="On-chain verified score">
+                  <span className="text-2xl font-bold leading-none" style={{ color: agent.onChainScore.trustColor }}>
+                    {agent.onChainScore.averageScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-zinc-500">/ 5</span>
+                  <Link2 className="h-3 w-3 ml-1 text-zinc-400" />
+                </div>
+              ) : agent.trust ? (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold leading-none" style={{ color: agent.trust.trustColor }}>
+                    {agent.trust.averageScore.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-zinc-500">/ 5</span>
+                </div>
+              ) : (
+                <span className="text-2xl font-bold leading-none text-zinc-300">—</span>
+              )}
+            </div>
+
+            <div className="w-px bg-zinc-200/60" />
+
             {/* Requests */}
             <div className="flex flex-1 flex-col gap-1.5 px-4 py-4 transition-colors hover:bg-white lg:px-5 lg:py-5">
               <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -209,6 +259,102 @@ export function AgentCard({ agent, balance, stats, onDelete }: AgentCardProps) {
           </div>
         </div>
       </div>
+
+      {/* Verification Result Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-[525px] bg-white text-zinc-900">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              {dialogContent?.type === 'success' ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  {dialogContent.title}
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  {dialogContent?.title || 'Verification Result'}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription className="pt-1 text-sm text-zinc-600">
+              {dialogContent?.message}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {(dialogContent?.mintTxHash || dialogContent?.verifyTxHash) && (
+            <div className="space-y-3 py-2">
+              {dialogContent.mintTxHash && (
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 max-w-[477px]">
+                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Mint Transaction
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded bg-white px-3 py-2 text-[13px] font-mono text-zinc-800 shadow-inner">
+                      {dialogContent.mintTxHash}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => copyToClipboard(dialogContent.mintTxHash!)}
+                      title="Copy transaction hash"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => window.open(getExplorerUrl(dialogContent.mintTxHash!), '_blank')}
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              {dialogContent.verifyTxHash && (
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 max-w-[477px]">
+                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
+                    Verify Transaction
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded bg-white px-3 py-2 text-[13px] font-mono text-zinc-800 shadow-inner">
+                      {dialogContent.verifyTxHash}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => copyToClipboard(dialogContent.verifyTxHash!)}
+                      title="Copy transaction hash"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-zinc-600 hover:text-zinc-900"
+                      onClick={() => window.open(getExplorerUrl(dialogContent.verifyTxHash!), '_blank')}
+                      title="View on explorer"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setShowDialog(false)} className="w-full sm:w-auto">
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

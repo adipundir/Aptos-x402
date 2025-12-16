@@ -31,7 +31,7 @@ export function MobileMenu() {
   };
 
   const navItems = [
-    { href: '/composer', label: 'Composer', icon: Bot },
+    { href: '/composer', label: 'Composer', icon: Bot, beta: true },
     { href: '/demo', label: 'Demo', icon: PlayCircle },
     { href: '/docs', label: 'Documentation', icon: BookOpen },
   ];
@@ -89,7 +89,14 @@ export function MobileMenu() {
                 `}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium flex items-center gap-2">
+                  {item.label}
+                  {item.beta && (
+                    <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                      Beta
+                    </span>
+                  )}
+                </span>
               </Link>
             );
           })}
@@ -106,7 +113,7 @@ export function MobileMenu() {
             Resources
           </p>
           <a 
-            href="https://github.com/adipundir/aptos-x402" 
+            href="https://github.com/adipundir/Aptos-x402" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center gap-3 p-3 rounded-lg text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"

@@ -311,7 +311,7 @@ console.log(result.data);`}
               </div>
               <div className="flex items-center gap-6">
                 <a
-                  href="https://github.com/adipundir/aptos-x402"
+                  href="https://github.com/adipundir/Aptos-x402"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-zinc-900 transition-colors"

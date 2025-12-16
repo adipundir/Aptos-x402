@@ -4,8 +4,8 @@
  * Includes ARC-8004 identity registration
  */
 
-import { db, agents, type Agent, type NewAgent } from '@/lib/db';
-import { eq, and, or, desc } from 'drizzle-orm';
+import { db, agents, sql as rawSql, type Agent, type NewAgent } from '@/lib/db';
+import { eq, and, or, desc, sql } from 'drizzle-orm';
 import { createAgentWallet, getAgentWalletPublic, deleteAgentWallet } from './agent-wallets';
 import { IdentityRegistry, createAgentCard } from '@/lib/arc8004';
 import type { AgentIdentity } from '@/lib/arc8004/types';
@@ -162,18 +162,69 @@ export async function getAgentByIdWithWallet(id: string, userId?: string): Promi
 export async function createAgent(
   agentData: Omit<NewAgent, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<AgentWithWallet> {
+  // Ensure apiIds is properly formatted as an array
+  const apiIds: string[] = Array.isArray(agentData.apiIds) ? agentData.apiIds : [];
+  
+  const agentId = generateId();
+  
+  // Create wallet for the agent FIRST (before inserting agent)
+  // This is needed because the database may still have wallet_address as a required column
+  const wallet = await createAgentWallet(agentId);
+  
   const newAgent: NewAgent = {
     ...agentData,
-    id: generateId(),
+    id: agentId,
     createdAt: new Date(),
     updatedAt: new Date(),
+    apiIds,
   };
 
   // Create agent in database
-  const [created] = await db.insert(agents).values(newAgent).returning();
-  
-  // Create wallet for the agent
-  const wallet = await createAgentWallet(created.id);
+  // Try normal Drizzle insert first, fallback to raw SQL if it fails (e.g., if wallet_address column exists)
+  let created: Agent;
+  try {
+    const [inserted] = await db.insert(agents).values(newAgent).returning();
+    if (!inserted) {
+      throw new Error('Failed to create agent: no record returned');
+    }
+    created = inserted;
+  } catch (error: any) {
+    // If Drizzle insert fails, try raw SQL with wallet_address included
+    // This handles the case where database schema still has wallet_address column
+    console.warn('[createAgent] Drizzle insert failed, trying raw SQL with wallet_address:', error?.message || error);
+    try {
+      // Use raw SQL to insert with wallet_address
+      const result = await rawSql`
+        INSERT INTO agents (id, user_id, name, description, image_url, visibility, api_ids, wallet_address, created_at, updated_at)
+        VALUES (${newAgent.id}, ${newAgent.userId}, ${newAgent.name}, ${newAgent.description || null}, ${newAgent.imageUrl || null}, ${newAgent.visibility}, ${JSON.stringify(newAgent.apiIds)}::jsonb, ${wallet.address}, ${newAgent.createdAt}, ${newAgent.updatedAt})
+        RETURNING *
+      `;
+      // Convert result to Agent type
+      const row = result[0] as any;
+      created = {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        description: row.description,
+        imageUrl: row.image_url,
+        visibility: row.visibility,
+        apiIds: row.api_ids,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      };
+      console.log('[createAgent] Successfully created agent using raw SQL fallback');
+    } catch (rawError: any) {
+      console.error('[createAgent] Raw SQL insert also failed:', rawError);
+      console.error('[createAgent] Original error:', error);
+      // Clean up wallet if agent creation fails
+      try {
+        await deleteAgentWallet(agentId);
+      } catch (cleanupError) {
+        console.error('[createAgent] Failed to cleanup wallet after agent creation failure:', cleanupError);
+      }
+      throw rawError;
+    }
+  }
   
   console.log(`[Agent] Created agent ${created.id} with wallet ${wallet.address}`);
   

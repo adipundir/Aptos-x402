@@ -1,10 +1,12 @@
 [package]
 name = "ARC8004"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Aptos-x402 Team"]
 
 [addresses]
-arc8004 = "4d7a87c0032df24b6bb29424d1ab3e7dffa5ca6801382523883f38485c32555f"
+# Module address for v2 with AgentScore feature
+# v1 was at: 0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323
+arc8004 = "0xa6cfe253f864c0eca623058c7ec2e80c645c5b0a5745c853e7082ee4daad077f"
 
 [dependencies.AptosFramework]
 git = "https://github.com/aptos-labs/aptos-core.git"

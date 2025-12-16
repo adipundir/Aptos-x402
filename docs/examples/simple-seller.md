@@ -199,7 +199,7 @@ export const middleware = paymentMiddleware(
 
 ## Source Code
 
-Full source code: [examples/simple-seller](https://github.com/adipundir/aptos-x402/tree/main/examples/simple-seller)
+Full source code: [examples/simple-seller](https://github.com/adipundir/Aptos-x402/tree/main/examples/simple-seller)
 
 ---
 

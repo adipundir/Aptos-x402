@@ -27,7 +27,7 @@ export default function SignInPage() {
             Sign in
           </h1>
           <p className="text-sm text-zinc-500">
-            Continue to Agent Composer
+            Continue to Agent Composer (Beta)
           </p>
         </div>
 

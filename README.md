@@ -449,6 +449,114 @@ import type {
 
 ---
 
+## 🛡️ ARC-8004: Agent Trust Layer
+
+ARC-8004 provides identity, reputation, and validation for AI agents on Aptos. It integrates with x402 payments to build trust signals from paid interactions.
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Identity Registry** | Agent Cards with metadata, capabilities, and verification status |
+| **Reputation Registry** | Trust scores based on feedback from interactions |
+| **Validation Registry** | Task completion verification before payments |
+| **Flexible Storage** | Memory (default), PostgreSQL, or custom backends |
+| **Optional On-Chain** | Enable NFT minting and attestations when needed |
+
+### Quick Start (v2.0 - Recommended)
+
+```typescript
+import { createARC8004Client } from 'aptos-x402/arc8004';
+
+// Create client - works with zero config (memory storage)
+const client = await createARC8004Client();
+
+// Register an agent identity
+const { identity } = await client.identity.register({
+  agentId: 'my-agent',
+  agentCard: {
+    name: 'WeatherBot',
+    description: 'Provides weather data',
+    version: '1.0.0',
+    capabilities: ['payment', 'data-fetch'],
+    protocols: ['x402'],
+    supportedNetworks: ['aptos-testnet'],
+    owner: { address: '0x...', publicKey: '0x...' },
+  },
+});
+
+// Submit feedback after payment
+await client.reputation.submitFeedback({
+  agentId: 'my-agent',
+  clientAddress: '0xclient',
+  overallScore: 5,
+  paymentHash: '0xPAYMENT_TX',
+  feedback: { comment: 'Fast response!' },
+});
+
+// Get reputation
+const rep = await client.reputation.getReputation('my-agent');
+console.log('Trust Level:', rep?.trustLevel); // "excellent"
+```
+
+### Storage Options
+
+```typescript
+// Memory (default) - No database required
+const client = await createARC8004Client({
+  config: { storageType: 'memory', skipAgentValidation: true },
+});
+
+// Database - PostgreSQL with Drizzle ORM
+const client = await createARC8004Client({
+  config: { storageType: 'database' },
+});
+
+// Custom - Bring your own storage
+const client = await createARC8004Client({
+  config: { storageType: 'custom' },
+  storage: { identity: myStorage, reputation: myRepStorage, validation: myValStorage },
+});
+```
+
+### On-Chain Integration (Optional)
+
+```typescript
+import { createARC8004Client, AptosOnChainProvider } from 'aptos-x402/arc8004';
+
+const client = await createARC8004Client({
+  config: { 
+    storageType: 'memory',
+    moduleAddress: '0xYOUR_CONTRACT',
+    network: 'aptos-testnet',
+  },
+  onChain: new AptosOnChainProvider('aptos-testnet', '0xYOUR_CONTRACT'),
+});
+```
+
+### Configuration
+
+```bash
+# .env.local
+ARC8004_AUTO_REGISTER=true        # Auto-register agents on creation
+ARC8004_ONCHAIN_ENABLED=false     # DB-only mode (recommended)
+```
+
+For on-chain NFT minting (optional):
+```bash
+ARC8004_MODULE_ADDRESS=0xa6cfe253f864c0eca623058c7ec2e80c645c5b0a5745c853e7082ee4daad077f
+ARC8004_ONCHAIN_ENABLED=true
+```
+
+### Documentation
+
+- [ARC-8004 Integration Guide](./docs/guides/arc8004-integration.md) - Full SDK usage (NEW)
+- [ARC-8004 Core Concepts](./docs/core-concepts/arc8004.md) - Architecture overview
+- [ARC-8004 Use Cases](./docs/guides/arc8004-use-cases.md) - Practical examples
+- [Self-Hosting Guide](./docs/guides/arc8004-self-hosting.md) - Deploy your own contracts
+
+---
+
 ## Advanced Usage
 
 ### Manual Payment Flow
@@ -540,8 +648,8 @@ Try the complete payment flow: **[aptos-x402.vercel.app](https://aptos-x402.verc
 ### CLI Demo
 
 ```bash
-git clone https://github.com/adipundir/aptos-x402
-cd aptos-x402
+git clone https://github.com/adipundir/Aptos-x402
+cd Aptos-x402
 npm install
 npm run dev  # In one terminal
 
@@ -690,13 +798,13 @@ APTOS_PRIVATE_KEY=0x... npx tsx scripts/benchmark-payment-flow.ts
 - [Performance Guide](./PERFORMANCE_OPTIMIZATIONS.md)
 
 ### Links
-- [GitHub Repository](https://github.com/adipundir/aptos-x402)
+- [GitHub Repository](https://github.com/adipundir/Aptos-x402)
 - [NPM Package](https://www.npmjs.com/package/aptos-x402)
 - [Aptos Developer Docs](https://aptos.dev)
 
 ### Support
-- [Report Issues](https://github.com/adipundir/aptos-x402/issues)
-- [Discussions](https://github.com/adipundir/aptos-x402/discussions)
+- [Report Issues](https://github.com/adipundir/Aptos-x402/issues)
+- [Discussions](https://github.com/adipundir/Aptos-x402/discussions)
 - [Twitter: @aptos-x402](https://x.com/aptosx402)
 
 ## Contributing
@@ -709,7 +817,7 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 
 **Built for the Aptos Ecosystem**
 
-[Documentation](https://aptos-x402.vercel.app) • [GitHub](https://github.com/adipundir/aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
+[Documentation](https://aptos-x402.vercel.app) • [GitHub](https://github.com/adipundir/Aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
 
 </div>
 

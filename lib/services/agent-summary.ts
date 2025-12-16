@@ -8,6 +8,7 @@ import { getChatWithMessages } from '@/lib/storage/chats';
 import { getAgentWalletBalance } from '@/lib/storage/agent-wallets';
 import { ReputationRegistry } from '@/lib/arc8004/reputation/registry';
 import { getTrustLevelLabel, getTrustLevelColor } from '@/lib/arc8004/reputation/scoring';
+import { createOnChainProvider, type OnChainAgentScore } from '@/lib/arc8004/chain/types';
 
 export type ClientAgent = ReturnType<typeof getAgentForClient>;
 
@@ -32,6 +33,7 @@ export interface AgentSummary {
   stats: AgentStatsSummary;
   trust?: AgentTrustSummary;
   identity?: AgentIdentitySummary;
+  onChainScore?: OnChainScoreSummary;
 }
 
 export interface AgentIdentitySummary {
@@ -49,6 +51,23 @@ export interface AgentTrustSummary {
   feedbackCount: number;
 }
 
+export interface OnChainScoreSummary {
+  /** Whether on-chain score exists */
+  hasOnChainScore: boolean;
+  /** Trust level (0-5) */
+  trustLevel: number;
+  /** Trust level label */
+  trustLabel: string;
+  /** Trust level color */
+  trustColor: string;
+  /** Average score (1-5, scaled from on-chain) */
+  averageScore: number;
+  /** Number of on-chain feedback attestations */
+  feedbackCount: number;
+  /** Last updated timestamp */
+  lastUpdated?: Date;
+}
+
 const FALLBACK_STATS: AgentStatsSummary = {
   requests: 0,
   apiCalls: 0,
@@ -57,6 +76,71 @@ const FALLBACK_STATS: AgentStatsSummary = {
 };
 
 const APT_TO_USD = 10; // TODO: replace with dynamic pricing feed when available
+
+// On-chain trust level labels matching Move contract
+const ON_CHAIN_TRUST_LABELS: Record<number, string> = {
+  0: 'Unknown',
+  1: 'New',
+  2: 'Developing',
+  3: 'Established',
+  4: 'Trusted',
+  5: 'Excellent',
+};
+
+const ON_CHAIN_TRUST_COLORS: Record<number, string> = {
+  0: '#9ca3af', // gray
+  1: '#f59e0b', // amber
+  2: '#3b82f6', // blue
+  3: '#8b5cf6', // purple
+  4: '#22c55e', // green
+  5: '#10b981', // emerald
+};
+
+/**
+ * Fetch on-chain score for an agent
+ */
+export async function getOnChainScore(agentId: string): Promise<OnChainScoreSummary | undefined> {
+  const moduleAddress = process.env.ARC8004_MODULE_ADDRESS;
+  const onChainEnabled = process.env.ARC8004_ONCHAIN_ENABLED === 'true';
+
+  if (!onChainEnabled || !moduleAddress) {
+    return undefined;
+  }
+
+  try {
+    const provider = createOnChainProvider({
+      enabled: true,
+      moduleAddress,
+      network: process.env.ARC8004_NETWORK || 'aptos-testnet',
+    });
+
+    const score = await provider.getAgentScore(agentId);
+
+    if (!score) {
+      return {
+        hasOnChainScore: false,
+        trustLevel: 0,
+        trustLabel: ON_CHAIN_TRUST_LABELS[0],
+        trustColor: ON_CHAIN_TRUST_COLORS[0],
+        averageScore: 0,
+        feedbackCount: 0,
+      };
+    }
+
+    return {
+      hasOnChainScore: true,
+      trustLevel: score.trustLevel,
+      trustLabel: ON_CHAIN_TRUST_LABELS[score.trustLevel] || 'Unknown',
+      trustColor: ON_CHAIN_TRUST_COLORS[score.trustLevel] || ON_CHAIN_TRUST_COLORS[0],
+      averageScore: score.averageScoreScaled / 100, // Convert from scaled (450) to actual (4.5)
+      feedbackCount: score.feedbackCount,
+      lastUpdated: score.lastUpdated > 0 ? new Date(score.lastUpdated * 1000) : undefined,
+    };
+  } catch (err) {
+    console.warn('[AgentSummary] Failed to fetch on-chain score:', err);
+    return undefined;
+  }
+}
 
 export async function getAgentStats(agentId: string, userId: string): Promise<AgentStatsSummary> {
   const chatData = await getChatWithMessages(agentId, userId);
@@ -125,8 +209,9 @@ export async function getAgentSummariesForUser(
       // Get agent's wallet balance
       const walletBalance = await getAgentWalletBalance(agent.id);
 
-      const [stats] = await Promise.all([
+      const [stats, onChainScore] = await Promise.all([
         getAgentStats(agent.id, userId).catch(() => ({ ...FALLBACK_STATS })),
+        getOnChainScore(agent.id).catch(() => undefined),
       ]);
 
       // Trust data from reputation registry (best-effort)
@@ -168,6 +253,7 @@ export async function getAgentSummariesForUser(
         stats,
         trust,
         identity,
+        onChainScore,
       } as AgentSummary;
     })
   );
