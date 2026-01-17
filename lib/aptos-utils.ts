@@ -1,78 +1,48 @@
+/**
+ * Aptos Utilities for x402
+ * 
+ * Utilities for building, signing, and submitting Aptos transactions.
+ */
+
 import {
   Aptos,
   AptosConfig,
   Network,
   Account,
   Ed25519PrivateKey,
-  AccountAddress,
-  InputGenerateTransactionPayloadData,
+  SimpleTransaction,
+  AccountAuthenticator,
 } from "@aptos-labs/ts-sdk";
 
-export interface TransactionPayload {
-  function: string;
-  functionArguments: any[];
-  typeArguments?: string[];
+import { parseCAIP2Network } from "./x402-protocol-types";
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface FeePayerTransactionResult {
+  transaction: SimpleTransaction;
+  senderAuthenticator: AccountAuthenticator;
 }
 
-export interface X402PaymentRequest {
-  amount: string;
-  recipient: string;
-  network: string;
-  memo?: string;
-}
-
-export interface X402PaymentResponse {
-  transactionHash: string;
-  sender: string;
-  amount: string;
-  recipient: string;
-  timestamp: number;
-}
+// ============================================
+// CLIENT MANAGEMENT
+// ============================================
 
 /**
- * Initialize Aptos client based on network
- * Supports both x402 format (aptos-testnet) and simple format (testnet)
- * Uses custom RPC URLs from environment variables when available
+ * Get Aptos client based on network (CAIP-2 format)
  */
-export function getAptosClient(network: string = "testnet"): Aptos {
-  // Map x402 network identifiers to Aptos SDK network enum
-  let aptosNetwork: Network;
+export function getAptosClient(network: string = "aptos:2"): Aptos {
+  const parsed = parseCAIP2Network(network);
+  const aptosNetwork = parsed?.chainId === '1' ? Network.MAINNET : Network.TESTNET;
   
-  if (network === "aptos-mainnet" || network === "mainnet") {
-    aptosNetwork = Network.MAINNET;
-  } else if (network === "aptos-testnet" || network === "testnet") {
-    aptosNetwork = Network.TESTNET;
-  } else if (network === "aptos-devnet" || network === "devnet") {
-    aptosNetwork = Network.DEVNET;
-  } else if (network.startsWith("aptos-")) {
-    // Strip "aptos-" prefix and use as network
-    aptosNetwork = network.replace("aptos-", "").toLowerCase() as Network;
-  } else {
-    aptosNetwork = network.toLowerCase() as Network;
-  }
+  const rpcUrl = aptosNetwork === Network.MAINNET 
+    ? process.env.APTOS_MAINNET_NODE_URL 
+    : process.env.APTOS_TESTNET_NODE_URL;
   
-  // Check for custom RPC URLs from environment variables
-  let config: AptosConfig;
-  let rpcUrl: string | undefined;
-  
-  // Map network to corresponding environment variable
-  if (aptosNetwork === Network.MAINNET && process.env.APTOS_MAINNET_NODE_URL) {
-    rpcUrl = process.env.APTOS_MAINNET_NODE_URL;
-  } else if (aptosNetwork === Network.TESTNET && process.env.APTOS_TESTNET_NODE_URL) {
-    rpcUrl = process.env.APTOS_TESTNET_NODE_URL;
-  } else if (aptosNetwork === Network.DEVNET && process.env.APTOS_DEVNET_NODE_URL) {
-    rpcUrl = process.env.APTOS_DEVNET_NODE_URL;
-  }
-  
-  if (rpcUrl) {
-    config = new AptosConfig({ 
-      network: aptosNetwork,
-      fullnode: rpcUrl
-    });
-  } else {
-    // Use default Aptos Labs RPC endpoints
-    config = new AptosConfig({ network: aptosNetwork });
-  }
+  const config = rpcUrl 
+    ? new AptosConfig({ network: aptosNetwork, fullnode: rpcUrl })
+    : new AptosConfig({ network: aptosNetwork });
   
   return new Aptos(config);
 }
@@ -81,121 +51,130 @@ export function getAptosClient(network: string = "testnet"): Aptos {
  * Create an Account from a private key
  */
 export function getAccountFromPrivateKey(privateKeyHex: string): Account {
-  // Remove '0x' prefix if present
   const cleanKey = privateKeyHex.replace(/^0x/, "");
-  const privateKey = new Ed25519PrivateKey(cleanKey);
-  return Account.fromPrivateKey({ privateKey });
+  return Account.fromPrivateKey({ privateKey: new Ed25519PrivateKey(cleanKey) });
 }
 
+// ============================================
+// TRANSACTION BUILDING (Fungible Assets Only)
+// ============================================
+
 /**
- * Sign and submit a simple coin transfer transaction
+ * Build a sponsored fungible asset transfer transaction
  */
-export async function signAndSubmitPayment(
+export async function buildFeePayerFATransfer(
   aptos: Aptos,
   sender: Account,
-  recipientAddress: string,
-  amount: string
-): Promise<string> {
-  const transaction = await aptos.transaction.build.simple({
+  recipient: string,
+  amount: string | bigint,
+  assetMetadata: string
+): Promise<SimpleTransaction> {
+  return await aptos.transaction.build.simple({
     sender: sender.accountAddress,
+    withFeePayer: true,
     data: {
-      function: "0x1::aptos_account::transfer",
-      functionArguments: [recipientAddress, amount],
+      function: "0x1::primary_fungible_store::transfer",
+      typeArguments: ["0x1::fungible_asset::Metadata"],
+      functionArguments: [assetMetadata, recipient, BigInt(amount.toString())],
     },
   });
+}
 
-  const committedTxn = await aptos.signAndSubmitTransaction({
-    signer: sender,
+// ============================================
+// TRANSACTION SIGNING
+// ============================================
+
+/**
+ * Sign a transaction as the sender
+ */
+export function signAsSender(
+  aptos: Aptos,
+  signer: Account,
+  transaction: SimpleTransaction
+): AccountAuthenticator {
+  return aptos.transaction.sign({ signer, transaction });
+}
+
+// ============================================
+// TRANSACTION SUBMISSION
+// ============================================
+
+/**
+ * Submit a transaction with sender signature
+ */
+export async function submitTransaction(
+  aptos: Aptos,
+  transaction: SimpleTransaction,
+  senderAuthenticator: AccountAuthenticator
+): Promise<string> {
+  const committed = await aptos.transaction.submit.simple({
     transaction,
+    senderAuthenticator,
   });
-
-  return committedTxn.hash;
+  return committed.hash;
 }
 
-/**
- * Verify a transaction exists and matches expected parameters
- */
-export async function verifyTransaction(
-  aptos: Aptos,
-  transactionHash: string,
-  expectedSender?: string,
-  expectedRecipient?: string,
-  expectedAmount?: string
-): Promise<boolean> {
-  try {
-    const txn = await aptos.transaction.getTransactionByHash({
-      transactionHash,
-    });
-
-    // Check if transaction is committed and successful
-    if (!('success' in txn) || !txn.success) {
-      return false;
-    }
-
-    // Basic verification - transaction exists and succeeded
-    if (!expectedSender && !expectedRecipient && !expectedAmount) {
-      return true;
-    }
-
-    // Additional verification if parameters provided
-    const payload = (txn as any).payload;
-    
-    if (payload?.function === "0x1::aptos_account::transfer") {
-      const args = payload.arguments;
-      
-      if (expectedRecipient && args[0] !== expectedRecipient) {
-        return false;
-      }
-      
-      if (expectedAmount && args[1] !== expectedAmount) {
-        return false;
-      }
-    }
-
-    if (expectedSender && (txn as any).sender !== expectedSender) {
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error verifying transaction:", error);
-    return false;
-  }
-}
+// ============================================
+// ACCOUNT UTILITIES
+// ============================================
 
 /**
- * Wait for a transaction to be confirmed
+ * Get fungible asset balance
  */
-export async function waitForTransaction(
+export async function getFungibleAssetBalance(
   aptos: Aptos,
-  transactionHash: string
-): Promise<boolean> {
-  try {
-    await aptos.waitForTransaction({
-      transactionHash,
-    });
-    return true;
-  } catch (error) {
-    console.error("Error waiting for transaction:", error);
-    return false;
-  }
-}
-
-/**
- * Get account balance
- */
-export async function getAccountBalance(
-  aptos: Aptos,
-  accountAddress: string
+  accountAddress: string,
+  assetMetadata: string
 ): Promise<string> {
   try {
-    const balance = await aptos.getAccountAPTAmount({
-      accountAddress,
+    const balances = await aptos.getCurrentFungibleAssetBalances({
+      options: {
+        where: {
+          owner_address: { _eq: accountAddress },
+          asset_type: { _eq: assetMetadata },
+        },
+      },
     });
-    return balance.toString();
-  } catch (error) {
-    console.error("Error getting account balance:", error);
+    return balances.length > 0 ? balances[0].amount.toString() : "0";
+  } catch {
     return "0";
   }
 }
 
+/**
+ * Check if an account exists on chain
+ */
+export async function accountExists(
+  aptos: Aptos,
+  accountAddress: string
+): Promise<boolean> {
+  try {
+    await aptos.getAccountInfo({ accountAddress });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ============================================
+// NETWORK UTILITIES
+// ============================================
+
+/**
+ * Get chain ID from CAIP-2 network
+ */
+export function getChainId(network: string): number {
+  const parsed = parseCAIP2Network(network);
+  if (parsed?.chainId) {
+    const id = parseInt(parsed.chainId, 10);
+    if (!isNaN(id)) return id;
+  }
+  return 2; // Default testnet
+}
+
+/**
+ * Get CAIP-2 network from chain ID
+ */
+export function getNetworkFromChainId(chainId: number): string {
+  return `aptos:${chainId}`;
+}

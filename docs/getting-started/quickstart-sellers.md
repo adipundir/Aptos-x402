@@ -1,14 +1,12 @@
 # Quickstart for Sellers
 
-Add payment requirements to your Next.js API in 5 minutes with x402 middleware.
+Add payment requirements to your Next.js API in 5 minutes with **x402 v2 compliant** middleware.
+
+> ✅ **x402 v2 protocol** | ⚠️ v1 is deprecated
 
 ## Prerequisites
 
-| Requirement | Version |
-|-------------|---------|
-| **Next.js** | 15.0.0+ with App Router |
-| **Node.js** | 20.0.0+ |
-| **TypeScript** | 5.x (recommended) |
+Next.js 15+ or 16+ with App Router, Node.js 20.9+, TypeScript 5.1+ (recommended).
 
 ## Installation
 
@@ -16,61 +14,61 @@ Add payment requirements to your Next.js API in 5 minutes with x402 middleware.
 npm install aptos-x402
 ```
 
-> The Aptos SDK (`@aptos-labs/ts-sdk`) is included as a peer dependency.
-
-## Step 1: Configure Wallet Address
-
-You need an Aptos wallet address to receive payments. The private key stays in your wallet - only the address is needed on your server.
-
-### Option A: Use Existing Wallet
-
-If you have [Petra Wallet](https://petra.app/) or [Martian Wallet](https://martianwallet.xyz/), copy your address (starts with `0x`).
-
-### Option B: Generate Programmatically
-
-```bash
-npx tsx -e "import { Account } from '@aptos-labs/ts-sdk'; const acc = Account.generate(); console.log('Address:', acc.accountAddress.toString());"
-```
-
-## Step 2: Configure Environment
+## Step 1: Configure Environment
 
 Create `.env.local` in your project root:
 
-```
+```bash
+# Your Aptos wallet address (receives USDC payments)
 PAYMENT_RECIPIENT_ADDRESS=0xYOUR_WALLET_ADDRESS
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+
+# Network (CAIP-2 format)
+APTOS_NETWORK=aptos:2  # Use aptos:1 for mainnet
+
+# USDC Asset Addresses (Circle)
+USDC_MAINNET_ADDRESS=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
+
+# Facilitator URL (handles blockchain operations)
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
+
+# Geomi API Key (for gas sponsorship)
+GEOMI_API_KEY=your_api_key_from_geomi_dev
 ```
 
-| Variable | Description |
-|----------|-------------|
-| `PAYMENT_RECIPIENT_ADDRESS` | Your Aptos wallet address (receives payments) |
-| `FACILITATOR_URL` | Service that handles blockchain operations |
 
-> **Note:** The public facilitator URL shown above is free and works on both testnet and mainnet. You can optionally [self-host](../guides/facilitator-setup.md) for custom requirements.
+## Step 2: Create Proxy
 
-## Step 3: Create Middleware
-
-Create `middleware.ts` in your project root (same level as `app/` directory):
+Create `proxy.ts` in your project root:
 
 ```typescript
+// proxy.ts
 import { paymentMiddleware } from 'aptos-x402';
 
-export const middleware = paymentMiddleware(
+// Select USDC address based on network
+const USDC_ASSET = process.env.APTOS_NETWORK === "aptos:1" 
+  ? process.env.USDC_MAINNET_ADDRESS! 
+  : process.env.USDC_TESTNET_ADDRESS!;
+
+export const proxy = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     '/api/premium/weather': {
-      price: '1000000',  // 0.01 APT
-      network: 'testnet',
+      price: '1000',       // 0.001 USDC (6 decimals)
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
+      sponsored: true,     // Facilitator sponsors gas (default: true)
       config: {
-        description: 'Premium weather data with 7-day forecast',
-        mimeType: 'application/json'
+        description: 'Premium weather data',
       }
     },
-    '/api/premium/stocks': {
-      price: '5000000',  // 0.05 APT
-      network: 'testnet',
+    '/api/premium/data': {
+      price: '5000',       // 0.005 USDC
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
+      sponsored: true,     // Facilitator sponsors gas (default: true)
       config: {
-        description: 'Real-time stock market data'
+        description: 'Premium data API',
       }
     }
   },
@@ -84,32 +82,12 @@ export const config = {
 };
 ```
 
-### Configuration Explained
 
-| Field | Purpose |
-|-------|---------|
-| **Route path** | Exact API endpoint path (e.g., `/api/premium/weather`) |
-| **price** | Payment amount in Octas |
-| **network** | Blockchain network (`'testnet'` or `'mainnet'`) |
-| **description** | Human-readable resource description |
-| **matcher** | Pattern for routes the middleware applies to |
+USDC uses 6 decimals: `1000` = $0.001, `10000` = $0.01, `1000000` = $1.00
 
-### Octas Pricing Reference
+## Step 3: Create API Routes
 
-Aptos uses **Octas** as the smallest unit (like satoshis or wei):
-
-```
-1 APT = 100,000,000 Octas
-
-Common prices:
-  $0.01 equivalent → ~100,000 Octas    (0.001 APT)
-  $0.10 equivalent → ~1,000,000 Octas  (0.01 APT)
-  $1.00 equivalent → ~10,000,000 Octas (0.1 APT)
-```
-
-## Step 4: Create API Routes
-
-Your API routes require **zero payment logic** - write them as normal:
+Your routes require **zero payment logic**:
 
 ```typescript
 // app/api/premium/weather/route.ts
@@ -119,60 +97,44 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   // This code ONLY executes after successful payment
-  
   return NextResponse.json({
     location: 'San Francisco',
     temperature: 72,
     condition: 'Sunny',
     forecast: [
       { day: 'Monday', high: 73, low: 58 },
-      { day: 'Tuesday', high: 70, low: 55 },
-      { day: 'Wednesday', high: 68, low: 54 }
-    ],
-    premium: true
+      { day: 'Tuesday', high: 70, low: 55 }
+    ]
   });
 }
 ```
 
-### Payment Flow
+## Step 4: Test
 
-The middleware automatically handles:
-
-1. **No Payment** → Returns 402 with payment instructions
-2. **Invalid Payment** → Returns 403 with error details
-3. **Valid Payment** → Verifies → Settles → Executes your route → Returns 200
-
-## Step 5: Test Your Setup
-
-### Test Without Payment
+### Without Payment
 
 ```bash
-npm run dev
-
-# In another terminal
 curl http://localhost:3000/api/premium/weather
 ```
 
 Expected 402 response:
+
 ```json
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "accepts": [{
     "scheme": "exact",
-    "network": "aptos-testnet",
-    "maxAmountRequired": "1000000",
+    "network": "aptos:2",
+    "amount": "1000",
+    "asset": "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
     "payTo": "0xYOUR_WALLET_ADDRESS",
-    "description": "Premium weather data with 7-day forecast",
-    "resource": "http://localhost:3000/api/premium/weather"
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
   }]
 }
 ```
 
-If you see this 402 response, your middleware is working correctly!
-
-### Test With Payment
-
-Use the client from [Quickstart for Buyers](quickstart-buyers.md):
+### With Payment
 
 ```typescript
 import { x402axios } from 'aptos-x402';
@@ -182,36 +144,19 @@ const response = await x402axios.get('http://localhost:3000/api/premium/weather'
 });
 
 console.log(response.data);
-console.log('Paid:', response.paymentInfo?.transactionHash);
+console.log('TX:', response.paymentInfo?.transactionHash);
 ```
 
-## Response Headers
 
-Successful payments include these headers:
+## USDC Addresses
 
-| Header | Description |
-|--------|-------------|
-| `X-PAYMENT-RESPONSE` | Payment receipt with transaction hash |
-| `X-Verification-Time` | Milliseconds for payment verification |
-| `X-Settlement-Time` | Milliseconds for blockchain settlement |
+| Network | Address |
+|---------|---------|
+| **Mainnet** | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
 ## Next Steps
 
-### For Development
-
-- Use testnet for all testing
-- Get free testnet APT from [faucet](https://aptoslabs.com/testnet-faucet)
-- Monitor transaction on [Aptos Explorer](https://explorer.aptoslabs.com/)
-
-### For Production
-
-1. **Deploy Own Facilitator** - See [Facilitator Setup](../guides/facilitator-setup.md)
-2. **Switch to Mainnet** - Change `network: 'mainnet'` in configuration
-3. **Monitor Performance** - Track verification and settlement times
-4. **Implement Error Handling** - Handle payment failures gracefully
-
-## Additional Resources
-
-- [Quickstart for Buyers](quickstart-buyers.md) - Consume your protected API
-- [HTTP 402 Protocol](../core-concepts/http-402.md) - Deep dive into the protocol
-- [Facilitator Guide](../guides/facilitator-setup.md) - Self-hosting options
+- [Quickstart for Buyers](quickstart-buyers.md) - Test your API
+- [Facilitator Guide](../guides/facilitator-setup.md) - Self-host facilitator
+- [Geomi Setup](../guides/geomi-setup.md) - Configure gas sponsorship

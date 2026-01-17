@@ -1,16 +1,6 @@
 /**
- * @x402/aptos - Server Middleware
- * 
- * Export payment middleware for various server frameworks
+ * Server Middleware
  */
 
-// Next.js middleware
-export { paymentMiddleware } from './next';
-
-// Re-export types for convenience
-export type {
-  RouteConfig,
-  FacilitatorConfig,
-  PaymentMiddlewareConfig,
-} from '../types';
-
+export { paymentMiddleware } from '../../lib/x402-middleware';
+export type { RouteConfig, FacilitatorConfig } from '../../lib/x402-types';

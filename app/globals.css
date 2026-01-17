@@ -147,12 +147,50 @@ html {
 .docs-page .prose > p,
 .docs-page .prose > ul > li,
 .docs-page .prose > ol > li {
-  color: #3f3f46 !important;
+  color: #27272a !important;
+}
+
+.docs-page article p {
+  color: #27272a !important;
+}
+
+.docs-page article ul > li,
+.docs-page article ol > li {
+  color: #27272a !important;
 }
 
 .docs-page .prose strong {
   color: #18181b !important;
   font-weight: 600 !important;
+}
+
+.docs-page blockquote {
+  color: #18181b !important;
+  border-left-color: #a1a1aa !important;
+  background-color: #f4f4f5 !important;
+}
+
+.docs-page blockquote p {
+  color: #18181b !important;
+}
+
+.docs-page blockquote strong {
+  color: #18181b !important;
+}
+
+.docs-page article a {
+  color: #2563eb !important;
+  text-decoration: underline !important;
+}
+
+.docs-page article a:hover {
+  color: #1d4ed8 !important;
+}
+
+/* Table of contents links should not be styled as regular links */
+.docs-page aside nav a {
+  color: inherit !important;
+  text-decoration: none !important;
 }
 
 .docs-page pre,
@@ -289,6 +327,16 @@ html {
 
 .docs-page tbody tr:hover {
   background: #fafafa;
+}
+
+/* Code block text selection */
+.docs-page pre,
+.docs-page code,
+.docs-page .shiki,
+.docs-page .shiki code,
+.docs-page .shiki span {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 /* Print styles */

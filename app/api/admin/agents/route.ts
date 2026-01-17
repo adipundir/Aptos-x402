@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Check wallet-based authentication
-    const walletAddress = request.headers.get('x-admin-wallet');
+    const walletAddress = request.headers.get('admin-wallet');
     
     if (!walletAddress) {
       return NextResponse.json({ error: 'Wallet address required' }, { status: 401 });

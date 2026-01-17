@@ -1,20 +1,21 @@
 {
   "name": "aptos-x402",
-  "version": "2.2.0",
-  "description": "HTTP 402 Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection and zero fallbacks",
+  "version": "2.3.1",
+  "description": "x402v2 compliant Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection",
   "author": "Aditya Pundir",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/adipundir/aptos-x402"
   },
-  "homepage": "https://aptos-x402.vercel.app",
+  "homepage": "https://aptos-x402.org",
   "keywords": [
     "x402",
     "aptos",
     "payment",
     "micropayment",
-    "http-402",
+    "http",
+    "x402v2",
     "blockchain",
     "cryptocurrency",
     "axios",
@@ -27,11 +28,6 @@
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "exports": {
     ".": {
       "types": "./dist/src/index.d.ts",
@@ -51,13 +47,14 @@
     }
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "npm run build:sdk && npm run build:demo",
     "build:sdk": "tsc -p tsconfig.sdk.json",
     "build:demo": "next build",
     "start": "next start",
     "demo": "tsx scripts/demo-agent.ts",
     "test:payment": "tsx scripts/test-payment-flow.ts",
+    "test:geomi": "tsx scripts/test-geomi.ts",
     "prepublishOnly": "npm run build:sdk",
     "test": "echo \"Tests coming soon\" && exit 0",
     "db:generate": "drizzle-kit generate",
@@ -69,6 +66,7 @@
     "@aptos-labs/ts-sdk": ">=1.26.0"
   },
   "dependencies": {
+    "@aptos-labs/gas-station-client": "^2.0.3",
     "@aptos-labs/ts-sdk": ">=1.26.0",
     "@aptos-labs/wallet-adapter-react": "^7.2.6",
     "@auth/drizzle-adapter": "^1.11.1",
@@ -93,7 +91,7 @@
     "got": "^14.6.5",
     "langchain": "^0.3.0",
     "lucide-react": "^0.548.0",
-    "next": "^15.5.9",
+    "next": "^16.0.0",
     "next-auth": "^5.0.0-beta.30",
     "openai": "^6.8.1",
     "react": "19.1.0",

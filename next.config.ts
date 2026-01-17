@@ -1,19 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  // Increase timeout for external API calls during build
-  experimental: {
-    // @ts-ignore
-    proxyTimeout: 300_000, // 5 minutes
-  },
+  /* Next.js 16 configuration */
+  
   // Externalize Aptos SDK to avoid keyv dynamic import issues
   serverExternalPackages: ['@aptos-labs/ts-sdk', 'aptos'],
+  
   // Disable static optimization for pages that might make network calls
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Fix for Aptos SDK keyv dynamic imports
+  
+  // Turbopack config (Next.js 16 default bundler)
+  // Empty config acknowledges we have webpack config but allows Turbopack to proceed
+  turbopack: {},
+  
+  // Webpack fallback for production builds that need it
   webpack: (config, { isServer }) => {
     // Handle keyv adapter dynamic imports - set all to false to ignore
     if (!isServer) {

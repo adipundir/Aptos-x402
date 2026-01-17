@@ -24,7 +24,7 @@ npm install aptos-x402
 
 STEP 2 - Environment Variables (.env.local):
 PAYMENT_RECIPIENT_ADDRESS=0x[your_aptos_address]
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
 
 STEP 3 - Middleware (middleware.ts):
 import { paymentMiddleware } from 'aptos-x402'
@@ -94,7 +94,7 @@ Key concepts:
 Explain how this works and show me the basic architecture.
 
 Available at: npm install aptos-x402
-Docs: https://aptos-x402.vercel.app/docs
+Docs: https://aptos-x402.org/docs
 ```
 
 ## Common Integration Tasks
@@ -214,7 +214,7 @@ Write comments describing what you need, then let Copilot generate:
 // Create x402 middleware that protects /api/premium/* routes
 // Charge 1000000 octas per request
 // Use PAYMENT_RECIPIENT_ADDRESS from env
-// Use public facilitator at https://aptos-x402.vercel.app/api/facilitator
+// Use public facilitator at https://aptos-x402.org/api/facilitator
 
 ```
 

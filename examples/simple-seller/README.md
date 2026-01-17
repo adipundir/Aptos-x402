@@ -93,7 +93,7 @@ You need to provide a facilitator URL. Options:
 ### Option 1: Use the public demo facilitator (easiest)
 
 ```env
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
 ```
 
 Perfect for development and testing!

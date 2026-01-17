@@ -2,37 +2,20 @@
 
 The x402 protocol standardizes how web services can require payment for resources using the HTTP 402 Payment Required status code.
 
-## Understanding HTTP 402
+## Protocol Overview
 
-HTTP status code 402 was reserved in the original HTTP specification (RFC 2616, 1999) with the designation "Payment Required" but was never standardized or widely implemented. The specification simply noted that this code was reserved for future use, leaving its practical application undefined for over two decades.
-
-The x402 protocol brings this reserved status code to life with a practical, blockchain-powered implementation that enables machine-to-machine micropayments over standard HTTP.
-
-## Why 402 Remained Unused
-
-Traditional online payment systems in 1999 lacked the characteristics necessary for the envisioned HTTP 402 use case. Credit card processing required days for settlement, imposed fees of 2-3% plus fixed costs, demanded merchant accounts and PCI compliance infrastructure, and provided no mechanism for programmatic payment by machines.
-
-These limitations made HTTP 402 impractical for its intended purpose of enabling automated micropayments between systems. The overhead of traditional payment processing made small transactions economically infeasible.
-
-## The x402 Solution
-
-Blockchain technology provides the missing infrastructure to make HTTP 402 practical. Aptos blockchain enables payment settlement in 1-3 seconds with transaction costs around $0.0001. Anyone can accept payments without special merchant accounts or compliance overhead. The programmable nature of blockchain transactions makes automated payment flows straightforward to implement.
+HTTP status code 402 was reserved in the original HTTP specification (RFC 2616, 1999) but never standardized. The x402 protocol brings this reserved status code to life with blockchain-powered implementation for machine-to-machine micropayments.
 
 ## Protocol Flow
 
-The x402 protocol follows a simple request-response pattern. When a client requests a protected resource, the server responds with HTTP 402 and includes payment requirements in the response body. The client creates and signs a blockchain transaction offline, encodes it in an X-PAYMENT header, and retries the request. The server verifies the payment structure, settles it on the blockchain, and delivers the resource only after successful settlement.
+1. **Client requests resource** → Server responds 402 with payment requirements
+2. **Client signs transaction** → Creates USDC transfer with fee payer placeholder
+3. **Client retries with payment** → Includes `PAYMENT-SIGNATURE` header
+4. **Server verifies** → Checks transaction matches requirements
+5. **Facilitator sponsors & settles** → Geomi pays gas, submits to blockchain
+6. **Server delivers resource** → Returns data with `PAYMENT-RESPONSE` header
 
-A standard HTTP request proceeds normally:
-
-```http
-GET /api/data HTTP/1.1
-Host: api.example.com
-
-→ 200 OK
-{ "data": "..." }
-```
-
-With x402 protection, the flow changes to include payment:
+### Example Flow
 
 ```http
 GET /api/premium/data HTTP/1.1
@@ -40,108 +23,106 @@ Host: api.example.com
 
 → 402 Payment Required
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "accepts": [{
     "scheme": "exact",
-    "network": "aptos-testnet",
-    "maxAmountRequired": "1000000",
+    "network": "aptos:2",
+    "amount": "1000",
+    "asset": "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
     "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    "description": "Premium data access",
-    "resource": "https://api.example.com/api/premium/data"
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
   }]
 }
 ```
 
-The client then signs a payment transaction and retries:
+Client signs and retries:
 
 ```http
 GET /api/premium/data HTTP/1.1
 Host: api.example.com
-X-PAYMENT: eyJ4NDAyVmVyc2lvbiI6MSwic2NoZW1lIjoi...
+PAYMENT-SIGNATURE: {"x402Version":2,"resource":{"url":"..."},"accepted":{...},"payload":{"transaction":"..."}}
 
 → 200 OK
-X-PAYMENT-RESPONSE: eyJzZXR0bGVtZW50Ijp7InR4SGFzaCI6Ij...
+PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLCJ0cmFuc2FjdGlvbiI6IjB4Li4uIn0=
 { "data": "..." }
 ```
 
-## Response Structure
-
-The 402 response body contains versioning information and an array of acceptable payment methods. Each payment option specifies the scheme, network, amount, recipient, and additional metadata about the protected resource.
-
-The required response format includes:
+## Response Structure (402)
 
 ```typescript
-{
-  x402Version: number,           // Protocol version (currently 1)
-  accepts: PaymentRequirements[]  // Array of payment options
+interface PaymentRequiredResponse {
+  x402Version: 2;
+  accepts: PaymentRequirements[];
+}
+
+interface PaymentRequirements {
+  scheme: "exact";
+  network: string;              // CAIP-2: "aptos:1" or "aptos:2"
+  amount: string;               // USDC atomic units (6 decimals)
+  asset: string;                // USDC metadata address
+  payTo: string;                // Recipient address
+  maxTimeoutSeconds: number;
+  extra?: {
+    sponsored?: boolean;        // Gas sponsorship enabled
+  };
 }
 ```
 
-Each payment requirement describes one acceptable payment method:
+## Payment Header (PAYMENT-SIGNATURE)
+
+Clients include payment as JSON (not base64):
 
 ```typescript
-{
-  scheme: string,                // Payment scheme ("exact" for Aptos)
-  network: string,               // Blockchain network identifier  
-  maxAmountRequired: string,     // Amount in smallest unit (Octas)
-  payTo: string,                 // Recipient address
-  description: string,           // Human-readable description
-  resource: string,              // Full URL being accessed
-  mimeType: string,              // Expected response content type
-  outputSchema?: object | null,  // JSON schema of response
-  maxTimeoutSeconds: number      // Max wait time for response
-}
-```
-
-Servers can offer multiple payment options, allowing clients to choose their preferred network or payment method. This flexibility enables graceful handling of multi-chain scenarios and future protocol extensions.
-
-## The X-PAYMENT Header
-
-Clients include payment information in the X-PAYMENT header as a base64-encoded JSON payload:
-
-```typescript
-{
-  x402Version: number,           // Protocol version
-  scheme: string,                // Payment scheme used
-  network: string,               // Network used
+interface PaymentPayload {
+  x402Version: 2;
+  resource: {
+    url: string;
+    description?: string;
+  };
+  accepted: PaymentRequirements;
   payload: {
-    signature: string,           // Base64-encoded BCS signature
-    transaction: string          // Base64-encoded BCS transaction
-  }
+    transaction: string;        // Base64 BCS-encoded transaction
+  };
 }
 ```
 
-The transaction and signature are separately encoded using Aptos's BCS (Binary Canonical Serialization) format, then base64-encoded for HTTP transport. This structure allows servers to verify payments offline before submitting transactions to the blockchain.
+The transaction is a USDC transfer via `0x1::primary_fungible_store::transfer` with fee payer set to `0x0` (placeholder for Geomi sponsorship).
 
-## Payment Receipts
+## Response Header (PAYMENT-RESPONSE)
 
-After successful payment settlement, servers include an X-PAYMENT-RESPONSE header with the settlement details. This provides cryptographic proof of payment and enables clients to verify the transaction on-chain.
-
-The receipt format:
+Base64-encoded JSON with settlement details:
 
 ```typescript
-{
-  settlement: {
-    success: boolean,
-    txHash: string | null,       // Blockchain transaction hash
-    networkId: string | null,    // Network where settled
-    error: string | null
-  }
+interface PaymentResponse {
+  success: boolean;
+  transaction: string | null;   // Transaction hash
+  network: string | null;       // "aptos:1" or "aptos:2"
+  payer: string | null;         // Fee payer address
+  error?: string;
 }
 ```
 
-Clients can use the transaction hash to verify settlement on the Aptos blockchain explorer, providing an immutable audit trail of all payments.
+## Protocol Version
 
-## Design Principles
+This package implements **x402 v2 protocol only**. If you see references to v1 anywhere, it is deprecated and not supported.
 
-The x402 protocol adheres to several core principles. It remains HTTP-native, using standard status codes, headers, and methods that work with existing tools. The protocol is client-driven, giving clients full visibility into payment amounts and recipients before signing transactions. Server implementations remain stateless, requiring no sessions, cookies, or authentication tokens. The payment and resource delivery process is atomic - payment settles or the request fails, with no partial states. All operations are transparent and verifiable on the blockchain.
+## USDC Addresses
+
+| Network | Address |
+|---------|---------|
+| **Mainnet** (`aptos:1`) | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** (`aptos:2`) | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
 ## Security Model
 
-The protocol's security derives from blockchain cryptography. Clients sign transactions locally with private keys that never leave their systems. Servers cannot forge payments due to cryptographic signatures. Blockchain confirmation provides final, irreversible settlement. All payments create an auditable trail on-chain.
-
-Payment verification happens in two stages. Quick offline verification checks payment structure and cryptographic validity in under 50 milliseconds. Slower blockchain settlement submits the transaction and waits for confirmation, taking 1-3 seconds on Aptos. This two-stage approach allows servers to reject invalid payments quickly while ensuring final settlement before delivering resources.
+- Private keys never leave the client
+- Transactions are signed locally
+- Facilitator only verifies and submits pre-signed transactions
+- Geomi sponsors gas without access to user funds
+- All payments are verifiable on-chain
 
 ## Next Steps
 
-See [Client / Server Architecture](client-server.md) for implementation patterns and [Facilitator](facilitator.md) for handling blockchain operations.
+- [Client / Server Architecture](client-server.md)
+- [Facilitator](facilitator.md)

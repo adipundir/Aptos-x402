@@ -1,58 +1,43 @@
 /**
  * Example: Simple Seller Integration
  * 
- * This shows how a seller would integrate @adipundir/aptos-x402
- * into their Next.js application.
- * 
  * Installation:
  * ```bash
- * npm install aptos-x402 @aptos-labs/ts-sdk
+ * npm install aptos-x402
  * ```
  */
 
 import { paymentMiddleware } from 'aptos-x402';
 
-// Configure your protected routes
+// USDC address (set in your .env)
+const USDC_ASSET = process.env.USDC_TESTNET_ADDRESS!;
+
 export const middleware = paymentMiddleware(
-  // Your Aptos wallet address (receives payments)
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
-  
-  // Route configuration: path -> payment requirements
   {
     '/api/premium/weather': {
-      price: '1000000',  // 0.01 APT (in Octas)
-      network: 'testnet',
+      price: '1000',        // 0.001 USDC
+      network: 'aptos:2',   // Testnet
+      asset: USDC_ASSET,
       config: {
-        description: 'Premium weather data with forecasting',
+        description: 'Premium weather data',
       },
     },
     
     '/api/premium/stocks': {
-      price: '5000000',  // 0.05 APT
-      network: 'testnet',
+      price: '5000',        // 0.005 USDC
+      network: 'aptos:2',
+      asset: USDC_ASSET,
       config: {
-        description: 'Real-time stock market data',
-      },
-    },
-    
-    '/api/premium/analytics': {
-      price: '10000000',  // 0.1 APT
-      network: 'testnet',
-      config: {
-        description: 'Advanced analytics dashboard data',
-        mimeType: 'application/json',
+        description: 'Real-time stock data',
       },
     },
   },
-  
-  // Facilitator configuration (REQUIRED)
   {
     url: process.env.FACILITATOR_URL!,
   }
 );
 
-// Configure which routes the middleware should intercept
 export const config = {
   matcher: ['/api/premium/:path*'],
 };
-

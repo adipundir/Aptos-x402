@@ -12,7 +12,7 @@ export default function SignInPage() {
   const handleSignIn = async (provider: 'google' | 'github') => {
     setLoading(provider);
     try {
-      await signIn(provider, { callbackUrl: '/composer' });
+      await signIn(provider, { callbackUrl: '/' });
     } catch (error) {
       console.error('Sign in error:', error);
       setLoading(null);

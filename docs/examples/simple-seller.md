@@ -1,16 +1,12 @@
 # Simple Seller Example
 
-Complete example of a simple API that accepts x402 payments.
-
-## Overview
-
-This example shows the minimal setup for a payment-protected API using x402.
+Complete example of a payment-protected API using x402.
 
 ## Project Structure
 
 ```
 simple-seller/
-├── middleware.ts
+├── proxy.ts
 ├── .env.local
 ├── app/
 │   └── api/
@@ -30,28 +26,44 @@ npm install aptos-x402 @aptos-labs/ts-sdk next
 
 Create `.env.local`:
 
-```
-# Your wallet address (receives payments)
+```bash
+# Your wallet address (receives USDC payments)
 PAYMENT_RECIPIENT_ADDRESS=0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
 
-# Use public facilitator for testing
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+# Network (CAIP-2 format)
+APTOS_NETWORK=aptos:2
+
+# USDC Addresses (Circle)
+USDC_MAINNET_ADDRESS=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
+
+# Public facilitator
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
+
+# Geomi API Key (for gas sponsorship)
+GEOMI_API_KEY=your_api_key
 ```
 
-## Step 3: Create Middleware
+## Step 3: Create Proxy
 
 ```typescript
-// middleware.ts
+// proxy.ts
 import { paymentMiddleware } from 'aptos-x402';
 
-export const middleware = paymentMiddleware(
+const USDC_ASSET = process.env.APTOS_NETWORK === "aptos:1" 
+  ? process.env.USDC_MAINNET_ADDRESS! 
+  : process.env.USDC_TESTNET_ADDRESS!;
+
+export const proxy = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     '/api/premium/weather': {
-      price: '1000000',  // 0.01 APT
-      network: 'testnet',
+      price: '1000',        // 0.001 USDC
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
+      sponsored: true,      // Facilitator sponsors gas (default: true)
       config: {
-        description: 'Premium weather data with 7-day forecast'
+        description: 'Premium weather data'
       }
     }
   },
@@ -73,41 +85,31 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET() {
   // This code only runs AFTER payment is verified and settled
-  
-  const weatherData = {
+  return NextResponse.json({
     location: 'San Francisco',
     temperature: 72,
     condition: 'Sunny',
-    humidity: 65,
-    windSpeed: 10,
     forecast: [
-      { day: 'Monday', high: 73, low: 58, condition: 'Partly Cloudy' },
-      { day: 'Tuesday', high: 70, low: 55, condition: 'Rainy' },
-      { day: 'Wednesday', high: 75, low: 60, condition: 'Sunny' },
-      { day: 'Thursday', high: 74, low: 59, condition: 'Sunny' },
-      { day: 'Friday', high: 71, low: 56, condition: 'Cloudy' },
-      { day: 'Saturday', high: 72, low: 57, condition: 'Partly Cloudy' },
-      { day: 'Sunday', high: 76, low: 61, condition: 'Sunny' }
+      { day: 'Monday', high: 73, low: 58 },
+      { day: 'Tuesday', high: 70, low: 55 },
+      { day: 'Wednesday', high: 75, low: 60 }
     ],
-    premium: true,
     timestamp: new Date().toISOString()
-  };
-  
-  return NextResponse.json(weatherData);
+  });
 }
 ```
 
-## Step 5: Test It
+## Step 5: Test
 
-### Start the dev server:
+### Start dev server:
 
 ```bash
 npm run dev
 ```
 
-### Test without payment (should get 402):
+### Test without payment (returns 402):
 
 ```bash
 curl http://localhost:3000/api/premium/weather
@@ -116,25 +118,33 @@ curl http://localhost:3000/api/premium/weather
 **Expected response:**
 ```json
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "accepts": [{
     "scheme": "exact",
-    "network": "aptos-testnet",
-    "maxAmountRequired": "1000000",
+    "network": "aptos:2",
+    "amount": "1000",
+    "asset": "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
     "payTo": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    "description": "Premium weather data with 7-day forecast",
-    "resource": "http://localhost:3000/api/premium/weather"
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
   }]
 }
 ```
 
 ### Test with payment:
 
-See [Quickstart for Buyers](../getting-started/quickstart-buyers.md) for how to make the payment.
+```typescript
+import { x402axios } from 'aptos-x402';
 
-## Complete Files
+const response = await x402axios.get('http://localhost:3000/api/premium/weather', {
+  privateKey: process.env.APTOS_PRIVATE_KEY
+});
 
-### package.json
+console.log(response.data);
+console.log('TX:', response.paymentInfo?.transactionHash);
+```
+
+## Complete package.json
 
 ```json
 {
@@ -146,62 +156,49 @@ See [Quickstart for Buyers](../getting-started/quickstart-buyers.md) for how to 
     "start": "next start"
   },
   "dependencies": {
-    "aptos-x402": "^0.1.3",
-    "@aptos-labs/ts-sdk": "^1.26.0",
-    "next": "^15.0.0",
+    "aptos-x402": "^0.2.0",
+    "@aptos-labs/ts-sdk": "^1.30.0",
+    "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }
 }
 ```
 
-## Variations
-
-### Multiple Endpoints
+## Multiple Endpoints
 
 ```typescript
-export const middleware = paymentMiddleware(
+export const proxy = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     '/api/premium/weather': {
-      price: '1000000',  // 0.01 APT
-      config: { description: 'Weather data' }
+      price: '1000',         // 0.001 USDC
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
     },
     '/api/premium/stocks': {
-      price: '5000000',  // 0.05 APT
-      config: { description: 'Stock data' }
+      price: '5000',         // 0.005 USDC
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
     },
     '/api/premium/analytics': {
-      price: '10000000',  // 0.1 APT
-      config: { description: 'Analytics' }
+      price: '10000',        // 0.01 USDC
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC_ASSET,
     }
   },
   { url: process.env.FACILITATOR_URL! }
 );
 ```
 
-### Different Networks
+## USDC Addresses
 
-```typescript
-// Accept testnet OR mainnet
-'/api/premium/weather': {
-  price: '1000000',
-  network: 'testnet',  // or 'mainnet'
-}
-```
+| Network | Address |
+|---------|---------|
+| **Mainnet** | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
 ## Next Steps
 
 - [Deploy to production](../guides/facilitator-setup.md)
-- [Add your own facilitator](../guides/facilitator-setup.md)
-- [Switch to mainnet](../core-concepts/network-token-support.md)
- - Switch to mainnet when ready
-
-## Source Code
-
-Full source code: [examples/simple-seller](https://github.com/adipundir/Aptos-x402/tree/main/examples/simple-seller)
-
----
-
-**Back to:** [Examples](#)
-
+- [Geomi Setup](../guides/geomi-setup.md)

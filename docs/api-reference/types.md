@@ -1,60 +1,47 @@
 # Types Reference
 
-Complete, accurate TypeScript types exported by aptos-x402.
+TypeScript types exported by aptos-x402.
 
-## Importing types
-
-Server and protocol types are available from the /types subpath, while client types come from the root package export.
+## Importing
 
 ```typescript
-// Server + protocol types
-import type {
-  // Server
-  RouteConfig,
-  FacilitatorConfig,
-  // Protocol
-  PaymentRequiredResponse,
-  PaymentRequirements,
-  PaymentPayload,
-  VerifyRequest,
-  VerifyResponse,
-  SettleRequest,
-  SettleResponse,
-  PaymentResponseHeader,
-} from 'aptos-x402/types';
-
-// Protocol constants (values)
 import {
+  // Constants
   X402_VERSION,
   APTOS_SCHEME,
   APTOS_MAINNET,
   APTOS_TESTNET,
-  APTOS_DEVNET,
-} from 'aptos-x402/types';
-
-// Client types
-import type {
-  WithPaymentInterceptorOptions,
-  X402Response,
-  X402PaymentResponse,
+  PAYMENT_HEADER,
+  PAYMENT_RESPONSE_HEADER,
+  KNOWN_ASSETS,
+  
+  // Client
+  x402axios,
+  
+  // Server
+  paymentMiddleware,
+  
+  // Types
+  type PaymentRequirements,
+  type PaymentPayload,
+  type RouteConfig,
+  type X402Response,
 } from 'aptos-x402';
 ```
 
-## Server types
+## Server Types
 
 ### RouteConfig
 
-Configuration for a protected route.
-
 ```typescript
 interface RouteConfig {
-  price: string;                    // Amount in Octas (smallest unit)
-  network?: string;                 // e.g. 'testnet' | 'mainnet' | 'devnet' (default: 'testnet')
+  price: string;              // Amount in atomic units
+  network?: string;           // CAIP-2 format (aptos:1, aptos:2)
+  asset: string;              // Fungible asset metadata address
+  sponsored?: boolean;        // Enable gas sponsorship (default: true)
   config?: {
-    description?: string;           // Human-readable description
-    mimeType?: string;              // Response MIME type
-    outputSchema?: Record<string, any>; // JSON schema of response
-    maxTimeoutSeconds?: number;     // Max processing time
+    description?: string;
+    maxTimeoutSeconds?: number;
   };
 }
 ```
@@ -63,38 +50,25 @@ interface RouteConfig {
 
 ```typescript
 interface FacilitatorConfig {
-  url: string; // Base URL (e.g., 'https://example.com/api/facilitator')
+  url: string; // Facilitator URL
 }
 ```
 
-## Protocol types
-
-These mirror the official x402 spec and are used by the middleware and facilitator.
-
-### PaymentRequiredResponse
-
-```typescript
-interface PaymentRequiredResponse {
-  x402Version: number;
-  accepts: PaymentRequirements[];
-  error?: string | null;
-}
-```
+## Protocol Types
 
 ### PaymentRequirements
 
 ```typescript
 interface PaymentRequirements {
-  scheme: string;                    // 'exact'
-  network: string;                   // e.g. 'aptos-testnet'
-  maxAmountRequired: string;         // Amount in smallest unit
-  resource: string;                  // Resource URL
-  description: string;               // Description
-  mimeType: string;                  // Response type
-  outputSchema?: object | null;      // Response schema
-  payTo: string;                     // Recipient address
-  maxTimeoutSeconds: number;         // Max timeout
-  extra?: object | null;             // Scheme-specific metadata
+  scheme: string;              // "exact"
+  network: string;             // CAIP-2 format (e.g., "aptos:2")
+  amount: string;              // Amount in atomic units
+  asset: string;               // Fungible asset metadata address
+  payTo: string;               // Recipient address
+  maxTimeoutSeconds: number;
+  extra?: {
+    sponsored?: boolean;       // Gas sponsorship
+  } | null;
 }
 ```
 
@@ -103,16 +77,15 @@ interface PaymentRequirements {
 ```typescript
 interface PaymentPayload {
   x402Version: number;
-  scheme: string;
-  network: string;
+  resource: { url: string; mimeType?: string };
+  accepted: PaymentRequirements;
   payload: {
-    signature: string;    // Base64 BCS-encoded signature
-    transaction: string;  // Base64 BCS-encoded transaction
+    transaction: string;       // Base64 encoded BCS transaction
   };
 }
 ```
 
-### Facilitator requests/responses
+### Facilitator Types
 
 ```typescript
 interface VerifyRequest {
@@ -134,37 +107,22 @@ interface SettleRequest {
 
 interface SettleResponse {
   success: boolean;
-  error: string | null;
-  message?: string;
-  txHash: string | null;
-  networkId: string | null;
-}
-
-interface PaymentResponseHeader {
-  settlement: SettleResponse;
+  transaction: string | null;
+  network: string | null;
+  payer: string | null;
+  error?: string | null;
 }
 ```
 
-### Constants
+## Client Types
 
 ```typescript
-const X402_VERSION = 1;
-const APTOS_SCHEME = 'exact';
-const APTOS_MAINNET = 'aptos-mainnet';
-const APTOS_TESTNET = 'aptos-testnet';
-const APTOS_DEVNET = 'aptos-devnet';
-```
-
-## Client types
-
-```typescript
-interface WithPaymentInterceptorOptions {
+interface X402RequestConfig {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  headers?: Record<string, string>;
+  body?: any;
   privateKey?: string;
   account?: Account;
-  url: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  body?: any;
-  headers?: Record<string, string>;
 }
 
 interface X402Response<T = any> {
@@ -175,58 +133,57 @@ interface X402Response<T = any> {
     transactionHash: string;
     amount: string;
     recipient: string;
-    settled: boolean;
+    network: string;
+    payer: string;
   };
 }
+```
 
-interface X402PaymentResponse {
-  settlement?: {
-    txHash: string;
-    networkId: string;
-    success: boolean;
-  };
-}
+## Constants
+
+```typescript
+const X402_VERSION = 2;
+const APTOS_SCHEME = "exact";
+const APTOS_MAINNET = "aptos:1";
+const APTOS_TESTNET = "aptos:2";
+const PAYMENT_HEADER = "PAYMENT-SIGNATURE";
+const PAYMENT_RESPONSE_HEADER = "PAYMENT-RESPONSE";
+
+const KNOWN_ASSETS = {
+  USDC_MAINNET: "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+  USDC_TESTNET: "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
+};
 ```
 
 ## Examples
 
-### Server configuration
+### Server Configuration
 
 ```typescript
-import type { RouteConfig, FacilitatorConfig } from 'aptos-x402/types';
+import { paymentMiddleware } from 'aptos-x402';
 
-const routes: Record<string, RouteConfig> = {
-  '/api/premium/weather': {
-    price: '1000000',
-    network: 'testnet',
-    config: {
-      description: 'Premium weather data',
+export const proxy = paymentMiddleware(
+  process.env.RECIPIENT!,
+  {
+    '/api/weather': {
+      price: '1000',
+      network: 'aptos:2',
+      asset: process.env.USDC_TESTNET_ADDRESS!,
     },
   },
-};
-
-const facilitator: FacilitatorConfig = {
-  url: 'https://facilitator.example.com/api/facilitator',
-};
+  { url: process.env.FACILITATOR_URL! }
+);
 ```
 
-### Decoding a payment response header
+### Client Request
 
 ```typescript
-import { decodeXPaymentResponse } from 'aptos-x402';
-import type { X402PaymentResponse } from 'aptos-x402';
+import { x402axios } from 'aptos-x402';
 
-const header = response.headers.get('x-payment-response');
-const parsed: X402PaymentResponse | null = decodeXPaymentResponse(header);
+const response = await x402axios.get('https://api.example.com/data', {
+  privateKey: '0x...'
+});
+
+console.log(response.data);
+console.log(response.paymentInfo?.transactionHash);
 ```
-
-## Next steps
-
-- [Server API Reference](server-api.md)
-- [SDK Exports](../SDK-EXPORTS.md)
-- [HTTP 402 Protocol](../core-concepts/http-402.md)
-
----
-
-Back to: [API Reference](#)
-

@@ -1,81 +1,131 @@
 # Client and Server
 
-This page focuses only on what you implement on the client and the server when using this SDK. No extras, no speculation.
+This page covers what you implement on the client and server when using this SDK.
 
-## What you build
+## What You Build
 
-- Client: makes requests and pays when a 402 is returned.
-- Server: protects routes and enforces payment with middleware.
+- **Client:** Makes requests and pays when a 402 is returned
+- **Server:** Protects routes and enforces payment with middleware
 
-## Client (buyer)
+## Client (Buyer)
 
-Use the single helper provided by this SDK. It detects 402, builds and signs the transaction, retries with X-PAYMENT, and returns the final response plus payment info.
+Use `x402axios` - it detects 402, builds/signs the transaction, retries with payment, and returns the response.
 
 ```typescript
 import { x402axios } from 'aptos-x402';
 
 const res = await x402axios.get('https://api.example.com/premium/weather', {
-	privateKey: process.env.PRIVATE_KEY!
+  privateKey: process.env.PRIVATE_KEY!
 });
 
 console.log(res.status, res.data);
-console.log(res.paymentInfo); // { transactionHash, amount, recipient, settled }
+console.log(res.paymentInfo);
+// { transactionHash, amount, recipient, network, payer }
 ```
 
-Key behavior:
-- First request → server responds 402 with payment requirements
-- SDK builds/signs Aptos transfer, sets X-PAYMENT header, and retries
-- Response includes `x-payment-response` header; `res.paymentInfo` is derived from it
+**Key behavior:**
+1. First request → server responds 402 with payment requirements
+2. SDK builds USDC transfer transaction (with fee payer placeholder)
+3. Signs locally and retries with `PAYMENT-SIGNATURE` header
+4. Facilitator sponsors gas and submits
+5. Response includes `PAYMENT-RESPONSE` header
 
-## Server (seller)
+## Server (Seller)
 
-Add the middleware and declare which paths are paid. No payment logic inside your route handlers.
+Add middleware and declare which paths require payment:
 
 ```typescript
-// middleware.ts
+// proxy.ts
 import { paymentMiddleware } from 'aptos-x402';
 
-export const middleware = paymentMiddleware(
-	process.env.PAYMENT_RECIPIENT_ADDRESS!,
-	{
-		'/api/premium/weather': {
-			price: '1000000', // Octas (0.01 APT)
-			network: 'testnet',
-			config: { description: 'Premium weather data' }
-		}
-	},
-	{ url: process.env.FACILITATOR_URL! }
+const USDC = process.env.APTOS_NETWORK === "aptos:1" 
+  ? process.env.USDC_MAINNET_ADDRESS! 
+  : process.env.USDC_TESTNET_ADDRESS!;
+
+export const proxy = paymentMiddleware(
+  process.env.PAYMENT_RECIPIENT_ADDRESS!,
+  {
+    '/api/premium/weather': {
+      price: '1000',              // 0.001 USDC
+      network: process.env.APTOS_NETWORK!,  // "aptos:2"
+      asset: USDC,
+      config: { description: 'Premium weather data' }
+    }
+  },
+  { url: process.env.FACILITATOR_URL! }
 );
 
 export const config = { matcher: ['/api/premium/:path*'] };
 ```
 
-What the middleware does:
-- No X-PAYMENT → returns 402 with PaymentRequirements
-- With X-PAYMENT →
-	- POST to `<FACILITATOR_URL>/verify`
-	- If invalid → 403
-	- Else POST to `<FACILITATOR_URL>/settle`
-	- If success → continues to your handler, adds `X-Payment-Response` header
+**What the middleware does:**
+1. No `PAYMENT-SIGNATURE` → returns 402 with PaymentRequirements
+2. With `PAYMENT-SIGNATURE`:
+   - POST to `<FACILITATOR_URL>/verify`
+   - If invalid → 403
+   - POST to `<FACILITATOR_URL>/settle`
+   - Facilitator sponsors gas and submits
+   - Success → continues to your handler, adds `PAYMENT-RESPONSE` header
 
-Tip: For testing, you may point `FACILITATOR_URL` to the public demo facilitator:
+## Request/Response Contract
 
+### 402 Response Body
+
+```json
+{
+  "x402Version": 2,
+  "accepts": [{
+    "scheme": "exact",
+    "network": "aptos:2",
+    "amount": "1000",
+    "asset": "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
+    "payTo": "0x...",
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
+  }]
+}
 ```
-https://aptos-x402.vercel.app/api/facilitator
+
+### PAYMENT-SIGNATURE Header (JSON)
+
+```json
+{
+  "x402Version": 2,
+  "resource": { "url": "..." },
+  "accepted": { ... },
+  "payload": { "transaction": "base64..." }
+}
 ```
-Don’t use this shared service for production.
 
-## Request/response contract
+### PAYMENT-RESPONSE Header (Base64 JSON)
 
-- 402 body: `{ x402Version: 1, accepts: PaymentRequirements[] }`
-- X-PAYMENT header (base64 JSON): `{ x402Version, scheme: 'exact', network, payload: { signature, transaction } }`
-- X-Payment-Response header (base64 JSON): `{ settlement: { success, txHash|null, networkId|null, error|null } }`
+```json
+{
+  "success": true,
+  "transaction": "0x...",
+  "network": "aptos:2",
+  "payer": "geomi-sponsored"
+}
+```
 
-## Status codes you’ll see
+## Status Codes
 
-- 402 Payment Required: no or failed settlement
-- 403 Forbidden: verification failed
-- 400 Bad Request: malformed payment payload
-- 500 Internal Server Error: facilitator or processing error
+| Code | Meaning |
+|------|---------|
+| **402** | Payment required |
+| **403** | Verification failed |
+| **400** | Malformed payment |
+| **500** | Server/facilitator error |
 
-For deeper type shapes, see the Types page; for end‑to‑end code, see the Quickstarts. This page stays focused on the essentials to wire up client and server.
+## USDC Addresses
+
+| Network | Address |
+|---------|---------|
+| **Mainnet** | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
+
+## Next Steps
+
+- [Types Reference](../api-reference/types.md)
+- [Quickstart for Sellers](../getting-started/quickstart-sellers.md)
+- [Quickstart for Buyers](../getting-started/quickstart-buyers.md)

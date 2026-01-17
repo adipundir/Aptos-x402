@@ -247,7 +247,7 @@ import { Account, Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
 
 export async function POST(request: NextRequest) {
   // Add your admin authentication here!
-  const adminSecret = request.headers.get('x-admin-secret');
+  const adminSecret = request.headers.get('admin-secret');
   if (adminSecret !== process.env.ADMIN_API_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

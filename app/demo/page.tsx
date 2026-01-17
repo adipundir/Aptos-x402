@@ -43,20 +43,20 @@ export default function DemoPage() {
       const endTime = performance.now();
       const totalTime = Math.round(endTime - startTime);
 
-      const verificationTime = result.headers['x-verification-time'];
-      const settlementTime = result.headers['x-settlement-time'];
+      const verificationTime = result.headers['verification-time'];
+      const settlementTime = result.headers['settlement-time'];
 
-      setResponse({
-        status: result.status,
-        statusText: "OK",
-        requestHeaders: {
-          "X-PAYMENT": "Automatically handled by x402Axios"
-        },
-        responseHeaders: result.headers,
-        body: result.data,
-        transactionHash: result.paymentInfo?.transactionHash,
-        paymentInfo: result.paymentInfo,
-      });
+              setResponse({
+                status: result.status,
+                statusText: "OK",
+                requestHeaders: {
+                  "PAYMENT-SIGNATURE": "Automatically handled by x402Axios (v2)"
+                },
+                responseHeaders: result.headers,
+                body: result.data,
+                transactionHash: result.paymentInfo?.transactionHash,
+                paymentInfo: result.paymentInfo,
+              });
 
       setTiming({
         total: totalTime,
@@ -92,7 +92,7 @@ export default function DemoPage() {
             x402 Payment Protocol Demo
           </h1>
           <p className="text-zinc-500 text-sm">
-            HTTP 402 on Aptos Blockchain
+            HTTP 402 on Aptos Blockchain • v2 with Gasless Transactions
           </p>
         </div>
 
@@ -161,7 +161,11 @@ export default function DemoPage() {
                           {response.transactionHash}
                         </code>
                         <a
-                          href={`https://explorer.aptoslabs.com/txn/${response.transactionHash}?network=${process.env.NEXT_PUBLIC_APTOS_NETWORK?.replace('aptos-', '') || 'testnet'}`}
+                          href={`https://explorer.aptoslabs.com/txn/${response.transactionHash}?network=${
+                            process.env.NEXT_PUBLIC_APTOS_NETWORK === 'aptos:1' ? 'mainnet' 
+                            : process.env.NEXT_PUBLIC_APTOS_NETWORK === 'aptos:2' ? 'testnet'
+                            : process.env.NEXT_PUBLIC_APTOS_NETWORK?.replace('aptos-', '') || 'testnet'
+                          }`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 hover:text-zinc-600 transition-colors"
@@ -237,11 +241,11 @@ export default function DemoPage() {
                 <ol className="space-y-3 text-sm">
                   {[
                     { title: 'Initial Request', desc: 'Tries to access resource (no payment)' },
-                    { title: '402 Detection', desc: 'Server returns 402 with payment spec' },
-                    { title: 'Extract Requirements', desc: 'Gets network, amount, recipient' },
-                    { title: 'Build & Sign', desc: 'Creates and signs Aptos transaction' },
-                    { title: 'Retry with Payment', desc: 'Resends request with X-PAYMENT header' },
-                    { title: 'Verify & Settle', desc: 'Facilitator verifies and settles' },
+                    { title: '402 Detection', desc: 'Server returns 402 with payment requirements' },
+                    { title: 'Extract Requirements', desc: 'Gets network (aptos:2), amount, asset, sponsored flag' },
+                    { title: 'Build Fee Payer Tx', desc: 'Creates sponsored transaction (gasless!)' },
+                    { title: 'Retry with Payment', desc: 'Resends with PAYMENT-SIGNATURE header' },
+                    { title: 'Sponsor & Settle', desc: 'Facilitator sponsors gas & submits' },
                   ].map((item, i) => (
                     <li key={i} className="flex gap-3">
                       <span className="font-semibold text-zinc-900 w-5">{i + 1}.</span>

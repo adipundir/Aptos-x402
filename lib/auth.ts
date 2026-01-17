@@ -21,7 +21,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 const authConfig = NextAuth({
-  secret: process.env.AUTH_SECRET || 'fallback-dev-secret-change-in-production',
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   // Use DrizzleAdapter with correct table mappings
   adapter: DrizzleAdapter(db, {

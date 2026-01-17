@@ -47,7 +47,7 @@ function generateUUID(): string {
 export function getUserIdHeaders(): Record<string, string> {
   const userId = getUserId();
   return {
-    'x-user-id': userId,
+    'user-id': userId,
   };
 }
 

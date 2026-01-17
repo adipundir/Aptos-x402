@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15+-black.svg)](https://nextjs.org/)
 
-[Documentation](https://aptos-x402.vercel.app/docs) • [API Reference](#api-reference) • [Demo](https://aptos-x402.vercel.app)
+[Documentation](https://aptos-x402.org/docs) • [API Reference](#api-reference) • [Demo](https://aptos-x402.org)
 
 </div>
 
@@ -16,16 +16,21 @@
 
 ## Overview
 
-**Aptos x402** is a TypeScript SDK implementing the [x402 payment protocol](https://github.com/coinbase/x402) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
+**Aptos x402** is a TypeScript SDK implementing the **x402 v2 protocol** ([spec](https://github.com/coinbase/x402)) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
+
+> ✅ **x402 v2 compliant**
 
 Built for **machine-to-machine micropayments**, this SDK provides zero-friction payment integration for Next.js applications with automatic payment handling, cryptographic verification, and **sub-second settlement times** (optimized from 2-3s to 200-500ms).
 
-### What’s new in 2.0.0
-- 🛡️ **ARC-8004 Agent Trust Layer** (Aptos-native, inspired by ERC-8004): agent identities, reputation, and task validation.
-- ✅ Frontend badges for Verified + Trust, with a verify API.
-- 📚 Docs and API routes for ARC-8004 (identity, reputation, validation).
+### What’s new in 2.2.0
+- 🛡️ **ARC-8004 Agent Trust Layer**: Agent identity, reputation, and task validation (Aptos-native).
+- ⛽ **Geomi Gas Sponsorship**: Native support for gasless transactions (facilitator pays gas).
+- 📋 **Protocol Updates**: Standardized `PAYMENT-SIGNATURE` headers (removed "X-").
+- 💰 **Fungible Assets**: Direct USDC/FA transfer support.
+- 🚚 **Header-Based Spec**: Payment specs and proofs handling moved entirely to headers.
+- ⚡ **Performance**: Significant speed improvements with bug fixes and optimizations.
 
-> ⚡ **Performance:** Latest optimizations deliver **5-10x faster** payments with verification caching, async confirmation, and smart deduplication. See [PERFORMANCE_OPTIMIZATIONS.md](./PERFORMANCE_OPTIMIZATIONS.md) for details.
+> ⚡ **Performance:** Latest optimizations deliver **faster settlement** with verification caching, async confirmation, and smart deduplication.
 
 <!-- ## Key Features
 
@@ -63,25 +68,7 @@ npm install aptos-x402
 - **TypeScript:** 5.x (recommended)
 - **Aptos SDK:** 1.26.0 or higher (included as peer dependency)
 
----
 
-## 🤖 AI-Powered Setup (Cursor IDE)
-
-Get started in seconds with AI-assisted integration:
-
-```bash
-mkdir -p .cursor/rules
-curl -o .cursor/rules/aptos-x402.mdc https://raw.githubusercontent.com/adipundir/aptos-x402/main/integration/aptos-x402.mdc
-```
-
-**Restart Cursor IDE**, then ask:
-> "Set up Aptos x402 in my Next.js app with payment middleware and a test client component"
-
-The MDC context file provides Cursor with complete API documentation, types, and examples for accurate code generation.
-
-**Learn more:** [Cursor Integration Guide](./docs/guides/cursor-integration.md)
-
----
 
 ## 🛒 Client Integration (Consuming Paid APIs)
 
@@ -125,21 +112,6 @@ await x402axios.patch('/resource/123', updates, { privateKey: '0x...' });
 await x402axios.delete('/resource/123', { privateKey: '0x...' });
 ```
 
-### Instance Configuration
-
-```typescript
-// Create configured instance
-const api = x402axios.create({
-  baseURL: 'https://api.example.com',
-  timeout: 10000,
-  privateKey: process.env.APTOS_PRIVATE_KEY,
-  headers: { 'X-Client-Version': '1.0.0' }
-});
-
-// Use instance for all requests
-const weather = await api.get('/premium/weather');
-const stocks = await api.get('/premium/stocks');
-```
 
 ### How It Works
 
@@ -165,7 +137,7 @@ Create `.env.local` in your project root:
 
 ```env
 PAYMENT_RECIPIENT_ADDRESS=0xYOUR_APTOS_WALLET_ADDRESS
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
 ```
 
 > **Getting a Wallet Address:**  
@@ -196,7 +168,8 @@ export const middleware = paymentMiddleware(
     }
   },
   { 
-    url: process.env.FACILITATOR_URL!
+    // Use the official public facilitator for free
+    url: "https://aptos-x402.org/api/facilitator"
   }
 );
 
@@ -608,7 +581,7 @@ async function manualPaymentFlow(url: string, privateKey: string) {
     // 5. Retry with payment
     response = await fetch(url, {
       headers: {
-        'X-PAYMENT': Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
+        'Payment': Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
       }
     });
   }
@@ -635,7 +608,7 @@ const signedTx = await signTransaction(transaction);
 
 ### Interactive Demo
 
-Try the complete payment flow: **[aptos-x402.vercel.app](https://aptos-x402.vercel.app)**
+Try the complete payment flow: **[aptos-x402.org](https://aptos-x402.org)**
 
 ### Example Code
 
@@ -665,7 +638,7 @@ The facilitator handles blockchain operations (verification and settlement) sepa
 
 | Option | Best For | Setup |
 |--------|----------|-------|
-| **Public Facilitator** | Development, testing, POCs | `FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator` |
+| **Public Facilitator** | Development, testing, POCs | `url: "https://aptos-x402.org/api/facilitator"` |
 | **Self-Hosted (Same App)** | Small to medium deployments | Copy facilitator routes to your Next.js app |
 | **Self-Hosted (Separate)** | Production, high scale | Deploy as standalone service |
 
@@ -762,9 +735,9 @@ Track payment performance with built-in timing headers:
 const response = await x402axios.get(url, { privateKey });
 
 // Check performance metrics
-const verifyTime = response.headers['x-verification-time'];
-const settleTime = response.headers['x-settlement-time'];
-const cached = response.headers['x-cached'] === 'true';
+const verifyTime = response.headers['verification-time'];
+const settleTime = response.headers['settlement-time'];
+const cached = response.headers['cached'] === 'true';
 
 console.log(`Verification: ${verifyTime}ms`);
 console.log(`Settlement: ${settleTime}ms`);
@@ -792,7 +765,7 @@ APTOS_PRIVATE_KEY=0x... npx tsx scripts/benchmark-payment-flow.ts
 ## Resources
 
 ### Documentation
-- [Full Documentation](https://aptos-x402.vercel.app/docs)
+- [Full Documentation](https://aptos-x402.org/docs)
 - [API Reference](./docs/api-reference/server-api.md)
 - [Protocol Specification](https://github.com/coinbase/x402)
 - [Performance Guide](./PERFORMANCE_OPTIMIZATIONS.md)
@@ -817,7 +790,7 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 
 **Built for the Aptos Ecosystem**
 
-[Documentation](https://aptos-x402.vercel.app) • [GitHub](https://github.com/adipundir/Aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
+[Documentation](https://aptos-x402.org) • [GitHub](https://github.com/adipundir/Aptos-x402) • [NPM](https://www.npmjs.com/package/aptos-x402)
 
 </div>
 

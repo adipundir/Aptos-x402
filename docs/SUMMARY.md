@@ -1,6 +1,6 @@
 # Table of Contents
 
-* [Welcome to x402](README.md)
+* [Overview](README.md)
 
 ## Getting Started
 
@@ -16,8 +16,9 @@
 
 ## Guides
 
+* [Facilitator Setup](guides/facilitator-setup.md)
+* [Geomi Gas Station Setup](guides/geomi-setup.md)
 * [AI IDE Integration](guides/ai-ide-integration.md)
-* [Setting Up Your Own Facilitator](guides/facilitator-setup.md)
 * [ARC-8004 SDK Integration](guides/arc8004-integration.md)
 * [ARC-8004 Overview](guides/arc8004.md)
 * [ARC-8004 Self-Hosting](guides/arc8004-self-hosting.md)
@@ -27,6 +28,7 @@
 
 * [Server API](api-reference/server-api.md)
 * [Types](api-reference/types.md)
+* [SDK Exports](SDK-EXPORTS.md)
 
 ## Examples
 

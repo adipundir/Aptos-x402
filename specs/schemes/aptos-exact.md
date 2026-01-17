@@ -1,360 +1,361 @@
-# Scheme: `exact` on `Aptos`
+# Scheme: `exact` on `Aptos` - x402 v2
 
 ## Summary
 
-The `exact` scheme on Aptos enables exact-amount payments on the Aptos blockchain for access to protected resources. This scheme is designed for use cases where a resource server requires a specific, predetermined amount of APT (Aptos native token) in exchange for access to a resource.
+The `exact` scheme on Aptos transfers a specific amount of a stablecoin (such as USDC) or native APT from the payer to the resource server using Aptos's fungible asset framework. The approach requires the payer to construct a complete signed transaction ensuring that the facilitator cannot alter the transaction or redirect funds to any address other than the one specified by the resource server in paymentRequirements.
 
-**Key characteristics:**
-- Payments are made in APT (Aptos native token, measured in Octas where 1 APT = 100,000,000 Octas)
-- The payment amount is exact and predetermined by the resource server
-- Payments use the built-in `0x1::aptos_account::transfer` function
-- The client signs the transaction but does not submit it; the facilitator broadcasts it to the blockchain
-- The client pays for gas fees (Pattern A: "Sender signs, anyone can submit")
-- Settlement is atomic with resource delivery
-- BCS (Binary Canonical Serialization) is used for transaction encoding
+**Version Support:** This specification supports x402 v2 protocol only.
 
-**Example use cases:**
-- Pay-per-API-call services (e.g., $0.01 per weather data request)
-- Premium content access (e.g., 0.1 APT per article)
-- AI agent micropayments (e.g., 1000 Octas per LLM inference request)
-- Metered resource access (e.g., exact payment per compute unit)
+## Protocol Sequencing
 
-## `X-Payment` header payload
+The protocol flow for `exact` on Aptos is client-driven. When the facilitator supports sponsorship, it sets `extra.sponsored` to `true` in the payment requirements. This signals to the client that sponsored (gasless) transactions are available.
 
-The `X-Payment` header contains a base64-encoded JSON object conforming to the `PaymentPayload` structure:
+```
+1. Client makes a request to a `resource server` and receives a `402 Payment Required` response
+   - Payment requirements are in the `PAYMENT-REQUIRED` header (Base64 JSON)
+   - The `extra.sponsored` field indicates sponsorship is available
+2. Client constructs a fee payer transaction to transfer the fungible asset
+   - Fee payer address field is set to `0x0` as a placeholder
+3. Client signs the transaction (covers payload but not fee payer address)
+4. Client serializes the signed transaction using BCS and encodes as Base64
+5. Client resends the request with payment in `PAYMENT-SIGNATURE` header
+6. Resource server passes payment payload to facilitator for verification
+7. Facilitator validates transaction structure, signature, and payment details
+8. Resource server fulfills the request
+9. Resource server requests settlement from facilitator
+10. Facilitator sponsors (adds fee payer signature) and submits to Aptos network
+11. Facilitator reports back the result with transaction hash
+12. Resource server returns response with `PAYMENT-RESPONSE` header
+```
+
+**Security Note:** The sponsorship mechanism does not give the fee payer possession or ability to alter the client's transaction. The client's signature covers the entire transaction payload (recipient, amount, asset). The fee payer can only add its own signature.
+
+## Network Format
+
+X402 v2 uses CAIP-2 format for network identifiers:
+
+- **Mainnet:** `aptos:1` (CAIP-2 format using Aptos chain ID 1)
+- **Testnet:** `aptos:2` (CAIP-2 format using Aptos chain ID 2)
+
+## `PaymentRequirements` for `exact`
+
+In addition to the standard x402 `PaymentRequirements` fields, the `exact` scheme on Aptos requires:
 
 ```json
 {
-  "x402Version": 1,
   "scheme": "exact",
-  "network": "aptos-testnet" | "aptos-mainnet",
-  "payload": {
-    "signature": "99X8xzbQkOBY3yUnaeCvDslpGdMfB81aqEf7QQC8RhXJ6rripVz2Z21Vboc/CAmodHZkcDjiraFbJlzqQJKkBQ==",
-    "transaction": "AAAIAQDi1HwjSnS6M+WGvD73iEyUY2FRKNj0MlRp7+3SHZM3xCvMdB0AAAAAIFRgPKOstGBLCnbcyGoOXugUYAWwVzNrpMjPCzXK4KQW..."
+  "network": "aptos:1",
+  "amount": "1000000",
+  "asset": "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+  "payTo": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "maxTimeoutSeconds": 60,
+  "extra": {
+    "sponsored": true
   }
 }
 ```
 
-**Note:** The `signature` and `transaction` fields contain base64-encoded BCS (Binary Canonical Serialization) bytes:
-- `signature`: BCS-encoded `AccountAuthenticator` (contains the Ed25519 signature)
-- `transaction`: BCS-encoded `RawTransaction` (contains all transaction details: sender, sequence number, gas, payload, etc.)
+### Field Descriptions
 
-### Construction steps:
+- `scheme`: Always `"exact"` for this scheme
+- `network`: CAIP-2 network identifier - `aptos:1` (mainnet) or `aptos:2` (testnet)
+- `amount`: The exact amount to transfer in atomic units (e.g., `"1000000"` = 1 USDC)
+- `asset`: The metadata address of the fungible asset
+  - For native APT: `"0x1::aptos_coin::AptosCoin"`
+  - For USDC on mainnet: `"0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b"`
+- `payTo`: The recipient address (32-byte hex string with `0x` prefix)
+- `maxTimeoutSeconds`: Maximum time in seconds before the payment expires
+- `extra.sponsored`: Boolean indicating whether the facilitator will sponsor gas fees
 
-1. **Receive 402 response** with `paymentRequirements`:
-   ```json
-   {
-     "x402Version": 1,
-     "accepts": [{
-       "scheme": "exact",
-       "network": "aptos-testnet",
-       "maxAmountRequired": "1000000",
-       "payTo": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-       "resource": "https://api.example.com/weather",
-       "description": "Access to weather data API",
-       "mimeType": "application/json",
-       "maxTimeoutSeconds": 60
-     }]
-   }
-   ```
+## PaymentPayload Structure (v2)
 
-2. **Build the transaction** using Aptos SDK:
-   ```typescript
-   const transaction = await aptos.transaction.build.simple({
-     sender: account.accountAddress,
-     data: {
-       function: "0x1::aptos_account::transfer",
-       functionArguments: [
-         paymentRequirements.payTo,
-         paymentRequirements.maxAmountRequired
-       ]
-     }
-   });
-   ```
+The `payload` field of the `PaymentPayload` for v2 contains:
 
-3. **Sign the transaction** (but do NOT submit):
-   ```typescript
-   const authenticator = aptos.transaction.sign({ 
-     signer: account, 
-     transaction 
-   });
-   ```
+```json
+{
+  "x402Version": 2,
+  "resource": {
+    "url": "https://example.com/weather",
+    "description": "Access to protected content",
+    "mimeType": "application/json"
+  },
+  "accepted": {
+    "scheme": "exact",
+    "network": "aptos:1",
+    "amount": "1000000",
+    "asset": "0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b",
+    "payTo": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+    "maxTimeoutSeconds": 60,
+    "extra": {
+      "sponsored": true
+    }
+  },
+  "payload": {
+    "transaction": "AQDy8fLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vLy8vIC..."
+  }
+}
+```
 
-4. **Serialize to BCS and base64 encode**:
-   ```typescript
-   // Serialize transaction and signature separately to BCS bytes
-   const transactionBytes = transaction.bcsToBytes();
-   const signatureBytes = authenticator.bcsToBytes();
-   
-   // Base64 encode both
-   const transactionBase64 = Buffer.from(transactionBytes).toString('base64');
-   const signatureBase64 = Buffer.from(signatureBytes).toString('base64');
-   
-   // Construct the payload
-   const signedTxPayload = {
-     signature: signatureBase64,
-     transaction: transactionBase64,
-   };
-   ```
+### Transaction Encoding (v2)
 
-5. **Create the PaymentPayload**:
-   ```typescript
-   const paymentPayload = {
-     x402Version: 1,
-     scheme: "exact",
-     network: paymentRequirements.network,
-     payload: signedTxPayload
-   };
-   ```
+The `transaction` field contains a Base64-encoded combined buffer:
 
-6. **Base64 encode** and set as X-PAYMENT header:
-   ```typescript
-   const paymentHeader = Buffer.from(JSON.stringify(paymentPayload)).toString('base64');
-   
-   fetch(resourceUrl, {
-     headers: {
-       "X-PAYMENT": paymentHeader
-     }
-   });
-   ```
+```
+[txLen (4 bytes big-endian)] + [transaction BCS bytes] + [signature BCS bytes]
+```
+
+This format combines the transaction and signature into a single field for simplicity.
+
+## Construction Steps
+
+### 1. Receive 402 response with `PAYMENT-REQUIRED` header:
+
+The payment requirements are sent in the `PAYMENT-REQUIRED` HTTP header as Base64-encoded JSON:
+
+**Header:** `PAYMENT-REQUIRED: eyJ4NDAyVmVyc2lvbiI6MiwiYWNjZXB0cy...`
+
+**Decoded content:**
+```json
+{
+  "x402Version": 2,
+  "accepts": [{
+    "scheme": "exact",
+    "network": "aptos:2",
+    "amount": "1000000",
+    "asset": "0x1::aptos_coin::AptosCoin",
+    "payTo": "0x1234567890abcdef...",
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
+  }]
+}
+```
+
+### 2. Build the fee payer transaction:
+
+```typescript
+const transaction = await aptos.transaction.build.simple({
+  sender: account.accountAddress,
+  withFeePayer: true,  // Fee payer transaction
+  data: {
+    function: "0x1::aptos_account::transfer",
+    functionArguments: [
+      paymentRequirements.payTo,
+      BigInt(paymentRequirements.amount)
+    ]
+  }
+});
+```
+
+### 3. Sign the transaction (sender only):
+
+```typescript
+const senderAuthenticator = aptos.transaction.sign({ 
+  signer: account, 
+  transaction 
+});
+```
+
+### 4. Serialize and combine:
+
+```typescript
+const transactionBytes = transaction.bcsToBytes();
+const signatureBytes = senderAuthenticator.bcsToBytes();
+
+// Create combined buffer
+const txLen = transactionBytes.length;
+const combined = new Uint8Array(4 + txLen + signatureBytes.length);
+combined[0] = (txLen >> 24) & 0xff;
+combined[1] = (txLen >> 16) & 0xff;
+combined[2] = (txLen >> 8) & 0xff;
+combined[3] = txLen & 0xff;
+combined.set(transactionBytes, 4);
+combined.set(signatureBytes, 4 + txLen);
+
+const transactionBase64 = Buffer.from(combined).toString('base64');
+```
+
+### 5. Create the PaymentPayload:
+
+```typescript
+const paymentPayload = {
+  x402Version: 2,
+  resource: {
+    url: resourceUrl,
+    description: "Protected resource",
+    mimeType: "application/json"
+  },
+  accepted: paymentRequirements,
+  payload: {
+    transaction: transactionBase64
+  }
+};
+```
+
+### 6. Send with PAYMENT-SIGNATURE header:
+
+```typescript
+fetch(resourceUrl, {
+  headers: {
+    "PAYMENT-SIGNATURE": JSON.stringify(paymentPayload)
+  }
+});
+```
 
 ## Verification
 
-The facilitator's `/verify` endpoint performs the following validation steps **without** submitting the transaction to the blockchain:
+Steps to verify a payment for the `exact` scheme:
 
-### 1. Protocol Validation
-- Verify `x402Version` matches supported version (currently 1)
-- Verify `scheme` is `"exact"`
-- Verify `network` is a valid Aptos network (`aptos-testnet`, `aptos-mainnet`, or `aptos-devnet`)
-
-### 2. Payload Structure Validation
-- Verify `payload` contains both `signature` and `transaction` fields (base64-encoded BCS bytes)
-- Decode both from base64 to ensure valid encoding
-- Verify both have non-zero length
-
-### 3. Payment Parameters Validation
-- **Recipient verification**: Ensure `transaction.payload.arguments[0]` matches `paymentRequirements.payTo`
-- **Amount verification**: Ensure `transaction.payload.arguments[1]` matches `paymentRequirements.maxAmountRequired`
-- **Sender verification**: Ensure `transaction.sender` is a valid Aptos address
-
-### 4. Signature Validation (TODO - Future Enhancement)
-- Deserialize the signature from `signature.signature`
-- Verify the signature is valid for the transaction using `signature.public_key`
-- Ensure the public key derives the sender address
-
-### Response Format
-
-**Success:**
-```json
-{
-  "isValid": true,
-  "invalidReason": null
-}
-```
-
-**Failure:**
-```json
-{
-  "isValid": false,
-  "invalidReason": "Payment amount mismatch: expected 1000000, got 500000"
-}
-```
-
-### Verification characteristics:
-- ⚡ **Fast**: No blockchain interaction, purely cryptographic and structural validation
-- 💰 **Free**: No gas costs incurred
-- 🔒 **Secure**: Validates payment correctness before resource delivery
-- 🚫 **Non-binding**: Verification alone does not move funds
+1. **Extract requirements**: Use `payload.accepted` to get the payment requirements
+2. **Verify version**: `x402Version` is `2`
+3. **Verify network**: Matches CAIP-2 format (`aptos:1` or `aptos:2`)
+4. **Deserialize**: Decode Base64, extract transaction and signature from combined format
+5. **Verify signature**: Validate the BCS signature is valid
+6. **Verify balance**: Sender has sufficient balance of the `asset`
+7. **Verify function**: Transaction contains valid transfer operation:
+   - `0x1::aptos_account::transfer` (for native APT)
+   - `0x1::primary_fungible_store::transfer` (for fungible assets)
+8. **Verify asset**: Transfer is for the correct asset (matching `requirements.asset`)
+9. **Verify amount**: Transfer amount matches `requirements.amount`
+10. **Verify recipient**: Transfer recipient matches `requirements.payTo`
+11. **Simulate**: Use Aptos REST API to simulate transaction success
 
 ## Settlement
 
-The facilitator's `/settle` endpoint performs the following steps to execute the payment on the Aptos blockchain:
+Settlement is performed by sponsoring and submitting the transaction:
 
-### 1. Parse Payment Payload
-- Decode the base64-encoded `X-PAYMENT` header
-- Extract the `payload.signature` and `payload.transaction` (both base64-encoded BCS bytes)
-- Validate the scheme and network (same as verification)
+1. **Deserialize**: Facilitator receives the client-signed transaction
+2. **Populate fee payer**: Replace `0x0` placeholder with actual fee payer address
+3. **Sign as fee payer**: Add fee payer signature (Geomi Gas Station or local key)
+4. **Submit**: Submit fully-signed transaction to Aptos network
+5. **Return hash**: Return transaction hash to resource server
 
-### 2. Deserialize BCS to SDK Objects
-Convert the BCS bytes back into Aptos SDK objects:
+### Geomi Gas Station Integration
 
-```typescript
-import { SimpleTransaction, AccountAuthenticator, Deserializer } from "@aptos-labs/ts-sdk";
-
-// Decode from base64
-const signatureBytes = Buffer.from(payload.signature, 'base64');
-const transactionBytes = Buffer.from(payload.transaction, 'base64');
-
-// Deserialize BCS bytes back to SDK objects
-const transaction = SimpleTransaction.deserialize(new Deserializer(transactionBytes));
-const senderAuthenticator = AccountAuthenticator.deserialize(new Deserializer(signatureBytes));
-```
-
-### 3. Submit Using SDK Method
-The facilitator uses the official Aptos SDK `submit.simple()` method (Pattern A: "Sender signs, anyone can submit"):
+For production sponsorship, integrate with [Geomi's Gas Station](https://geomi.dev/docs/gas-stations):
 
 ```typescript
-const committed = await aptos.transaction.submit.simple({
-  transaction,           // Deserialized RawTransaction
-  senderAuthenticator,   // Deserialized AccountAuthenticator
-});
+import { getGasStation } from 'aptos-x402';
 
-console.log("Transaction hash:", committed.hash);
-```
+const gasStation = getGasStation(); // Uses GEOMI_API_KEY from env
 
-**Important:** The **sender pays gas fees** in this flow. The facilitator only broadcasts the transaction to the network. This is the standard pattern for x402 micropayments where the client has already funded their account.
+const result = await gasStation.sponsorAndSubmitTransaction(
+  transaction,
+  senderAuthenticator
+);
 
-### 4. Wait for Confirmation
-```typescript
-await aptos.waitForTransaction({ 
-  transactionHash: pendingTx.hash 
-});
-```
-
-The facilitator waits for the transaction to be confirmed and included in a block.
-
-### 5. Verify Success
-```typescript
-const txDetails = await aptos.transaction.getTransactionByHash({
-  transactionHash: pendingTx.hash
-});
-
-if (!txDetails.success) {
-  throw new Error("Transaction failed on blockchain");
+if (result.success) {
+  console.log('TX Hash:', result.txHash);
 }
 ```
 
-### 6. Return Settlement Response
+## `PAYMENT-RESPONSE` Header Payload
 
-**Success:**
+The `PAYMENT-RESPONSE` header is Base64 encoded JSON:
+
 ```json
 {
   "success": true,
-  "error": null,
-  "txHash": "0xabc123...",
-  "networkId": "aptos-testnet"
+  "transaction": "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890",
+  "network": "aptos:1",
+  "payer": "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
 }
 ```
 
-**Failure:**
-```json
-{
-  "success": false,
-  "error": "Transaction failed on blockchain",
-  "txHash": "0xabc123...",
-  "networkId": "aptos-testnet"
-}
-```
+### Field Descriptions
 
-### Settlement characteristics:
-- 🐢 **Slow**: Requires blockchain confirmation (typically 1-3 seconds on Aptos)
-- 💰 **Gas costs**: Transaction fees are paid by the sender (client), NOT the facilitator or resource server
- - **Final**: Once settled, the payment is irreversible
-- 🔒 **Atomic**: Resource delivery should only occur after successful settlement
-
-### Gas Handling
-
-In the `exact` scheme on Aptos:
-- The **client** pays for gas fees (deducted from their account balance)
-- Gas fees are separate from the payment amount
-- The client must have sufficient balance to cover: `maxAmountRequired + gas_fees`
-- Typical gas cost: ~100-500 Octas (negligible compared to payment amounts)
-
-**Gas Payment Patterns:**
-
-This implementation uses **Pattern A** from the Aptos SDK docs:
-- **Pattern A (Current)**: "Sender signs, anyone can submit"
-  - Client signs transaction and pays gas
-  - Facilitator broadcasts using `aptos.transaction.submit.simple()`
-  - Simple, no facilitator funds needed
-  - Recommended for most x402 use cases
-
-- **Pattern B (Alternative)**: "Fee-payer flow"
-  - Client signs transaction but facilitator pays gas
-  - Facilitator broadcasts using `aptos.signAndSubmitAsFeePayer()`
-  - More complex, requires facilitator to fund gas costs
-  - Better for clients without APT balance
-
-### Replay Protection
-
-Aptos provides built-in replay protection through:
-- **Sequence numbers**: Each account has a sequence number that increments with each transaction
-- **Expiration timestamps**: Transactions expire after `expiration_timestamp_secs`
-- Once a transaction is submitted, the sequence number is consumed and cannot be reused
-
-The facilitator does not need to implement additional replay protection beyond validating that settlement has not already occurred.
+- `success`: Boolean indicating whether settlement was successful
+- `transaction`: Transaction hash (64 hex characters with `0x` prefix)
+- `network`: CAIP-2 network identifier
+- `payer`: Address of the payer's wallet (sender or fee payer)
 
 ## Appendix
 
-### Network Configuration
+### Sponsored Transactions
 
-| Network         | Node URL                                      | Chain ID |
-|-----------------|-----------------------------------------------|----------|
-| aptos-mainnet   | https://fullnode.mainnet.aptoslabs.com/v1     | 1        |
-| aptos-testnet   | https://fullnode.testnet.aptoslabs.com/v1     | 2        |
-| aptos-devnet    | https://fullnode.devnet.aptoslabs.com/v1      | (varies) |
+When `extra.sponsored` is `true`, the facilitator pays gas fees using Aptos's native fee payer mechanism.
 
-### Currency Units
+**Fee Payer Placeholder:** Client sets fee payer address to `0x0`. The facilitator replaces this during settlement.
 
-- **APT**: The native token of Aptos (similar to ETH on Ethereum)
-- **Octas**: The smallest unit of APT
-- **Conversion**: 1 APT = 100,000,000 Octas (10^8)
+**Implementation:**
 
-### Example Payment Amounts
+Gas sponsorship is provided by Geomi Gas Station. Set `GEOMI_API_KEY` in your environment.
 
-| Description          | Octas     | APT    |
-|---------------------|-----------|--------|
-| Micropayment        | 1,000     | 0.00001|
-| Typical API call    | 1,000,000 | 0.01   |
-| Premium content     | 10,000,000| 0.1    |
-| High-value resource | 100,000,000| 1.0   |
+### Non-Sponsored Transactions
 
-### Transaction Structure Reference
+If `extra.sponsored` is `false`, the client pays their own gas:
 
-The Aptos transaction structure used in `aptos-exact`:
+1. Client constructs regular transaction (no `withFeePayer`)
+2. Client signs transaction normally
+3. Facilitator submits directly without additional signing
 
-- `sender`: The Aptos account address sending the payment (0x-prefixed hex)
-- `sequence_number`: Anti-replay nonce, auto-incremented per account
-- `max_gas_amount`: Maximum gas units willing to spend (typical: 100,000)
-- `gas_unit_price`: Price per gas unit in Octas (typical: 100)
-- `expiration_timestamp_secs`: Unix timestamp when transaction expires
-- `payload.function`: Always `"0x1::aptos_account::transfer"` for this scheme
-- `payload.arguments[0]`: Recipient address (must match `paymentRequirements.payTo`)
-- `payload.arguments[1]`: Amount in Octas (must match `paymentRequirements.maxAmountRequired`)
+### Fungible Asset Transfer
 
-### Security Considerations
+Two transfer approaches:
 
-1. **Trust Model**: 
-   - Client trusts the facilitator to submit their signed transaction correctly
-   - Resource server trusts the facilitator to verify and settle payments
-   - The facilitator CANNOT move funds other than as specified in the signed transaction
+**Option 1: `0x1::primary_fungible_store::transfer`** (recommended)
 
-2. **Expiration**: 
-   - Transactions should have reasonable expiration times (typically 60-600 seconds)
-   - Expired transactions will be rejected by the Aptos network
+```move
+public entry fun transfer<T: key>(
+    sender: &signer,
+    metadata: Object<T>,
+    recipient: address,
+    amount: u64,
+)
+```
 
-3. **Balance Requirements**: 
-   - Clients must maintain sufficient APT balance for: payment amount + gas fees
-   - Failed transactions due to insufficient balance will not be retried
+**Option 2: `0x1::aptos_account::transfer`** (native APT only)
 
-4. **Network Selection**: 
-   - Always use mainnet for production payments
-   - Use testnet only for development and testing
-   - Ensure all parties (client, resource server, facilitator) agree on the network
+```move
+public entry fun transfer(
+    source: &signer,
+    to: address,
+    amount: u64,
+)
+```
 
-### Future Enhancements
+### Network Identifiers
 
-- **Signature verification in /verify**: Fully validate cryptographic signatures before settlement
-- **Multi-currency support**: Support for Aptos fungible assets beyond native APT
-- **Fee-payer flow (Pattern B)**: Allow facilitator/resource server to pay gas fees using `signAndSubmitAsFeePayer()`
-- **Partial payments**: Support for "upto" scheme variant for metered usage
-- **Batch payments**: Support for multiple payments in a single transaction
+| Network | CAIP-2 Format | Chain ID |
+|---------|---------------|----------|
+| Mainnet | `aptos:1` | 1 |
+| Testnet | `aptos:2` | 2 |
 
-### References
+### Account Addresses
+
+Aptos addresses are 32-byte hex strings with `0x` prefix (64 hex characters).
+
+### Environment Variables
+
+```env
+# Geomi Gas Station (for sponsored transactions)
+GEOMI_API_KEY=your-api-key
+
+# Network
+APTOS_NETWORK=aptos:2
+
+# USDC Asset Addresses
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
+USDC_MAINNET_ADDRESS=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b
+```
+
+### Migration from v1
+
+| v1 | v2 |
+|----|----|
+| Requirements in body | Requirements in `PAYMENT-REQUIRED` header |
+| `X-PAYMENT` header | `PAYMENT-SIGNATURE` header |
+| `X-PAYMENT-RESPONSE` header | `PAYMENT-RESPONSE` header |
+| `aptos-testnet` network | `aptos:2` network |
+| `maxAmountRequired` field | `amount` field |
+| Separate `signature` and `transaction` | Combined `transaction` field |
+| `txHash` in response | `transaction` in response |
+| `networkId` in response | `network` in response |
+
+## References
 
 - [Aptos Developer Documentation](https://aptos.dev)
 - [Aptos TypeScript SDK](https://github.com/aptos-labs/aptos-ts-sdk)
-- [Aptos REST API Specification](https://aptos.dev/apis/fullnode-rest-api)
+- [Aptos Sponsored Transactions](https://aptos.dev/build/guides/sponsored-transactions)
 - [x402 Protocol Specification](https://github.com/coinbase/x402)
-- [BCS (Binary Canonical Serialization)](https://docs.rs/bcs/latest/bcs/)
-
+- [CAIP-2 Chain ID Specification](https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-2.md)
+- [Geomi Gas Station](https://geomi.dev/docs/gas-station)

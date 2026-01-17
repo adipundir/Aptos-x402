@@ -13,7 +13,7 @@ interface DocItem {
 }
 
 const docsStructure: DocItem[] = [
-  { title: 'Welcome to x402', path: 'README.md' },
+  { title: 'Overview', path: 'README.md' },
   {
     title: 'Getting Started',
     children: [

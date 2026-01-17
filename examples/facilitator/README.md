@@ -9,7 +9,7 @@ A facilitator is a service that handles blockchain interactions for x402 payment
 ## Do I Need to Deploy a Facilitator?
 
 **No, if you:**
- - Use the public demo facilitator: `https://aptos-x402.vercel.app/api/facilitator`
+ - Use the public demo facilitator: `https://aptos-x402.org/api/facilitator`
  - Use your company's existing facilitator
  - Just testing/developing
 
@@ -30,7 +30,7 @@ export const middleware = paymentMiddleware(
   { /* routes */ },
   {
     // Public demo facilitator - perfect for testing!
-    url: 'https://aptos-x402.vercel.app/api/facilitator'
+    url: 'https://aptos-x402.org/api/facilitator'
   }
 );
 ```

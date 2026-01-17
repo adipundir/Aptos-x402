@@ -1,300 +1,242 @@
-# Setting Up Your Own Facilitator
+# Facilitator Setup Guide
 
-This guide walks through deploying a production-ready facilitator service for x402 payment processing.
+Deploy a production-ready facilitator for x402 payment processing.
 
-## Public Facilitator (Free)
+## Public Facilitator (Recommended)
 
-**Before setting up your own facilitator**, note that we provide a **free public facilitator** at `https://aptos-x402.vercel.app/api/facilitator` that works on both **testnet and mainnet**. 
+Before self-hosting, consider the free public facilitator:
 
-This service is:
-- **Completely free** (currently and for the foreseeable future)
-- **Production-ready** for most use cases
-- **Zero setup required** - just use it in your configuration
-- **No authentication needed**
-
-**You only need to set up your own facilitator if you require:**
-- Guaranteed uptime SLAs
-- Custom rate limits or higher throughput
-- Private infrastructure
-- Full control over blockchain node selection
-- Custom monitoring and logging
-
-For most users, especially those getting started, the free public facilitator is sufficient even for production use.
-
-## When to Deploy Your Own
-
-Your own deployment provides control over uptime and performance, eliminates dependency on shared infrastructure, allows customization for specific requirements, and enables proper monitoring and alerting.
-
-Consider self-hosting if you expect very high transaction volumes or need guaranteed service levels for mission-critical applications.
-
-## Prerequisites
-
-You need a Next.js 15+ environment with TypeScript support, Node.js 20 or higher, and access to deploy web services (Vercel, AWS, Google Cloud, or similar platforms). Familiarity with the Aptos SDK and basic DevOps practices will help with deployment and monitoring.
-
-## Implementation
-
-The facilitator consists of two API endpoints that handle verification and settlement. Both endpoints are standard Next.js API routes that can be deployed anywhere Next.js runs.
-
-### Verify Endpoint
-
-Create the verification endpoint at `app/api/facilitator/verify/route.ts`:
-
-```typescript
-import { NextResponse } from 'next/server';
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { paymentHeader, paymentRequirements } = body;
-    
-    const paymentPayload = JSON.parse(
-      Buffer.from(paymentHeader, 'base64').toString()
-    );
-    
-    if (!paymentPayload.payload?.transaction || 
-        !paymentPayload.payload?.signature) {
-      return NextResponse.json({
-        isValid: false,
-        invalidReason: 'Missing transaction or signature'
-      });
-    }
-    
-    if (paymentPayload.scheme !== paymentRequirements.scheme) {
-      return NextResponse.json({
-        isValid: false,
-        invalidReason: 'Scheme mismatch'
-      });
-    }
-    
-    if (paymentPayload.network !== paymentRequirements.network) {
-      return NextResponse.json({
-        isValid: false,
-        invalidReason: 'Network mismatch'
-      });
-    }
-    
-    return NextResponse.json({
-      isValid: true,
-      invalidReason: null
-    });
-    
-  } catch (error) {
-    return NextResponse.json({
-      isValid: false,
-      invalidReason: error.message
-    }, { status: 400 });
-  }
-}
+```
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
 ```
 
-This endpoint performs structural validation without touching the blockchain. It confirms the payment has the required components, matches the expected scheme and network, and is properly formatted. Returning quickly allows servers to reject invalid payments before attempting settlement.
+Features:
+- Free for all users
+- Testnet and mainnet support
+- Geomi gas sponsorship included
+- Zero configuration
 
-### Settle Endpoint
+**Only self-host if you need:** guaranteed SLAs, custom rate limits, private infrastructure.
 
-Create the settlement endpoint at `app/api/facilitator/settle/route.ts`:
+## Self-Hosting Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| Next.js | 15+ or 16+ |
+| Node.js | 20+ |
+| Geomi API Key | From [geomi.dev](https://geomi.dev) |
+
+## Step 1: Environment Setup
+
+```bash
+# .env.local
+
+# Geomi API Key (REQUIRED for gas sponsorship)
+GEOMI_API_KEY=your_api_key_from_geomi_dev
+
+# Network
+APTOS_NETWORK=aptos:2
+
+# USDC Addresses
+USDC_MAINNET_ADDRESS=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
+```
+
+## Step 2: Install Dependencies
+
+```bash
+npm install aptos-x402 @aptos-labs/ts-sdk @aptos-labs/gas-station-client
+```
+
+## Step 3: Create Verify Endpoint
 
 ```typescript
-import { NextResponse } from 'next/server';
-import { 
-  Aptos, 
-  AptosConfig, 
-  Network,
-  Deserializer,
-  SimpleTransaction,
-  AccountAuthenticator
-} from '@aptos-labs/ts-sdk';
+// app/api/facilitator/verify/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { Aptos, AptosConfig, Network, Deserializer, SimpleTransaction } from '@aptos-labs/ts-sdk';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
-    const body = await request.json();
-    const { paymentHeader, paymentRequirements } = body;
+    const { paymentHeader, paymentRequirements } = await request.json();
     
-    const paymentPayload = JSON.parse(
-      Buffer.from(paymentHeader, 'base64').toString()
-    );
+    if (!paymentHeader || !paymentRequirements?.asset || !paymentRequirements?.payTo) {
+      return NextResponse.json({ isValid: false, invalidReason: "Missing required fields" }, { status: 400 });
+    }
+
+    const payload = JSON.parse(paymentHeader);
+    if (!payload.payload?.transaction) {
+      return NextResponse.json({ isValid: false, invalidReason: "No transaction in payload" });
+    }
+
+    // Deserialize and simulate
+    const txBytes = Uint8Array.from(atob(payload.payload.transaction), c => c.charCodeAt(0));
+    const transaction = SimpleTransaction.deserialize(new Deserializer(txBytes));
     
-    const network = paymentRequirements.network === 'aptos-testnet' 
-      ? Network.TESTNET 
-      : Network.MAINNET;
-    const config = new AptosConfig({ network });
-    const aptos = new Aptos(config);
+    const network = paymentRequirements.network === 'aptos:1' ? Network.MAINNET : Network.TESTNET;
+    const aptos = new Aptos(new AptosConfig({ network }));
     
-    const txBytes = Buffer.from(
-      paymentPayload.payload.transaction, 
-      'base64'
-    );
-    const sigBytes = Buffer.from(
-      paymentPayload.payload.signature, 
-      'base64'
-    );
-    
-    const transaction = SimpleTransaction.deserialize(
-      new Deserializer(txBytes)
-    );
-    const authenticator = AccountAuthenticator.deserialize(
-      new Deserializer(sigBytes)
-    );
-    
-    const result = await aptos.transaction.submit.simple({
+    const [simulation] = await aptos.transaction.simulate.simple({
+      signerPublicKey: transaction.rawTransaction.sender,
       transaction,
-      senderAuthenticator: authenticator
     });
     
-    await aptos.waitForTransaction({
-      transactionHash: result.hash
-    });
-    
-    return NextResponse.json({
-      success: true,
-      txHash: result.hash,
-      networkId: paymentRequirements.network,
-      error: null
-    });
-    
-  } catch (error) {
-    return NextResponse.json({
-      success: false,
-      txHash: null,
-      networkId: paymentRequirements.network,
-      error: error.message
-    }, { status: 400 });
+    if (!simulation.success) {
+      return NextResponse.json({ isValid: false, invalidReason: `Simulation failed: ${simulation.vm_status}` });
+    }
+
+    const duration = Date.now() - startTime;
+    const response = NextResponse.json({ isValid: true, invalidReason: null });
+    response.headers.set('Verification-Time', duration.toString());
+    return response;
+
+  } catch (error: any) {
+    return NextResponse.json({ isValid: false, invalidReason: error.message }, { status: 500 });
   }
 }
 ```
 
-This endpoint deserializes the payment components, submits the transaction to Aptos, and waits for confirmation. Error handling captures common issues like insufficient balance or invalid signatures, returning descriptive messages to help with debugging.
-
-## Deployment Options
-
-### Same Application Deployment
-
-The simplest deployment includes facilitator endpoints in your main Next.js application. Create the facilitator routes as shown above, ensure your application has the Aptos SDK installed, and configure your middleware to use the local facilitator URL.
-
-Your project structure becomes:
-
-```
-my-app/
-├── app/
-│   └── api/
-│       ├── facilitator/
-│       │   ├── verify/route.ts
-│       │   └── settle/route.ts
-│       └── premium/
-│           └── route.ts
-└── middleware.ts
-```
-
-Set the facilitator URL to your own domain:
-
-```
-FACILITATOR_URL=https://your-app.com/api/facilitator
-```
-
-This works well for moderate traffic levels and provides the simplest operational model.
-
-### Separate Service Deployment
-
-For production scale, deploy the facilitator as a standalone service. Create a separate Next.js project containing only the facilitator endpoints, deploy it independently from your API servers, and configure your API middleware to point to the facilitator service URL.
-
-This provides several advantages. The facilitator can scale independently based on transaction volume. Blockchain operations don't compete for resources with API logic. Multiple API services can share one facilitator deployment. Updates to either service can happen independently.
-
-The architecture becomes:
-
-```
-API Service (Vercel) → Facilitator Service (Vercel/AWS/GCP) → Aptos
-```
-
-### Serverless Deployment
-
-Both deployment patterns work well with serverless platforms like Vercel, AWS Lambda, or Google Cloud Functions. The facilitator's stateless design makes it naturally suited to serverless execution.
-
-Configure appropriate timeouts to accommodate blockchain settlement times. Settlement can take up to 5 seconds during network congestion, so set function timeouts to at least 10 seconds.
-
-## Configuration
-
-### Environment Variables
-
-Configure these variables for your facilitator:
-
-```
-APTOS_NODE_URL=https://api.mainnet.aptoslabs.com/v1
-```
-
-The node URL is optional. Without it, the Aptos SDK uses default public RPC endpoints. For production, consider using your own RPC node or a service like Alchemy or QuickNode for better reliability and rate limits.
-
-### Network Selection
-
-Support both testnet and mainnet by checking the network in payment requirements and initializing the appropriate Aptos client. The example settle endpoint shows this pattern.
-
-Never hardcode the network. Always respect the network specified in payment requirements to allow clients to choose between test and production networks.
-
-## Production Considerations
-
-### Rate Limiting
-
-Implement rate limiting to prevent abuse. A simple implementation:
+## Step 4: Create Settle Endpoint
 
 ```typescript
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// app/api/facilitator/settle/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { Aptos, AptosConfig, Network, Deserializer, SimpleTransaction, AccountAuthenticator } from '@aptos-labs/ts-sdk';
+import { getGasStation } from 'aptos-x402';
 
-function checkRateLimit(ip: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
   
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return true;
+  try {
+    const { paymentHeader, paymentRequirements } = await request.json();
+    
+    const payload = JSON.parse(paymentHeader);
+    const network = paymentRequirements.network;
+    
+    // Deserialize transaction
+    const txBytes = Uint8Array.from(atob(payload.payload.transaction), c => c.charCodeAt(0));
+    const transaction = SimpleTransaction.deserialize(new Deserializer(txBytes));
+    
+    // Get sender authenticator
+    const senderAuth = (transaction as any).rawTransaction.authenticator || 
+                       AccountAuthenticator.deserialize(new Deserializer(txBytes));
+    
+    // Sponsor and submit via Geomi
+    const gasStation = getGasStation();
+    if (!gasStation.isConfigured()) {
+      return NextResponse.json({
+        success: false, transaction: null, network, payer: null,
+        error: 'Gas station not configured. Set GEOMI_API_KEY.'
+      }, { status: 500 });
+    }
+    
+    const result = await gasStation.sponsorAndSubmitTransaction(transaction, senderAuth);
+    
+    if (!result.success) {
+      return NextResponse.json({
+        success: false, transaction: null, network, payer: null, error: result.error
+      }, { status: 400 });
+    }
+    
+    const duration = Date.now() - startTime;
+    const response = NextResponse.json({
+      success: true,
+      transaction: result.txHash,
+      network,
+      payer: 'geomi-sponsored'
+    });
+    response.headers.set('Settlement-Time', duration.toString());
+    return response;
+
+  } catch (error: any) {
+    return NextResponse.json({
+      success: false, transaction: null, network: null, payer: null, error: error.message
+    }, { status: 500 });
   }
-  
-  if (record.count >= limit) {
-    return false;
-  }
-  
-  record.count++;
-  return true;
 }
 ```
 
-Apply rate limiting before processing requests. This prevents resource exhaustion from malicious clients attempting to overwhelm your facilitator with invalid payments.
+## Step 5: Configure Middleware
 
-### Monitoring
+```typescript
+// proxy.ts
+import { paymentMiddleware } from 'aptos-x402';
 
-Track key metrics to ensure healthy operation. Monitor verification latency (should average under 50ms), settlement latency (should average 1-3 seconds), success rates for both operations (should exceed 95%), and error rates by type.
+const USDC = process.env.APTOS_NETWORK === "aptos:1" 
+  ? process.env.USDC_MAINNET_ADDRESS! 
+  : process.env.USDC_TESTNET_ADDRESS!;
 
-Log all operations with sufficient detail for debugging but without exposing sensitive information. Include timestamps, operation types, network, amounts, and outcome. Never log private keys or complete transaction details.
+export const proxy = paymentMiddleware(
+  process.env.PAYMENT_RECIPIENT_ADDRESS!,
+  {
+    '/api/premium/data': {
+      price: '1000',
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC,
+    }
+  },
+  {
+    url: process.env.FACILITATOR_URL || 'http://localhost:3000/api/facilitator'
+  }
+);
 
-### Error Handling
+export const config = { matcher: ['/api/premium/:path*'] };
+```
 
-Return clear, actionable error messages that help clients understand failures. Common errors include insufficient balance, invalid signature, sequence number conflicts, network connectivity issues, and RPC rate limiting.
+## Deployment
 
-Implement exponential backoff for blockchain submission during periods of network congestion. This prevents cascading failures when the blockchain is slow or unavailable.
+### Vercel
 
-### Security
+```bash
+vercel deploy
+vercel env add GEOMI_API_KEY
+vercel env add APTOS_NETWORK
+vercel env add USDC_TESTNET_ADDRESS
+```
 
-Validate all inputs before processing. Check that amounts are positive numbers, addresses are valid format, networks match supported values, and payload sizes are reasonable.
+### Docker
 
-For production deployments, consider requiring authentication from API servers. This prevents unauthorized use of your facilitator by external parties.
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
+ENV GEOMI_API_KEY=your_key
+ENV APTOS_NETWORK=aptos:2
+CMD ["npm", "start"]
+```
 
-### High Availability
+## Testing
 
-Deploy multiple facilitator instances behind a load balancer for production systems. Configure health checks that verify both API responsiveness and blockchain connectivity. Implement automatic failover if an instance becomes unhealthy.
+```bash
+# Test verify endpoint
+curl -X POST http://localhost:3000/api/facilitator/verify \
+  -H "Content-Type: application/json" \
+  -d '{"paymentHeader":"...", "paymentRequirements":{...}}'
 
-Maintain multiple Aptos RPC endpoints and implement failover between them. Public RPC endpoints occasionally experience issues, and having backups ensures continued operation.
+# Test settle endpoint
+curl -X POST http://localhost:3000/api/facilitator/settle \
+  -H "Content-Type: application/json" \
+  -d '{"paymentHeader":"...", "paymentRequirements":{...}}'
+```
 
-## Testing Your Facilitator
+## Monitoring
 
-Verify correct operation before directing production traffic to your facilitator. Test the verify endpoint with valid and invalid payloads. Test the settle endpoint with testnet transactions. Verify error handling for malformed requests. Check that logging and monitoring work as expected.
+Track these metrics:
+- Verification time (<100ms target)
+- Settlement time (<3s target)
+- Success rate (>95% target)
+- Error rates by type
 
-Use the Aptos testnet for testing. Create test accounts, fund them from the faucet, and submit real transactions. Verify that transaction hashes appear in the Aptos explorer and that settlement completes within expected time bounds.
+## USDC Addresses
 
-## Cost Considerations
-
-Running your own facilitator incurs minimal costs. Serverless deployments on platforms like Vercel typically cost under $20/month for moderate traffic. Compute costs scale with transaction volume but remain low due to the efficiency of the operations. No blockchain transaction fees apply to the facilitator itself (clients pay all gas fees).
-
-For high-volume deployments, dedicated infrastructure may prove more cost-effective than serverless platforms. Evaluate your traffic patterns and costs once your service reaches scale.
+| Network | Address |
+|---------|---------|
+| **Mainnet** | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
 ## Next Steps
 
-Once your facilitator is deployed and tested, update your API middleware to use it, monitor operation in production, and implement alerting for errors or performance degradation. As your service grows, consider scaling the facilitator independently from your API tier.
-
-Monitor your facilitator's performance metrics, error rates, and transaction success rates to ensure smooth operation.
+- [Geomi Setup](geomi-setup.md) - Configure gas sponsorship
+- [HTTP 402 Protocol](../core-concepts/http-402.md) - Protocol details

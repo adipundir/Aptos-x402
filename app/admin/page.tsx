@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 
 // Admin wallet address from environment variable
-const ADMIN_WALLET_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS || '';
+const ADMIN_WALLET_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS as string;
 
 interface AgentOwner {
   id: string;
@@ -131,7 +131,7 @@ function AdminPageContent() {
     try {
       const res = await fetch('/api/admin/agents', {
         headers: {
-          'x-admin-wallet': walletAddress || connectedAddress || '',
+          'admin-wallet': walletAddress || connectedAddress || '',
         },
       });
       if (!res.ok) {
@@ -157,7 +157,7 @@ function AdminPageContent() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-admin-wallet': connectedAddress || '',
+          'admin-wallet': connectedAddress || '',
         },
         body: JSON.stringify({ agentId }),
       });

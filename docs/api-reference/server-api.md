@@ -20,7 +20,7 @@ function paymentMiddleware(
 
 #### `recipientAddress` (string, required)
 
-Your Aptos wallet address that will receive payments.
+Your Aptos wallet address that will receive USDC payments.
 
 ```typescript
 paymentMiddleware(
@@ -36,8 +36,9 @@ Map of route paths to their payment configurations.
 ```typescript
 {
   '/api/premium/weather': {
-    price: '1000000',
-    network: 'testnet',
+    price: '1000',                    // 0.001 USDC
+    network: 'aptos:2',               // CAIP-2 format
+    asset: '0x69091fbab...',          // USDC address
     config: {
       description: 'Premium weather data'
     }
@@ -51,7 +52,7 @@ Facilitator service configuration.
 
 ```typescript
 {
-  url: 'https://facilitator.example.com/api/facilitator'
+  url: 'https://aptos-x402.org/api/facilitator'
 }
 ```
 
@@ -59,13 +60,13 @@ Facilitator service configuration.
 
 ```typescript
 interface RouteConfig {
-  price: string;                   // Amount in Octas
-  network?: string;                // e.g. 'testnet' | 'mainnet' | 'devnet' (default: 'testnet')
+  price: string;                   // Amount in atomic units (USDC has 6 decimals)
+  network?: string;                // CAIP-2 format: "aptos:1" or "aptos:2"
+  asset: string;                   // USDC fungible asset metadata address (REQUIRED)
+  sponsored?: boolean;             // Facilitator sponsors gas (default: true)
   config?: {
     description?: string;          // Human-readable description
-    mimeType?: string;             // Response content type
-    outputSchema?: Record<string, any>; // Optional JSON schema of response
-    maxTimeoutSeconds?: number;    // Max wait time
+    maxTimeoutSeconds?: number;    // Max wait time (default: 60)
   };
 }
 ```
@@ -74,31 +75,37 @@ interface RouteConfig {
 
 ```typescript
 interface FacilitatorConfig {
-  url: string;  // Base facilitator URL (without /verify or /settle)
+  url: string;  // Facilitator URL (without /verify or /settle)
 }
 ```
 
 ### Returns
 
-Next.js middleware function that can be exported as `middleware`.
+Next.js middleware function for export.
 
 ### Example
 
 ```typescript
-// middleware.ts
+// proxy.ts
 import { paymentMiddleware } from 'aptos-x402';
 
-export const middleware = paymentMiddleware(
+const USDC = process.env.APTOS_NETWORK === "aptos:1"
+  ? process.env.USDC_MAINNET_ADDRESS!
+  : process.env.USDC_TESTNET_ADDRESS!;
+
+export const proxy = paymentMiddleware(
   process.env.PAYMENT_RECIPIENT_ADDRESS!,
   {
     '/api/premium/weather': {
-      price: '1000000',
-      network: 'testnet',
+      price: '1000',
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC,
       config: { description: 'Weather data' }
     },
     '/api/premium/stocks': {
-      price: '5000000',
-      network: 'testnet',
+      price: '5000',
+      network: process.env.APTOS_NETWORK!,
+      asset: USDC,
       config: { description: 'Stock data' }
     }
   },
@@ -114,132 +121,104 @@ export const config = {
 
 ## Middleware Behavior
 
-### Without X-PAYMENT Header
+### Without PAYMENT-SIGNATURE Header
 
 Returns 402 with payment requirements:
 
 ```json
 {
-  "x402Version": 1,
+  "x402Version": 2,
   "accepts": [{
     "scheme": "exact",
-    "network": "aptos-testnet",
-    "maxAmountRequired": "1000000",
+    "network": "aptos:2",
+    "amount": "1000",
+    "asset": "0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832",
     "payTo": "0x742d35Cc...",
-    "description": "Weather data",
-    "resource": "http://localhost:3000/api/premium/weather"
+    "maxTimeoutSeconds": 60,
+    "extra": { "sponsored": true }
   }]
 }
 ```
 
-### With Valid X-PAYMENT Header
+### With Valid PAYMENT-SIGNATURE Header
 
-1. Verifies payment structure
-2. Settles payment on blockchain
+1. Verifies payment structure via `/verify`
+2. Settles payment via `/settle` (facilitator sponsors gas)
 3. Calls your API route handler
-4. Returns response with X-PAYMENT-RESPONSE header
+4. Returns response with `PAYMENT-RESPONSE` header
 
-### With Invalid X-PAYMENT Header
+### With Invalid PAYMENT-SIGNATURE Header
 
 Returns 403 with error details:
 
 ```json
 {
   "error": "Payment verification failed",
-  "message": "Invalid signature"
+  "message": "Asset mismatch"
 }
 ```
 
 ## Response Headers
 
-### X-PAYMENT-RESPONSE
+### PAYMENT-RESPONSE
 
-Included in successful responses with settlement details:
+Base64-encoded settlement details:
 
-```
-X-PAYMENT-RESPONSE: eyJzZXR0bGVtZW50Ijp7InR4SGFzaCI6Ij...
-```
-
-Decoded:
 ```json
 {
-  "settlement": {
-    "success": true,
-    "txHash": "0x5f2e...",
-    "networkId": "aptos-testnet",
-    "error": null
-  }
+  "success": true,
+  "transaction": "0x5f2e...",
+  "network": "aptos:2",
+  "payer": "geomi-sponsored"
 }
 ```
 
-### X-Verification-Time
+### Verification-Time
 
-Time taken for payment verification (milliseconds):
-
-```
-X-Verification-Time: 45
-```
-
-### X-Settlement-Time
-
-Time taken for blockchain settlement (milliseconds):
+Payment verification time (milliseconds):
 
 ```
-X-Settlement-Time: 1234
+Verification-Time: 85
+```
+
+### Settlement-Time
+
+Blockchain settlement time (milliseconds):
+
+```
+Settlement-Time: 1234
 ```
 
 ## Environment Variables
 
 ### Required
 
-```
+```bash
 PAYMENT_RECIPIENT_ADDRESS=0xYOUR_ADDRESS
-FACILITATOR_URL=https://facilitator.example.com/api/facilitator
+FACILITATOR_URL=https://aptos-x402.org/api/facilitator
+APTOS_NETWORK=aptos:2
+USDC_MAINNET_ADDRESS=0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
+GEOMI_API_KEY=your_api_key
 ```
-
-### Optional
-
-None.
-
-### Public test facilitator
-
-For development and quick testing, you can point your middleware to the public demo facilitator:
-
-```
-FACILITATOR_URL=https://aptos-x402.vercel.app/api/facilitator
-```
-
-Note: This shared service is for demos only. Don’t use it for production.
 
 ## Error Handling
 
-The middleware handles errors gracefully and returns appropriate status codes:
+| Status | Meaning |
+|--------|---------|
+| **402** | Payment required |
+| **403** | Payment verification failed |
+| **400** | Malformed payment payload |
+| **500** | Internal server error |
 
-- **402**: Payment required or payment failed
-- **403**: Payment verification failed
-- **400**: Malformed payment payload
-- **500**: Internal server error (facilitator unreachable, etc.)
+## USDC Addresses
 
-## Type Exports
-
-Import types for TypeScript:
-
-```typescript
-import type {
-  RouteConfig,
-  FacilitatorConfig,
-  PaymentRequiredResponse,
-  PaymentRequirements
-} from 'aptos-x402/types';
-```
+| Network | Address |
+|---------|---------|
+| **Mainnet** (`aptos:1`) | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** (`aptos:2`) | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
 ## Next Steps
 
 - [Types Reference](types.md)
 - [Quickstart for Sellers](../getting-started/quickstart-sellers.md)
-- [Quickstart for Buyers](../getting-started/quickstart-buyers.md)
-
----
-
-**Back to:** [API Reference](#)
-

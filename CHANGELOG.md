@@ -2,7 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.2] - 2025-01-XX
+## [2.3.1] - 2026-01-18
+
+### 📚 Documentation
+- Updated facilitator URL to use the official public one: `https://aptos-x402.org/api/facilitator`
+
+## [2.3.0] - 2026-01-17
+
+### 🔴 Breaking Change (V2 Protocol Compliance)
+- **402 Response Format**: Payment requirements now sent via `PAYMENT-REQUIRED` header (base64 JSON) instead of response body
+- **Header Constants**: Added `PAYMENT_REQUIRED_HEADER` export
+
+### ✨ Improvements
+- **Backward Compatibility**: Client (`x402axios`) still reads from body if header is missing (V1 fallback)
+- **Protocol Compliance**: Now fully compliant with official x402 V2 specification
+
+## [2.2.4] - 2026-01-17
+
+### 🐛 Bug Fixes
+- Fixed npm package missing README and CHANGELOG
+
+## [2.2.3] - 2026-01-17
+
+### 🐛 Bug Fixes
+- Fixed minor typo in CHANGELOG
+
+## [2.2.2] - 2026-01-17
+
+### 📚 Documentation
+- Removed v1 deprecation warning from README
+
+## [2.2.1] - 2026-01-17
+
+### 📚 Documentation
+- Fixed README examples: Removed non-existent `x402axios.create()` references
+- Clarified v2 protocol changes: Header-based architecture, standard headers (no "X-" prefix), fungible assets
+- Updated "What's new" section with accurate v2.2.0 features
+
+## [2.2.0] - 2026-01-17
+
+### 🌟 New Features (v2 Protocol)
+- **Protocol Standards**: Removed "X-" prefix from headers (now `PAYMENT-SIGNATURE`).
+- **Header-Based Architecture**: Moved payment specifications and proofs to headers.
+- **Fungible Assets**: Native support for USDC transfers on Aptos (via `primary_fungible_store`).
+- **Geomi Gas Sponsorship**: Facilitator-sponsored gas fees for better UX.
+- **ARC-8004**: Added Agent Trust Layer (Identity, Reputation, Validation).
+
+### ⚡ Improvements
+- **Performance**: Faster settlement times and bug fixes.
+- **Bug Fixes**: Resolved performance bottlenecks and improved type safety.
+
+## [1.0.2] - 2025-01-10
 
 ### ⚡ Performance Optimizations
 - **Hex Encoding**: Replaced base64 encoding with hex for transaction/signature (faster, more compact)

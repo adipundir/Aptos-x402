@@ -122,7 +122,7 @@ async function benchmarkPaymentFlow() {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'X-PAYMENT': paymentHeader,
+        'Payment': paymentHeader,
       },
     });
     timings.push({ operation: '11. Send Payment Request', duration: Date.now() - t });

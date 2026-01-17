@@ -34,22 +34,23 @@ async function testPaymentFlow() {
     console.log('\n✅ SUCCESS! Request completed');
     console.log('=' .repeat(50));
     console.log(`⏱️  Total time: ${totalTime}ms`);
-    console.log(`📊 Status: ${response.status} ${response.statusText}`);
+    console.log(`📊 Status: ${response.status}`);
     
     if (response.paymentInfo) {
       console.log('\n💰 Payment Info:');
       console.log(`  Transaction Hash: ${response.paymentInfo.transactionHash}`);
-      console.log(`  Amount: ${response.paymentInfo.amount} Octas`);
+      console.log(`  Amount: ${response.paymentInfo.amount}`);
       console.log(`  Recipient: ${response.paymentInfo.recipient}`);
-      console.log(`  Settled: ${response.paymentInfo.settled}`);
+      console.log(`  Network: ${response.paymentInfo.network}`);
+      console.log(`  Payer: ${response.paymentInfo.payer}`);
     }
     
     console.log('\n📦 Response Data:');
     console.log(JSON.stringify(response.data, null, 2));
     
     // Check headers for timing info
-    const verificationTime = response.headers['x-verification-time'];
-    const settlementTime = response.headers['x-settlement-time'];
+    const verificationTime = response.headers['verification-time'];
+    const settlementTime = response.headers['settlement-time'];
     
     if (verificationTime || settlementTime) {
       console.log('\n⏱️  Performance Breakdown:');

@@ -24,7 +24,7 @@ function normalizeAddress(address: string): string {
 export async function POST(request: NextRequest) {
   try {
     // Check wallet-based authentication
-    const walletAddress = request.headers.get('x-admin-wallet');
+    const walletAddress = request.headers.get('admin-wallet');
     
     if (!walletAddress) {
       return NextResponse.json({ error: 'Wallet address required' }, { status: 401 });

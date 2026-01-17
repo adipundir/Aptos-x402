@@ -1,126 +1,78 @@
-# Welcome to Aptos x402
+# Aptos x402
 
-## What is Aptos x402?
+**x402 v2 compliant** HTTP 402 Payment Required implementation for Aptos. Enable pay-per-request API monetization with USDC micropayments.
 
-Aptos x402 is a production-ready payment protocol implementation that enables APIs to require cryptocurrency payments on a per-request basis. Built on the Aptos blockchain, it brings the HTTP 402 "Payment Required" status code to life—allowing you to monetize APIs with seamless, automatic micropayments.
+> ⚠️ **v1 is deprecated.** This package implements x402 v2 protocol only.
 
-Think of it as a toll booth for your APIs: users pay as they go, with each request requiring a small blockchain payment. The entire payment flow is handled automatically, requiring no changes to your business logic.
+## Quick Start
 
-## The Problem We Solve
+**Sellers** - Protect your API:
 
-### Traditional API Monetization is Broken
+```typescript
+// proxy.ts
+import { paymentMiddleware } from 'aptos-x402';
 
-Current API monetization models have significant limitations:
+export const proxy = paymentMiddleware(
+  '0xYOUR_WALLET_ADDRESS',  // Your wallet that receives USDC payments
+  {
+    '/api/data': {
+      price: '1000',         // 0.001 USDC (6 decimals)
+      network: 'aptos:1',    // aptos:1 = mainnet, aptos:2 = testnet
+      asset: '0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b',  // USDC mainnet
+      sponsored: true,       // Facilitator pays gas fees (default: true)
+    }
+  },
+  { url: 'https://aptos-x402.org/api/facilitator' }  // Public facilitator
+);
 
-1) Subscription Fatigue - Users pay monthly fees even when they barely use the service. Small developers can't afford dozens of subscriptions for APIs they need occasionally.
+export const config = { matcher: ['/api/:path*'] };
+```
 
-2) Usage Tiers - Rigid pricing tiers force users to overpay or underpay. You either commit to thousands of calls per month or get nothing.
+**Buyers** - Access paid APIs:
 
-3) Payment Integration Complexity - Setting up Stripe, managing subscriptions, handling billing cycles, dealing with chargebacks, currency conversions, and international payments adds weeks of development time.
+```typescript
+import { x402axios } from 'aptos-x402';
 
-4) No Microtransactions - Traditional payment processors charge 30¢ + 2.9% per transaction. This makes charging $0.001 per API call impossible.
+const response = await x402axios.get('https://api.example.com/data', {
+  privateKey: '0xYOUR_PRIVATE_KEY'  // Signs transactions locally, never sent to server
+});
 
-5) Trust & Privacy - Users must share credit card information, personal data, and trust you with recurring charges. Developers must handle sensitive payment data and PCI compliance.
+console.log(response.data);
+console.log(response.paymentInfo?.transactionHash);  // Payment receipt
+```
 
-### Enter Blockchain Micropayments
+## Why x402?
 
-Blockchain technology enables something revolutionary: **true pay-per-use** at scale. Charge $0.0001 per API call with near-instant settlement and no intermediaries. Users pay only for what they use, and you get paid for every request.
+Pay-per-request instead of subscriptions. Cryptographic signatures instead of API keys. Near-zero fees (~$0.0001) instead of 2.9% + 30¢. One middleware file instead of complex billing integration.
 
-But implementing blockchain payments is complex—managing wallets, signing transactions, verifying payments, handling network latency, ensuring security. **This is what Aptos x402 solves.**
+## Why Aptos?
 
-## Why x402 Protocol?
+1-3s finality for real-time responses. USDC support for stable pricing. Gas sponsorship for gasless transactions.
 
-The [x402 protocol](https://github.com/coinbase/x402), created by Coinbase, standardizes how APIs request payments using the HTTP 402 status code. When a client requests a protected resource:
+## USDC Addresses (Circle)
 
-1. **Server responds with 402** - Includes payment instructions (amount, recipient, blockchain network)
-2. **Client signs transaction** - Automatically creates and signs the payment
-3. **Client retries with proof** - Resends request with payment proof header
-4. **Server validates and responds** - Verifies payment on-chain and returns the resource
+| Network | Address |
+|---------|---------|
+| Mainnet (`aptos:1`) | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| Testnet (`aptos:2`) | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
 
-This standardized approach means any x402-compatible client can interact with any x402-compatible API, creating an open ecosystem for machine-to-machine payments.
+## Public Facilitator
 
-## Why Build on Aptos?
+Use `https://aptos-x402.org/api/facilitator` for development and testing. Gas sponsorships are free as an introductory offer under limited usage.
 
-Not all blockchains are suitable for API micropayments. We chose Aptos for fundamental technical reasons:
+## Protocol Version
 
-### Lightning-Fast Finality
+This package implements **x402 v2 protocol only**. If you see references to v1 anywhere, it is deprecated and not supported.
 
-- 1-3 second transaction confirmation means your API responses don't keep users waiting. Compare this to Ethereum (15+ seconds) or Bitcoin (10+ minutes). Fast finality enables real-time API interactions.
+## Documentation
 
-### Negligible Transaction Costs
+- [Quickstart for Sellers](getting-started/quickstart-sellers.md)
+- [Quickstart for Buyers](getting-started/quickstart-buyers.md)
+- [HTTP 402 Protocol](core-concepts/http-402.md)
+- [API Reference](api-reference/server-api.md)
 
-- ~$0.0001 per transaction makes true micropayments economically viable. On Ethereum, gas fees often exceed $5-50, making small payments impractical. On Aptos, you can charge pennies per API call and still profit.
+## Links
 
-### Massive Throughput
-
-- Thousands of transactions per second means your API can scale without blockchain bottlenecks. Aptos's parallel execution engine processes transactions concurrently, unlike sequential blockchains.
-
-### Developer-First Design
-
-- Modern TypeScript SDK with excellent tooling, comprehensive documentation, and intuitive APIs. Aptos was built for developers in the modern era, not retrofitted from older blockchain architectures.
-
-### Account Abstraction
-
-- Native account features enable sophisticated payment flows, sponsored transactions, and flexible fee structures without complex smart contracts.
-
-## How Aptos x402 Makes It Simple
-
-We've abstracted away all blockchain complexity:
-
-### For API Providers
-
-- Add one middleware file to your Next.js application and your APIs are protected. No payment logic, no blockchain code, no wallet management. Configure which endpoints require payment and how much to charge. The middleware handles everything—detecting requests, validating payments, settling transactions.
-
-### For API Consumers
-
-- Use our drop-in axios replacement and blockchain payments happen automatically. Request a protected API, get a 402 response, and the library handles signing the transaction and retrying. From your perspective, it feels like a regular API call with a slight delay.
-
-### For Everyone
-
-- Free hosted facilitator service handles blockchain interactions. No infrastructure to run, no blockchain nodes to sync, no transaction broadcasting to manage. Just point to our facilitator and start building.
-
-## The Architecture
-
-Our three-tier architecture ensures security, scalability, and simplicity:
-
-1) Client Layer - Signs transactions locally using private keys that never leave the user's machine. Handles retry logic and payment proof generation.
-
-2) API Server Layer - Your business logic remains pure and payment-agnostic. Middleware intercepts requests, validates payments, and gates access automatically.
-
-3) Facilitator Layer - Our hosted service verifies payment signatures, broadcasts to the blockchain, confirms settlement, and provides instant feedback. This is the bridge between HTTP and blockchain.
-
-4) Blockchain Layer - Aptos provides immutable settlement, ensuring payments can't be reversed or disputed. Every transaction is permanently recorded.
-
-## Real-World Use Cases
-
-### AI Agent Marketplaces
-
-Autonomous AI agents need to pay for API access without human intervention. x402 enables agents to trade services, share data, and collaborate economically.
-
-### Pay-Per-Query Data APIs
-
-Weather data, financial feeds, geolocation services, ML model inference—charge per request rather than monthly subscriptions. Users pay only for data they actually use.
-
-### Microservices Economy
-
-Internal company APIs can be monetized between departments. Track usage accurately, allocate costs fairly, and incentivize efficient API design.
-
-### Developer Tools
-
-Rate limiters, API analytics, monitoring services—charge pennies per call instead of $99/month. Make professional tools accessible to hobbyists and bootstrapped startups.
-
-### Content Delivery
-
-Serve premium content, articles, images, videos—charge micropayments per access. No paywalls, no subscriptions, just pay-per-view.
-
-## What Makes This Production-Ready?
-
-- Comprehensive Error Handling - Network failures, insufficient balances, timeout scenarios, blockchain congestion—all handled gracefully with helpful error messages.
-
-- Extensive Testing - Battle-tested in production environments with real money. Test suite covers edge cases, race conditions, and failure modes.
-
-- Security First - Private keys never leave the client. Middleware validates all payments cryptographically. No trusted third parties except the blockchain itself.
-
-- Monitoring & Observability - Built-in timing headers, transaction tracking, and audit trails. Know exactly where delays occur and how your system performs.
-
-- TypeScript Throughout - Full type safety from client to server. Catch errors at compile time, not runtime. Excellent IDE autocomplete and inline documentation.
+- [GitHub](https://github.com/adipundir/aptos-x402)
+- [npm](https://www.npmjs.com/package/aptos-x402)
+- [x402 Protocol Spec](https://github.com/coinbase/x402)

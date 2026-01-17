@@ -33,8 +33,8 @@
     "lib/x402-middleware.ts",
     "lib/x402-types.ts",
     "lib/x402-protocol-types.ts",
-    "lib/facilitator-client.ts",
     "lib/aptos-utils.ts",
+    "lib/services/geomi-gas-station.ts",
     "lib/arc8004/**/*"
   ],
   "exclude": [

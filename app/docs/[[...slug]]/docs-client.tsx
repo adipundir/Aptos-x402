@@ -150,7 +150,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
               transition-colors group
               ${level === 0 
                 ? 'font-semibold text-sm text-zinc-900 hover:bg-zinc-100' 
-                : 'text-sm text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'
+                : 'text-sm text-zinc-800 hover:text-zinc-900 hover:bg-zinc-50'
               }
             `}
           >
@@ -182,7 +182,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
             w-full text-left px-3 py-2 rounded-lg text-sm transition-colors
             ${isSelected 
               ? 'bg-zinc-900 text-white font-medium' 
-              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+              : 'text-zinc-800 hover:text-zinc-900 hover:bg-zinc-100'
             }
           `}
         >
@@ -356,7 +356,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
           if (m) { quote.push(m[1]); j++; } else { break; }
         }
         i = j - 1;
-        processed.push(`<blockquote class="border-l-4 border-zinc-300 bg-zinc-50 pl-4 py-3 my-4 text-zinc-600 italic rounded-r-lg"><p>${quote.join(' ')}</p></blockquote>`);
+        processed.push(`<blockquote class="border-l-4 border-zinc-300 bg-zinc-50 pl-4 py-3 my-4 text-zinc-800 dark:text-zinc-200 italic rounded-r-lg"><p>${quote.join(' ')}</p></blockquote>`);
         continue;
       }
 
@@ -376,7 +376,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
     html = html.split('\n\n').map(block => {
       const trimmed = block.trim();
       if (trimmed && !trimmed.startsWith('<') && !trimmed.match(/^#+\s/)) {
-        return `<p class="mb-4 leading-relaxed text-zinc-600">${trimmed}</p>`;
+        return `<p class="mb-4 leading-relaxed text-zinc-800">${trimmed}</p>`;
       }
       return trimmed;
     }).join('\n\n');
@@ -438,7 +438,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                     w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
                     ${selectedDoc === 'README.md' 
                       ? 'bg-zinc-900 text-white font-medium' 
-                      : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
+                      : 'text-zinc-800 hover:text-zinc-900 hover:bg-zinc-100'
                     }
                   `}
                 >
@@ -620,12 +620,12 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         {/* Table of Contents */}
         <aside className="hidden xl:block fixed right-0 top-16 bottom-0 w-56 border-l border-zinc-200 bg-white">
           <ScrollArea className="h-full">
-            <div className="p-4">
-              <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+            <div className="p-6">
+              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
                 On this page
               </h3>
               {tableOfContents.length > 0 ? (
-                <nav className="space-y-1">
+                <nav className="space-y-1.5">
                   {tableOfContents.map((item) => (
                     <a
                       key={item.id}
@@ -635,13 +635,13 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                         document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
                       }}
                       className={`
-                        block text-sm py-1 transition-colors
-                        ${item.level === 1 ? 'font-medium' : ''}
-                        ${item.level === 2 ? 'pl-3' : ''}
-                        ${item.level === 3 ? 'pl-6 text-xs' : ''}
+                        block text-sm py-1.5 transition-colors no-underline
+                        ${item.level === 1 ? 'font-semibold text-zinc-900' : ''}
+                        ${item.level === 2 ? 'pl-3 text-zinc-700' : ''}
+                        ${item.level === 3 ? 'pl-5 text-xs text-zinc-600' : ''}
                         ${activeHeading === item.id 
-                          ? 'text-zinc-900' 
-                          : 'text-zinc-500 hover:text-zinc-900'
+                          ? 'text-zinc-900 font-medium' 
+                          : item.level === 1 ? 'text-zinc-900' : 'text-zinc-700 hover:text-zinc-900'
                         }
                       `}
                     >

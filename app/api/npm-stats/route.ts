@@ -2,82 +2,49 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-interface NpmDownloads {
-  downloads: number;
-  start: string;
-  end: string;
-  package: string;
-}
-
-interface NpmPackageData {
-  'dist-tags': {
-    latest: string;
-  };
-  time: {
-    created: string;
-    modified: string;
-  };
-}
+const FALLBACK = {
+  downloads: 200,
+  version: '0.2.0',
+  created: '2024-01-01T00:00:00.000Z',
+  modified: new Date().toISOString(),
+};
 
 export async function GET() {
+  const packageName = 'aptos-x402';
+  
   try {
-    const packageName = 'aptos-x402';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     
-    // Fetch download stats for the last week
-    const downloadsResponse = await fetch(
-      `https://api.npmjs.org/downloads/point/last-week/${packageName}`,
-      { 
-        cache: 'no-store', // Don't cache during development
-        headers: {
-          'User-Agent': 'aptos-x402-stats'
-        }
-      }
-    );
+    const [downloads, pkg] = await Promise.allSettled([
+      fetch(`https://api.npmjs.org/downloads/point/last-week/${packageName}`, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'aptos-x402' }
+      }).then(r => r.ok ? r.json() : null),
+      
+      fetch(`https://registry.npmjs.org/${packageName}`, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'aptos-x402' }
+      }).then(r => r.ok ? r.json() : null),
+    ]);
     
-    let downloads = 150; // Default fallback (will show as "200+" due to threshold)
-    
-    if (downloadsResponse.ok) {
-      const downloadsData: NpmDownloads = await downloadsResponse.json();
-      downloads = downloadsData.downloads;
-    }
-    
-    // Fetch package metadata
-    const packageResponse = await fetch(
-      `https://registry.npmjs.org/${packageName}`,
-      { 
-        cache: 'no-store',
-        headers: {
-          'User-Agent': 'aptos-x402-stats'
-        }
-      }
-    );
-    
-    let version = '1.0.1';
-    let created = new Date().toISOString();
-    let modified = new Date().toISOString();
-    
-    if (packageResponse.ok) {
-      const packageData: NpmPackageData = await packageResponse.json();
-      version = packageData['dist-tags'].latest;
-      created = packageData.time.created;
-      modified = packageData.time.modified;
-    }
+    clearTimeout(timeout);
     
     return NextResponse.json({
-      downloads,
-      version,
-      created,
-      modified,
+      downloads: downloads.status === 'fulfilled' && downloads.value?.downloads 
+        ? downloads.value.downloads 
+        : FALLBACK.downloads,
+      version: pkg.status === 'fulfilled' && pkg.value?.['dist-tags']?.latest
+        ? pkg.value['dist-tags'].latest
+        : FALLBACK.version,
+      created: pkg.status === 'fulfilled' && pkg.value?.time?.created
+        ? pkg.value.time.created
+        : FALLBACK.created,
+      modified: pkg.status === 'fulfilled' && pkg.value?.time?.modified
+        ? pkg.value.time.modified
+        : FALLBACK.modified,
     });
-  } catch (error) {
-    console.error('Error fetching NPM stats:', error);
-    
-    // Return fallback data
-    return NextResponse.json({
-      downloads: 200,
-      version: '1.0.1',
-      created: new Date().toISOString(),
-      modified: new Date().toISOString(),
-    });
+  } catch {
+    return NextResponse.json(FALLBACK);
   }
 }

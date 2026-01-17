@@ -23,7 +23,7 @@ async function getUserId(request: Request): Promise<string> {
   if (userIdFromCookie) {
     return userIdFromCookie;
   }
-  return request.headers.get('x-user-id') || 'default-user';
+  return request.headers.get('user-id') || 'default-user';
 }
 
 export async function GET(

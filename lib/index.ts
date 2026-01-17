@@ -1,126 +1,128 @@
 /**
- * aptos-x402 - Official x402 Payment Protocol SDK for Aptos
+ * aptos-x402 - x402 Payment Protocol SDK for Aptos
  * 
  * Implementation of HTTP 402 Payment Required for Aptos blockchain.
  * Based on Coinbase x402 protocol: https://github.com/coinbase/x402
  * 
  * @packageDocumentation
  * 
- * @example Buyer Example - Access paid APIs (Axios-compatible)
+ * @example Buyer - Access paid APIs
  * ```typescript
  * import { x402axios } from 'aptos-x402';
  * 
- * // Works exactly like axios
- * const response = await x402axios.get('https://api.example.com/data');
- * 
- * // With x402 payment support
- * const response = await x402axios.get('https://api.example.com/premium/data', {
+ * const response = await x402axios.get('https://api.example.com/premium', {
  *   privateKey: process.env.PRIVATE_KEY!
  * });
  * console.log(response.data);
  * console.log(response.paymentInfo?.transactionHash);
  * ```
  * 
- * @example Seller Example - Create paid APIs
+ * @example Seller - Create paid APIs
  * ```typescript
  * import { paymentMiddleware } from 'aptos-x402';
  * 
- * export const middleware = paymentMiddleware(
+ * export const proxy = paymentMiddleware(
  *   process.env.RECIPIENT_ADDRESS!,
- *   { '/api/premium/*': { price: '1000000', network: 'testnet' } },
+ *   { '/api/premium/*': { price: '1000', network: 'aptos:2', asset: USDC_ADDRESS } },
  *   { url: process.env.FACILITATOR_URL! }
  * );
  * ```
  */
 
 // ============================================
-// FOR BUYERS (Consuming Paid APIs) 🛒
+// FOR BUYERS 🛒
 // ============================================
 
-/**
- * Main buyer function - Axios-compatible with x402 payment support
- * @recommended Use this for consuming paid APIs
- */
-export { x402axios, decodeXPaymentResponse } from "./x402-axios";
-export type { 
-  AxiosRequestConfig,
-  AxiosResponse,
-  WithPaymentInterceptorOptions,
-  X402Response, 
-  X402PaymentResponse 
-} from "./x402-axios";
+export { x402axios, decodePaymentResponse } from "./x402-axios";
+export type { X402RequestConfig, X402Response, X402PaymentResponse } from "./x402-axios";
 
 // ============================================
-// FOR SELLERS (Creating Paid APIs) 🏪
+// FOR SELLERS 🏪
 // ============================================
 
-/**
- * Main seller function - Next.js middleware for payment-protected routes
- * @recommended Use this for creating paid APIs
- */
 export { paymentMiddleware } from "./x402-middleware";
+export type { RouteConfig, FacilitatorConfig, ResolvedRouteConfig } from "./x402-types";
+export { resolveRouteConfig } from "./x402-types";
 
-/**
- * Configuration types for sellers
- */
-export type { RouteConfig, FacilitatorConfig } from "./x402-types";
+// ============================================
+// PROTOCOL TYPES 📋
+// ============================================
 
-/**
- * Low-level facilitator functions (advanced usage)
- */
 export {
-  verifyPaymentSimple,
-  settlePaymentSimple,
-  createPaymentResponse,
-} from "./facilitator-client";
+  X402_VERSION,
+  APTOS_SCHEME,
+  APTOS_MAINNET,
+  APTOS_TESTNET,
+  PAYMENT_REQUIRED_HEADER,
+  PAYMENT_HEADER,
+  PAYMENT_RESPONSE_HEADER,
+  KNOWN_ASSETS,
+  validateCAIP2Network,
+  parseCAIP2Network,
+  getAptosChainId,
+} from "./x402-protocol-types";
+
+export type {
+  PaymentRequirements,
+  PaymentRequiredResponse,
+  PaymentPayload,
+  ResourceInfo,
+  VerifyRequest,
+  VerifyResponse,
+  SettleRequest,
+  SettleResponse,
+  PaymentResponseHeader,
+} from "./x402-protocol-types";
 
 // ============================================
-// UTILITIES (Advanced Usage) 🔧
+// GAS SPONSORSHIP (Geomi) ⛽
 // ============================================
 
-/**
- * Aptos blockchain utilities
- */
+export {
+  GeomiGasStation,
+  getGasStation,
+  initGasStation,
+  getFeePayerPlaceholder,
+  isPlaceholderFeePayer,
+} from "./services/geomi-gas-station";
+
+export type { GasStationConfig, SponsorResult } from "./services/geomi-gas-station";
+
+// ============================================
+// APTOS UTILITIES 🔧
+// ============================================
+
 export {
   getAptosClient,
   getAccountFromPrivateKey,
-  signAndSubmitPayment,
-  getAccountBalance,
+  buildFeePayerFATransfer,
+  signAsSender,
+  submitTransaction,
+  getFungibleAssetBalance,
+  accountExists,
+  getChainId,
+  getNetworkFromChainId,
 } from "./aptos-utils";
+
+export type { FeePayerTransactionResult } from "./aptos-utils";
 
 // ============================================
 // ARC-8004: AGENT TRUST LAYER 🛡️
 // ============================================
 
-/**
- * ARC-8004 Agent Trust Layer
- * Provides identity, reputation, and validation registries for AI agents
- */
 export {
-  // Main exports
   ARC8004_VERSION,
   ARC8004_PROTOCOL,
-  
-  // Identity Registry
   IdentityRegistry,
   createAgentCard,
   validateAgentCard,
-  
-  // Reputation Registry
   ReputationRegistry,
   calculateTrustLevel,
   getTrustLevelLabel,
-  
-  // Validation Registry
   ValidationRegistry,
-  
-  // Types
   TrustLevel,
 } from "./arc8004";
 
-/**
- * ARC-8004 type exports
- */
 export type {
   AgentCard,
   AgentIdentity,

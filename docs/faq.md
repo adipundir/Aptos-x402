@@ -5,12 +5,12 @@
 <details>
 <summary><strong>What is x402?</strong></summary>
 
-x402 is an open protocol specification by Coinbase that enables APIs to require cryptocurrency payments before serving responses. It uses the HTTP 402 Payment Required status code to standardize machine-to-machine micropayments without accounts, API keys, or subscriptions.
+x402 is an open protocol specification by Coinbase that enables APIs to require cryptocurrency payments before serving responses. It uses the HTTP 402 Payment Required status code to standardize machine-to-machine micropayments.
 
 **Key Features:**
 - Standardized payment protocol
-- Blockchain-agnostic specification
-- Machine-to-machine payments
+- Gasless transactions (Geomi sponsorship)
+- USDC payments
 - No authentication required
 
 </details>
@@ -27,51 +27,67 @@ Aptos provides optimal characteristics for micropayments:
 | **High Throughput** | Thousands of TPS |
 | **Developer Experience** | Modern TypeScript SDK |
 
-These make per-API-call charging economically viable.
+</details>
+
+<details>
+<summary><strong>What is v2 of the protocol?</strong></summary>
+
+v2 includes several improvements:
+
+| Feature | v1 | v2 |
+|---------|----|----|
+| Version | 1 | 2 |
+| Network format | `aptos-testnet` | `aptos:2` (CAIP-2) |
+| Amount field | `maxAmountRequired` | `amount` |
+| Asset | Optional (APT default) | Required (USDC) |
+| Header name | `X-PAYMENT` | `PAYMENT-SIGNATURE` |
+| Gas payment | Client pays | Sponsored by facilitator |
+
+</details>
+
+## Payments
+
+<details>
+<summary><strong>What currency is used?</strong></summary>
+
+**USDC (Circle's stablecoin)** is used for all payments:
+
+| Network | USDC Address |
+|---------|--------------|
+| **Mainnet** | `0xbae207659db88bea0cbead6da0ed00aac12edcdda169e591cd41c94180b46f3b` |
+| **Testnet** | `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832` |
+
+**Pricing (6 decimals):**
+- `1000` = 0.001 USDC
+- `10000` = 0.01 USDC
+- `1000000` = 1 USDC
 
 </details>
 
 <details>
-<summary><strong>How is this different from API keys?</strong></summary>
+<summary><strong>How are gas fees handled?</strong></summary>
 
-| Aspect | API Keys | x402 Payments |
-|--------|----------|---------------|
-| **Authentication** | Secrets to manage | Cryptographic proofs |
-| **Billing** | Subscriptions/Tiers | Pay-per-use |
-| **Access Control** | Centralized | Decentralized |
-| **Monetization** | Payment processors | Direct blockchain |
-| **Leakage Risk** | Keys can leak | No secrets shared |
+**Geomi sponsors all gas fees!**
+
+Users only need USDC for payment - no APT required for gas.
+
+```bash
+# Configure in .env
+GEOMI_API_KEY=your_api_key_from_geomi_dev
+```
+
+Get an API key at [geomi.dev](https://geomi.dev)
 
 </details>
-
-## Performance
 
 <details>
 <summary><strong>How fast are payments?</strong></summary>
 
-| Operation | Latency | Notes |
-|-----------|---------|-------|
-| **Verification** | < 50ms | Cryptographic validation only |
-| **Settlement** | 1-3s | Aptos blockchain finality |
-| **Total Flow** | ~1-3s | From 402 to resource delivery |
-
-Fast enough for interactive API calls.
-
-</details>
-
-<details>
-<summary><strong>What are the costs?</strong></summary>
-
-**Client Costs:**
-- Transaction gas: ~$0.0001 (0.000001 APT)
-- API price: Set by provider
-
-**Server Costs:**
-- Facilitator hosting only
-- No per-transaction fees
-
-**Protocol Costs:**
-- Zero - completely open source
+| Operation | Latency |
+|-----------|---------|
+| **Verification** | 50-100ms |
+| **Settlement** | 1-3s |
+| **Total Flow** | ~1-3s |
 
 </details>
 
@@ -80,15 +96,13 @@ Fast enough for interactive API calls.
 <details>
 <summary><strong>Do I need a blockchain wallet?</strong></summary>
 
-**For API Providers (Sellers):**
--  Need wallet address (to receive payments)
--  Don't need private key on server
-- Generate: Use Petra/Martian wallet or `Account.generate()`
+**For Sellers:**
+- ✅ Need wallet address (to receive USDC)
+- ❌ Don't need private key on server
 
-**For API Consumers (Buyers):**
--  Need funded wallet with private key
--  Must have APT balance for payments + gas
-- Get testnet APT: [aptoslabs.com/testnet-faucet](https://aptoslabs.com/testnet-faucet)
+**For Buyers:**
+- ✅ Need funded wallet with USDC
+- ✅ Need private key for signing
 
 </details>
 
@@ -98,7 +112,7 @@ Fast enough for interactive API calls.
 **No.** The middleware handles everything:
 
 ```typescript
-// Your route - zero payment logic needed
+// Your route - zero payment logic
 export async function GET() {
   return NextResponse.json({ data: 'premium content' });
 }
@@ -107,42 +121,23 @@ export async function GET() {
 Middleware automatically:
 - Returns 402 for missing payments
 - Verifies payment structure
-- Settles on blockchain
+- Settles on blockchain via Geomi
 - Only executes route after payment
-
-</details>
-
-<details>
-<summary><strong>What is a facilitator?</strong></summary>
-
-A **facilitator** is a service that handles blockchain operations:
-
-**Responsibilities:**
-- Verify payment structure (< 50ms)
-- Submit transactions to blockchain (1-3s)
-- Return settlement confirmation
-
-**Deployment Options:**
-1. **Public:** `https://aptos-x402.vercel.app/api/facilitator` (free)
-2. **Self-Hosted (Same App):** Deploy with your API
-3. **Self-Hosted (Separate):** Standalone service
-
-See [Facilitator Setup](guides/facilitator-setup.md) for details.
 
 </details>
 
 <details>
 <summary><strong>Can I charge different prices per endpoint?</strong></summary>
 
-**Yes.** Configure each route independently:
+**Yes:**
 
 ```typescript
-export const middleware = paymentMiddleware(
+export const proxy = paymentMiddleware(
   recipientAddress,
   {
-    '/api/weather': { price: '1000000' },    // 0.01 APT
-    '/api/stocks': { price: '5000000' },     // 0.05 APT
-    '/api/analytics': { price: '10000000' }  // 0.1 APT
+    '/api/weather': { price: '1000', network: 'aptos:2', asset: USDC },
+    '/api/stocks': { price: '5000', network: 'aptos:2', asset: USDC },
+    '/api/analytics': { price: '10000', network: 'aptos:2', asset: USDC }
   },
   facilitatorConfig
 );
@@ -155,15 +150,10 @@ export const middleware = paymentMiddleware(
 <details>
 <summary><strong>Is my private key exposed?</strong></summary>
 
-**Sellers:** No private keys needed on servers. Only public wallet address required.
+**No.**
 
-**Buyers:** Private keys stay on client. Transactions signed locally, never sent to servers.
-
-**Security Model:**
-- Client signs transactions offline
-- Server verifies cryptographic signatures
-- Blockchain provides final settlement
-- All verifiable on-chain
+- **Sellers:** No private keys needed on servers
+- **Buyers:** Private keys stay on client, transactions signed locally
 
 </details>
 
@@ -172,119 +162,40 @@ export const middleware = paymentMiddleware(
 
 **No.** Protection is cryptographically enforced:
 
-1. Middleware checks for X-PAYMENT header
-2. Verifies cryptographic signature
-3. Settles on blockchain
-4. Only executes API after confirmation
-
-**Cannot be bypassed because:**
-- Signatures cannot be forged
-- Blockchain transactions are final
-- Middleware enforces before route execution
-
-</details>
-
-<details>
-<summary><strong>Can payments be refunded?</strong></summary>
-
-Blockchain transactions are **irreversible by default**.
-
-**To Implement Refunds:**
-1. Store client addresses from payment receipts
-2. Build refund logic in your application
-3. Send separate transfer transactions back
-
-The protocol doesn't include built-in refunds.
+1. Middleware checks for `PAYMENT-SIGNATURE` header
+2. Verifies transaction structure
+3. Simulates on Aptos
+4. Settles on blockchain
+5. Only executes API after confirmation
 
 </details>
 
 ## Production
 
 <details>
-<summary><strong>Is this production-ready?</strong></summary>
-
-**Yes**, with proper setup:
-
-**Required:**
--  Start with testnet for testing
--  Deploy own facilitator (or use public)
--  Implement error handling
--  Monitor settlement success rates
--  Test thoroughly before mainnet
-
-**Best Practices:**
-- Monitor wallet balances
-- Log payment receipts
-- Set up alerting for failures
-- Have backup RPC endpoints
-
-</details>
-
-<details>
 <summary><strong>How do I test without real money?</strong></summary>
 
 **Use Aptos Testnet:**
 
-1. Configure middleware:
-```typescript
-{ network: 'testnet' }
-```
-
-2. Generate test wallet:
+1. Set network:
 ```bash
-npx tsx scripts/generate-account.ts
+APTOS_NETWORK=aptos:2
+USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
 ```
 
-3. Get free testnet APT:
-[aptoslabs.com/testnet-faucet](https://aptoslabs.com/testnet-faucet)
+2. Get testnet USDC (swap APT from [faucet](https://aptoslabs.com/testnet-faucet))
 
-4. Test complete flow with zero cost
-
-Everything works identically to mainnet.
+3. Test complete flow with zero cost
 
 </details>
 
 <details>
 <summary><strong>What networks are supported?</strong></summary>
 
-**Current Implementation:**
-- Aptos Testnet
-- Aptos Mainnet
-
-**x402 Protocol:**
-- Blockchain-agnostic specification
-- Implementations planned for Ethereum, Solana, Sui
-
-**Auto-Detection:**
-Client automatically detects network from 402 response.
-
-</details>
-
-## AI & Automation
-
-<details>
-<summary><strong>How do AI agents use x402?</strong></summary>
-
-Perfect for autonomous agent payments:
-
-```typescript
-// Agent makes autonomous payments
-const agent = {
-  privateKey: process.env.AGENT_KEY
-};
-
-const data = await x402axios.get(apiUrl, {
-  privateKey: agent.privateKey
-});
-
-// No human interaction required
-```
-
-**Benefits for Agents:**
-- No account management
-- No API keys to secure
-- Pay-per-use automatically
-- Fully autonomous operation
+| Network | CAIP-2 ID | Status |
+|---------|-----------|--------|
+| **Mainnet** | `aptos:1` | ✅ Supported |
+| **Testnet** | `aptos:2` | ✅ Supported |
 
 </details>
 
@@ -294,13 +205,10 @@ const data = await x402axios.get(apiUrl, {
 <summary><strong>Where can I get help?</strong></summary>
 
 **Resources:**
--  [Full Documentation](https://aptos-x402.vercel.app)
--  [Report Issues](https://github.com/adipundir/Aptos-x402/issues)
--  [Discussions](https://github.com/adipundir/Aptos-x402/discussions)
--  [Twitter: @adipundir](https://x.com/adipundir)
-
-**Additional:**
+- [Documentation](https://aptos-x402.org)
+- [GitHub Issues](https://github.com/adipundir/Aptos-x402/issues)
 - [x402 Protocol Spec](https://github.com/coinbase/x402)
+- [Geomi Docs](https://geomi.dev/docs)
 - [Aptos Developer Docs](https://aptos.dev)
 
 </details>

@@ -36,9 +36,9 @@ async function benchmark() {
       timings.push(totalTime);
 
       // Extract timing headers
-      const verificationTime = response.headers['x-verification-time'] || 'N/A';
-      const settlementTime = response.headers['x-settlement-time'] || 'N/A';
-      const cached = response.headers['x-cached'] === 'true';
+      const verificationTime = response.headers['verification-time'] || 'N/A';
+      const settlementTime = response.headers['settlement-time'] || 'N/A';
+      const cached = response.headers['cached'] === 'true';
 
       console.log(`\n✅ Request succeeded!`);
       console.log(`   Total Time:        ${totalTime}ms`);
@@ -48,7 +48,8 @@ async function benchmark() {
 
       if (response.paymentInfo) {
         console.log(`   Transaction Hash:  ${response.paymentInfo.transactionHash}`);
-        console.log(`   Settled:           ${response.paymentInfo.settled}`);
+        console.log(`   Network:           ${response.paymentInfo.network}`);
+        console.log(`   Payer:             ${response.paymentInfo.payer}`);
       }
 
       // Wait a bit between runs

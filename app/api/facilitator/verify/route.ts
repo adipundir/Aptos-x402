@@ -1,309 +1,158 @@
+/**
+ * Facilitator Verify Endpoint - x402 v2 (Optimized)
+ * 
+ * POST /api/facilitator/verify
+ * 
+ * SECURITY-CRITICAL validations only:
+ * - Asset, recipient, amount match requirements
+ * - On-chain simulation (balance check, signature validity)
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { getAptosClient } from "@/lib/aptos-utils";
-import type {
-  VerifyRequest,
-  VerifyResponse,
-  PaymentPayload,
-} from "@/lib/x402-protocol-types";
-import { X402_VERSION, APTOS_SCHEME, APTOS_TESTNET, APTOS_MAINNET, APTOS_DEVNET } from "@/lib/x402-protocol-types";
+import { SimpleTransaction, AccountAuthenticator, Deserializer } from "@aptos-labs/ts-sdk";
+import type { VerifyRequest, VerifyResponse, PaymentPayload } from "@/lib/x402-protocol-types";
 
 export const dynamic = "force-dynamic";
 
-// ⚡ Helper: Extract amount from BCS-encoded argument
-function extractAmount(amountArgRaw: any): string {
-  if (typeof amountArgRaw === 'object' && 'value' in amountArgRaw) {
-    const valueData = (amountArgRaw as any).value;
-    if (typeof valueData === 'object' && valueData !== null && 'value' in valueData) {
-      const innerValue = valueData.value;
-      if (innerValue instanceof Uint8Array || Array.isArray(innerValue)) {
-        const arr = Array.isArray(innerValue) ? innerValue : Array.from(innerValue);
-        let num = BigInt(0);
-        for (let i = 0; i < arr.length; i++) {
-          num += BigInt(arr[i]) << BigInt(i * 8);
-        }
-        return num.toString();
-      }
-      return innerValue.toString();
-    } else if (valueData instanceof Uint8Array || Array.isArray(valueData)) {
-      const arr = Array.isArray(valueData) ? valueData : Array.from(valueData);
+/** Normalize address for comparison */
+const normalizeAddress = (addr: string) => 
+  addr.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+
+/** Extract u64 amount from BCS-encoded argument */
+function extractAmount(arg: any): string {
+  if (typeof arg === 'object' && arg !== null && 'value' in arg) {
+    const val = arg.value;
+    const data = (typeof val === 'object' && val !== null && 'value' in val) ? val.value : val;
+    if (data instanceof Uint8Array || Array.isArray(data)) {
+      const bytes = Array.isArray(data) ? data : Array.from(data);
       let num = BigInt(0);
-      for (let i = 0; i < arr.length; i++) {
-        num += BigInt(arr[i]) << BigInt(i * 8);
+      for (let i = 0; i < bytes.length; i++) {
+        num += BigInt(bytes[i]) << BigInt(i * 8);
       }
       return num.toString();
     }
-    return valueData.toString();
+    return data.toString();
   }
-  
-  const amountStr = amountArgRaw.toString();
-  if (amountStr.startsWith('0x')) {
-    const hex = amountStr.slice(2);
+  const str = arg.toString();
+  if (str.startsWith('0x')) {
+    const hex = str.slice(2);
     let num = BigInt(0);
     for (let i = 0; i < hex.length; i += 2) {
-      const byte = parseInt(hex.substr(i, 2), 16);
-      num += BigInt(byte) << BigInt((i / 2) * 8);
+      num += BigInt(parseInt(hex.substr(i, 2), 16)) << BigInt((i / 2) * 8);
     }
     return num.toString();
   }
-  return amountStr;
+  return str;
 }
 
-/**
- * POST /api/facilitator/verify
- * 
- * 🛡️ ROBUST VERIFICATION WITH TRANSACTION SIMULATION
- * 
- * This endpoint performs comprehensive validation to ensure the transaction
- * will succeed when submitted. Since we use optimistic settlement (no confirmation wait),
- * we must be absolutely certain the transaction is valid.
- * 
- * Verification Steps:
- * 1. Structure validation (BCS deserialization)
- * 2. Signature validation (cryptographic verification)
- * 3. Amount & recipient validation
- * 4. Sender balance check (has enough APT + gas)
- * 5. Transaction simulation (will it succeed on-chain?)
- * 6. Sequence number validation (not reused)
- * 
- * Only if ALL checks pass, we return isValid: true
- */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log('\n🔍 [Facilitator Verify] Starting verification...');
+  console.log('\n🔍 [Verify] Starting...');
 
   try {
-    const body: VerifyRequest = await request.json();
-    const { x402Version, paymentHeader, paymentRequirements } = body;
-    console.log('[Verify] Received request:', {
-      x402Version,
-      network: paymentRequirements?.network,
-      amount: paymentRequirements?.maxAmountRequired,
-      recipient: paymentRequirements?.payTo,
-    });
+    const { paymentHeader, paymentRequirements }: VerifyRequest = await request.json();
 
-    // Fast validation checks
-    if (x402Version !== X402_VERSION) {
-      console.log('[Verify] ❌ Unsupported x402 version:', x402Version);
-      return NextResponse.json({ isValid: false, invalidReason: `Unsupported x402 version: ${x402Version}` });
-    }
-
-    if (!paymentHeader || !paymentRequirements) {
-      console.log('[Verify] ❌ Missing required fields');
+    // Quick fail if missing data (middleware should have validated)
+    if (!paymentHeader || !paymentRequirements?.asset || !paymentRequirements?.payTo) {
       return NextResponse.json({ isValid: false, invalidReason: "Missing required fields" }, { status: 400 });
     }
 
-    if (paymentRequirements.scheme !== APTOS_SCHEME) {
-      console.log('[Verify] ❌ Unsupported scheme:', paymentRequirements.scheme);
-      return NextResponse.json({ isValid: false, invalidReason: `Unsupported scheme: ${paymentRequirements.scheme}` });
+    // Parse payment (already validated by middleware, just need the transaction)
+    const payload: PaymentPayload = JSON.parse(paymentHeader);
+    if (!payload.payload?.transaction) {
+      return NextResponse.json({ isValid: false, invalidReason: "No transaction in payload" });
     }
 
-    const network = paymentRequirements.network;
-    if (!network || !network.startsWith('aptos-')) {
-      console.log('[Verify] ❌ Invalid Aptos network:', network);
-      return NextResponse.json({ isValid: false, invalidReason: `Invalid Aptos network: ${network}` });
-    }
-    
-    console.log('[Verify] ✅ Basic validation passed');
-    const aptos = getAptosClient(network);
+    // Decode transaction: [txLen(4 bytes) + txBytes + sigBytes]
+    const combined = Buffer.from(payload.payload.transaction, 'base64');
+    const txLen = (combined[0] << 24) | (combined[1] << 16) | (combined[2] << 8) | combined[3];
+    const txBytes = combined.slice(4, 4 + txLen);
+    const sigBytes = combined.slice(4 + txLen);
 
-    // Parse payment header (⚡ direct JSON, no base64)
-    let paymentPayload: PaymentPayload;
+    // Deserialize
+    let transaction: SimpleTransaction;
+    let senderAuth: AccountAuthenticator;
     try {
-      paymentPayload = JSON.parse(paymentHeader);
-    } catch {
-      return NextResponse.json({ isValid: false, invalidReason: "Invalid payment header encoding" });
+      transaction = SimpleTransaction.deserialize(new Deserializer(txBytes));
+      senderAuth = AccountAuthenticator.deserialize(new Deserializer(sigBytes));
+    } catch (e: any) {
+      return NextResponse.json({ isValid: false, invalidReason: `Invalid transaction: ${e.message}` });
     }
 
-    // Validate payload matches requirements
-    if (paymentPayload.scheme !== paymentRequirements.scheme ||
-        paymentPayload.network !== paymentRequirements.network) {
-      return NextResponse.json({ 
-        isValid: false, 
-        invalidReason: "Scheme or network mismatch" 
-      });
-    }
-    
-    const signatureHex = paymentPayload.payload.signature;
-    const transactionHex = paymentPayload.payload.transaction;
-    
-    if (!signatureHex || !transactionHex) {
-      return NextResponse.json({ isValid: false, invalidReason: "Missing signature or transaction" });
-    }
-    
-    // Decode BCS components from hex (⚡ faster than base64)
-    let signatureBytes: Buffer;
-    let transactionBytes: Buffer;
-    
-    try {
-      signatureBytes = Buffer.from(signatureHex, 'hex');
-      transactionBytes = Buffer.from(transactionHex, 'hex');
-      
-      if (signatureBytes.length === 0 || transactionBytes.length === 0) {
-        return NextResponse.json({ isValid: false, invalidReason: "Empty payment data" });
-      }
-    } catch {
-      return NextResponse.json({ isValid: false, invalidReason: "Invalid hex encoding" });
-    }
-    
-    // ⚡ STEP 1: BCS Deserialization & Structure Validation
-    console.log('[Verify] Step 1: Starting BCS deserialization...');
-    let transaction: any;
-    let senderAuthenticator: any;
-    let rawTx: any;
-    let senderAddress: string;
-    let recipientArg: string;
-    let amountValue: string;
-    
-    try {
-      const { SimpleTransaction, AccountAuthenticator, Deserializer } = await import("@aptos-labs/ts-sdk");
-      
-      transaction = SimpleTransaction.deserialize(new Deserializer(transactionBytes));
-      senderAuthenticator = AccountAuthenticator.deserialize(new Deserializer(signatureBytes));
-      rawTx = transaction.rawTransaction;
-      const payload = rawTx.payload as any;
-      console.log('[Verify] ✅ BCS deserialization successful');
-      
-      // Extract function and arguments
-      let functionId: string;
-      let args: any[];
-      
-      if ('entryFunction' in payload) {
-        const entryFunc = payload.entryFunction;
-        if (!('module_name' in entryFunc && 'function_name' in entryFunc)) {
-          return NextResponse.json({ isValid: false, invalidReason: "Invalid entryFunction structure" });
-        }
-          const moduleName = entryFunc.module_name;
-          const funcName = entryFunc.function_name;
-          const moduleAddress = moduleName.address.toString();
-          const moduleIdentifier = moduleName.name?.identifier || moduleName.name?.toString() || '';
-          const functionIdentifier = funcName.identifier || funcName.toString();
-          functionId = `${moduleAddress}::${moduleIdentifier}::${functionIdentifier}`;
-          args = entryFunc.args || [];
-      } else if ('function' in payload && 'functionArguments' in payload) {
-        functionId = payload.function.toString();
-        args = payload.functionArguments;
-      } else {
-        return NextResponse.json({ isValid: false, invalidReason: "Invalid transaction payload type" });
-      }
-      
-      if (!functionId.includes("coin::transfer") && !functionId.includes("aptos_account::transfer")) {
-        return NextResponse.json({ isValid: false, invalidReason: `Invalid function: ${functionId}` });
-      }
-      
-      if (args.length < 2) {
-        return NextResponse.json({ isValid: false, invalidReason: "Missing transaction arguments" });
-      }
-      
-      recipientArg = args[0].toString();
-      amountValue = extractAmount(args[1]);
-      
-      console.log('[Verify] Transaction details:', {
-        function: functionId,
-        recipient: recipientArg,
-        amount: amountValue,
-      });
-      
-      const normalizeAddress = (addr: string) => addr.toLowerCase().replace(/^0x/, '');
-      
-      if (normalizeAddress(recipientArg) !== normalizeAddress(paymentRequirements.payTo)) {
-        console.log('[Verify] ❌ Recipient mismatch:', { 
-          expected: paymentRequirements.payTo, 
-          got: recipientArg 
-        });
-        return NextResponse.json({ isValid: false, invalidReason: "Recipient mismatch" });
-      }
-      
-      if (amountValue !== paymentRequirements.maxAmountRequired) {
-        console.log('[Verify] ❌ Amount mismatch:', { 
-          expected: paymentRequirements.maxAmountRequired, 
-          got: amountValue 
-        });
-        return NextResponse.json({ isValid: false, invalidReason: "Amount mismatch" });
-      }
-      
-      senderAddress = rawTx.sender.toString();
-      if (!senderAddress || senderAddress.length === 0) {
-        console.log('[Verify] ❌ Invalid sender address');
-        return NextResponse.json({ isValid: false, invalidReason: "Invalid sender address" });
-      }
-      
-      console.log('[Verify] ✅ Amount and recipient validation passed');
-      console.log('[Verify] Sender address:', senderAddress);
-      
-    } catch (validationError: any) {
-      console.log('[Verify] ❌ Validation error:', validationError.message);
-      return NextResponse.json({ 
-        isValid: false,
-        invalidReason: `Validation failed: ${validationError.message || String(validationError)}` 
-      });
+    const rawTx = transaction.rawTransaction;
+    const txPayload = rawTx.payload as any;
+
+    // Extract function and args
+    let functionId: string;
+    let args: any[];
+
+    if ('entryFunction' in txPayload) {
+      const ef = txPayload.entryFunction;
+      functionId = `${ef.module_name.address}::${ef.module_name.name?.identifier || ef.module_name.name}::${ef.function_name.identifier || ef.function_name}`;
+      args = ef.args || [];
+    } else if ('function' in txPayload) {
+      functionId = txPayload.function.toString();
+      args = txPayload.functionArguments;
+    } else {
+      return NextResponse.json({ isValid: false, invalidReason: "Invalid payload type" });
     }
 
-    // ⚡ STEP 2: Transaction Simulation (The Only Check We Need!)
-    console.log('[Verify] Step 2: Simulating transaction on Aptos VM...');
-    try {
-      const simulationResult = await aptos.transaction.simulate.simple({
-        signerPublicKey: senderAuthenticator.public_key || rawTx.sender,
-        transaction,
-      });
-
-      if (!simulationResult || simulationResult.length === 0) {
-        console.log('[Verify] ❌ Simulation returned no results');
-        return NextResponse.json({ 
-          isValid: false, 
-          invalidReason: "Transaction simulation returned no results" 
-        });
-      }
-
-      const firstResult = simulationResult[0];
-      console.log('[Verify] Simulation result:', {
-        success: firstResult.success,
-        vm_status: firstResult.vm_status,
-        gas_used: firstResult.gas_used,
-      });
-      
-      if (!firstResult.success) {
-        const vmStatus = firstResult.vm_status || 'Unknown error';
-        console.log('[Verify] ❌ Simulation failed:', vmStatus);
-        return NextResponse.json({ 
-          isValid: false, 
-          invalidReason: `Transaction will fail: ${vmStatus}` 
-        });
-      }
-
-      if (firstResult.vm_status && firstResult.vm_status !== 'Executed successfully') {
-        console.log('[Verify] ❌ VM error:', firstResult.vm_status);
-        return NextResponse.json({ 
-          isValid: false, 
-          invalidReason: `Transaction will fail: ${firstResult.vm_status}` 
-        });
-      }
-      
-      console.log('[Verify] ✅ Simulation successful - transaction will succeed');
-
-    } catch (error: any) {
-      console.log('[Verify] ❌ Simulation error:', error.message);
-      return NextResponse.json({ 
-        isValid: false, 
-        invalidReason: `Simulation failed: ${error.message || String(error)}` 
-      });
+    // Must be fungible asset transfer
+    if (!functionId.includes('primary_fungible_store::transfer')) {
+      return NextResponse.json({ isValid: false, invalidReason: `Invalid function: ${functionId}` });
     }
 
-    // ✅ ALL CHECKS PASSED! Transaction is valid and will succeed
-    const verificationTime = Date.now() - startTime;
-    console.log(`[Verify] ✅ ALL CHECKS PASSED! Verification took ${verificationTime}ms`);
+    // Extract transfer args: [asset, recipient, amount]
+    const txAsset = args[0].toString();
+    const txRecipient = args[1].toString();
+    const txAmount = extractAmount(args[2]);
+
+    console.log('[Verify] TX:', { function: functionId.split('::').pop(), asset: txAsset.slice(-12), recipient: txRecipient.slice(-12), amount: txAmount });
+
+    // ═══════════════════════════════════════════════════════════════
+    // SECURITY-CRITICAL: Validate against requirements
+    // ═══════════════════════════════════════════════════════════════
     
-    const nextResponse = NextResponse.json({ isValid: true, invalidReason: null });
-    nextResponse.headers.set('X-Verification-Time', verificationTime.toString());
-    return nextResponse;
+    if (normalizeAddress(txAsset) !== normalizeAddress(paymentRequirements.asset)) {
+      return NextResponse.json({ isValid: false, invalidReason: "Asset mismatch" });
+    }
+    if (normalizeAddress(txRecipient) !== normalizeAddress(paymentRequirements.payTo)) {
+      return NextResponse.json({ isValid: false, invalidReason: "Recipient mismatch" });
+    }
+    if (txAmount !== paymentRequirements.amount) {
+      return NextResponse.json({ isValid: false, invalidReason: `Amount mismatch: ${txAmount} vs ${paymentRequirements.amount}` });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SECURITY-CRITICAL: On-chain simulation
+    // ═══════════════════════════════════════════════════════════════
+    
+    const aptos = getAptosClient(paymentRequirements.network);
+    
+    console.log('[Verify] ✅ Params valid, simulating...');
+    const simStart = Date.now();
+    
+    const [result] = await aptos.transaction.simulate.simple({
+      signerPublicKey: (senderAuth as any).public_key || rawTx.sender,
+      transaction,
+    });
+
+    if (!result?.success) {
+      console.log('[Verify] ❌ Simulation failed:', result?.vm_status);
+      return NextResponse.json({ isValid: false, invalidReason: `Will fail: ${result?.vm_status}` });
+    }
+
+    const time = Date.now() - startTime;
+    const simTime = Date.now() - simStart;
+    console.log(`[Verify] ✅ VERIFIED in ${time}ms (sim: ${simTime}ms, gas: ${result.gas_used})`);
+
+    const response = NextResponse.json({ isValid: true, invalidReason: null } as VerifyResponse);
+    response.headers.set('Verification-Time', time.toString());
+    return response;
 
   } catch (error: any) {
-    console.error("[Facilitator Verify] Error verifying payment:", error);
-    
-    const response: VerifyResponse = {
-      isValid: false,
-      invalidReason: error.message || String(error),
-    };
-    
-    return NextResponse.json(response, { status: 500 });
+    console.error('[Verify] Error:', error.message);
+    return NextResponse.json({ isValid: false, invalidReason: error.message }, { status: 500 });
   }
 }
