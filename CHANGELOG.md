@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] - 2026-01-18
+
+### 📚 Documentation
+- Updated landing page hero to highlight x402 v2 compliance
+
 ## [2.3.1] - 2026-01-18
 
 ### 📚 Documentation

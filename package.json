@@ -1,6 +1,6 @@
 {
   "name": "aptos-x402",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "x402v2 compliant Payment Protocol SDK for Aptos - Axios-compatible payment wrapper with automatic network detection",
   "author": "Aditya Pundir",
   "license": "MIT",

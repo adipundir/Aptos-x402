@@ -17,7 +17,7 @@ export default function LandingPage() {
       .catch(err => console.error('Failed to fetch NPM stats:', err));
   }, []);
 
-  const displayDownloads = npmStats 
+  const displayDownloads = npmStats
     ? (npmStats.downloads < 200 ? '200+' : npmStats.downloads.toLocaleString())
     : '200+';
 
@@ -25,7 +25,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white relative overflow-hidden">
       {/* Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)]" />
-      
+
       <div className="relative">
         {/* Hero Section */}
         <div className="container mx-auto px-6 pt-32 pb-24 max-w-5xl">
@@ -33,7 +33,7 @@ export default function LandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 bg-zinc-50/50 backdrop-blur-sm text-sm text-zinc-700">
               <Package className="w-3 h-3" />
-              <span>x402 Payment Protocol for Aptos</span>
+              <span>x402 v2 Compliant Payment Protocol for Aptos</span>
             </div>
 
             {/* Headline */}
@@ -71,7 +71,7 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-900 rounded-lg font-mono text-sm text-zinc-100">
                 <span>npm install aptos-x402</span>
               </div>
-              
+
               {/* NPM Stats */}
               <div className="flex items-center justify-center gap-8 mt-8">
                 <div className="flex items-center gap-2.5 text-base text-zinc-600">
@@ -176,7 +176,7 @@ export default function LandingPage() {
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
                   <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
-{`// middleware.ts
+                    {`// middleware.ts
 import { paymentMiddleware }
   from 'aptos-x402';
 
@@ -227,7 +227,7 @@ export const middleware =
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
                   <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
-{`// route.ts
+                    {`// route.ts
 import { NextResponse }
   from 'next/server';
 
@@ -274,7 +274,7 @@ export async function GET() {
                 </div>
                 <div className="overflow-x-auto rounded-lg bg-zinc-900">
                   <pre className="text-zinc-100 p-3 text-[10px] leading-[1.4] font-mono">
-{`// client.ts
+                    {`// client.ts
 import { x402axios }
   from 'aptos-x402';
 
@@ -303,7 +303,7 @@ console.log(result.data);`}
                 aptos-x402
               </h2>
             </div>
-            
+
             {/* Footer Links */}
             <div className="flex items-center justify-between text-sm text-zinc-600">
               <div>
