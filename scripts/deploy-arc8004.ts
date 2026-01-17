@@ -31,9 +31,9 @@ const cleanKey = ADMIN_PRIVATE_KEY.replace(/^0x/, '');
 const privateKey = new Ed25519PrivateKey(cleanKey);
 const adminAccount = Account.fromPrivateKey({ privateKey });
 
-const NODE_URL = NETWORK_STR === 'aptos-testnet' 
-  ? process.env.APTOS_TESTNET_NODE_URL || 'https://fullnode.testnet.aptoslabs.com/v1'
-  : process.env.APTOS_MAINNET_NODE_URL || 'https://fullnode.mainnet.aptoslabs.com/v1';
+const NODE_URL = NETWORK_STR === 'aptos-testnet'
+  ? 'https://fullnode.testnet.aptoslabs.com/v1'
+  : 'https://fullnode.mainnet.aptoslabs.com/v1';
 
 const aptosConfig = new AptosConfig({ network: NETWORK });
 const aptos = new Aptos(aptosConfig);
@@ -52,21 +52,21 @@ async function deployContract() {
   console.log('\n=== Deploying ARC-8004 Contracts ===');
   console.log(`Network: ${NETWORK}`);
   console.log(`Admin Address: ${adminAccount.accountAddress.toString()}`);
-  
+
   // Check balance
   const balance = await checkAccountBalance(adminAccount.accountAddress.toString());
   console.log(`Admin Balance: ${Number(balance) / 1e8} APT`);
-  
+
   if (balance < BigInt(100000000)) { // Less than 1 APT
     console.warn('⚠️  Warning: Admin account has less than 1 APT. Deployment may fail.');
     console.log('   Fund the account at:', adminAccount.accountAddress.toString());
   }
 
   const contractDir = path.join(process.cwd(), 'contracts', 'arc8004');
-  
+
   console.log('\n📦 Building Move package...');
   try {
-    execSync('aptos move build', { 
+    execSync('aptos move build', {
       cwd: contractDir,
       stdio: 'inherit',
       env: {
@@ -94,11 +94,11 @@ async function deployContract() {
   }
 
   // Get the published module address
-  const accountResources = await aptos.getAccountResources({ 
-    accountAddress: adminAccount.accountAddress.toString() 
+  const accountResources = await aptos.getAccountResources({
+    accountAddress: adminAccount.accountAddress.toString()
   });
   const moduleAddress = adminAccount.accountAddress.toString();
-  
+
   console.log(`\n📋 Module Address: ${moduleAddress}`);
   console.log('\n💾 Update your .env file:');
   console.log(`ARC8004_MODULE_ADDRESS=${moduleAddress}`);
@@ -106,9 +106,9 @@ async function deployContract() {
 
 async function initializeModules() {
   console.log('\n=== Initializing ARC-8004 Modules ===');
-  
+
   const moduleAddress = adminAccount.accountAddress.toString();
-  
+
   // Initialize agent_identity
   console.log('\n1️⃣ Initializing agent_identity module...');
   try {
@@ -195,7 +195,7 @@ async function main() {
   try {
     await deployContract();
     await initializeModules();
-    
+
     console.log('\n✅ ARC-8004 contracts deployed and initialized successfully!');
     console.log(`\n📝 Next steps:`);
     console.log(`   1. Update ARC8004_MODULE_ADDRESS in .env to: ${adminAccount.accountAddress.toString()}`);

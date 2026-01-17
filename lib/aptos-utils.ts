@@ -35,16 +35,8 @@ export interface FeePayerTransactionResult {
 export function getAptosClient(network: string = "aptos:2"): Aptos {
   const parsed = parseCAIP2Network(network);
   const aptosNetwork = parsed?.chainId === '1' ? Network.MAINNET : Network.TESTNET;
-  
-  const rpcUrl = aptosNetwork === Network.MAINNET 
-    ? process.env.APTOS_MAINNET_NODE_URL 
-    : process.env.APTOS_TESTNET_NODE_URL;
-  
-  const config = rpcUrl 
-    ? new AptosConfig({ network: aptosNetwork, fullnode: rpcUrl })
-    : new AptosConfig({ network: aptosNetwork });
-  
-  return new Aptos(config);
+
+  return new Aptos(new AptosConfig({ network: aptosNetwork }));
 }
 
 /**
