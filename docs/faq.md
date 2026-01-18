@@ -183,7 +183,7 @@ APTOS_NETWORK=aptos:2
 USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832
 ```
 
-2. Get testnet USDC (swap APT from [faucet](https://aptoslabs.com/testnet-faucet))
+2. Get testnet USDC from [Circle Faucet](https://faucet.circle.com/)
 
 3. Test complete flow with zero cost
 

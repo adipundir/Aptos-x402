@@ -74,8 +74,7 @@ npx tsx -e "import { Account } from '@aptos-labs/ts-sdk'; const acc = Account.ge
 
 ### Get Testnet USDC
 
-1. Fund your wallet with testnet APT from [aptoslabs.com/testnet-faucet](https://aptoslabs.com/testnet-faucet)
-2. Swap APT for testnet USDC on a testnet DEX
+Use the [Circle Testnet Faucet](https://faucet.circle.com/) to get testnet USDC directly
 
 **Testnet USDC Address:** `0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168daf52832`
 
