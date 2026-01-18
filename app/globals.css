@@ -122,6 +122,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground antialiased;
   }
@@ -144,9 +145,9 @@ html {
   color-scheme: light !important;
 }
 
-.docs-page .prose > p,
-.docs-page .prose > ul > li,
-.docs-page .prose > ol > li {
+.docs-page .prose>p,
+.docs-page .prose>ul>li,
+.docs-page .prose>ol>li {
   color: #27272a !important;
 }
 
@@ -154,8 +155,8 @@ html {
   color: #27272a !important;
 }
 
-.docs-page article ul > li,
-.docs-page article ol > li {
+.docs-page article ul>li,
+.docs-page article ol>li {
   color: #27272a !important;
 }
 
@@ -189,8 +190,21 @@ html {
 
 /* Table of contents links should not be styled as regular links */
 .docs-page aside nav a {
-  color: inherit !important;
+  color: #3f3f46 !important;
+  /* zinc-700 for good readability */
   text-decoration: none !important;
+  transition: color 0.15s ease !important;
+}
+
+.docs-page aside nav a:hover {
+  color: #18181b !important;
+  /* zinc-900 on hover */
+}
+
+/* TOC title */
+.docs-page aside h3 {
+  color: #52525b !important;
+  /* zinc-600 for the "On this page" title */
 }
 
 .docs-page pre,
@@ -215,7 +229,23 @@ html {
   .docs-page {
     color-scheme: light !important;
   }
-  
+
+  /* Force dark text colors for TOC in dark mode since docs page uses light theme */
+  .docs-page aside nav a {
+    color: #3f3f46 !important;
+    /* zinc-700 */
+  }
+
+  .docs-page aside nav a:hover {
+    color: #18181b !important;
+    /* zinc-900 */
+  }
+
+  .docs-page aside h3 {
+    color: #52525b !important;
+    /* zinc-600 */
+  }
+
   .docs-page .shiki,
   .docs-page .shiki span {
     color: var(--shiki-light) !important;
@@ -227,6 +257,22 @@ html {
 .dark .docs-page .shiki span {
   color: var(--shiki-light) !important;
   background-color: var(--shiki-light-bg) !important;
+}
+
+/* Force dark text colors for TOC when .dark class is applied */
+.dark .docs-page aside nav a {
+  color: #3f3f46 !important;
+  /* zinc-700 */
+}
+
+.dark .docs-page aside nav a:hover {
+  color: #18181b !important;
+  /* zinc-900 */
+}
+
+.dark .docs-page aside h3 {
+  color: #52525b !important;
+  /* zinc-600 */
 }
 
 /* Scrollbar */
@@ -249,8 +295,13 @@ html {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeInUp {
@@ -258,6 +309,7 @@ html {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -344,7 +396,7 @@ html {
   .docs-page aside {
     display: none !important;
   }
-  
+
   .docs-page main {
     margin: 0 !important;
     padding: 2rem !important;

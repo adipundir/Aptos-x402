@@ -1,29 +1,29 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import {
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
-  Menu, 
-  X, 
-  BookOpen, 
-  Code2, 
-  Rocket, 
-  Zap, 
-  ArrowUp, 
+  Menu,
+  X,
+  BookOpen,
+  Code2,
+  Rocket,
+  Zap,
+  ArrowUp,
   FileText,
   Lightbulb
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   CodeBlock,
   CodeBlockHeader,
   CodeBlockFilename,
   CodeBlockCopyButton,
   CodeBlockBody,
   CodeBlockItem,
-  CodeBlockContent 
+  CodeBlockContent
 } from '@/src/components/ui/shadcn-io/code-block';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -42,7 +42,7 @@ interface DocsClientProps {
 export default function DocsClient({ initialContent, initialDocPath, docsStructure }: DocsClientProps) {
   const [content] = useState(initialContent);
   const [selectedDoc, setSelectedDoc] = useState(initialDocPath);
-  const [tableOfContents, setTableOfContents] = useState<{id: string; text: string; level: number}[]>([]);
+  const [tableOfContents, setTableOfContents] = useState<{ id: string; text: string; level: number }[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['Core Concepts', 'Getting Started', 'API Reference', 'Guides', 'Examples'])
   );
@@ -52,7 +52,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   const router = useRouter();
 
   const allDocs = useMemo(() => {
-    const docs: Array<{title: string; path: string}> = [];
+    const docs: Array<{ title: string; path: string }> = [];
     docsStructure.forEach(item => {
       if (item.path) docs.push({ title: item.title, path: item.path });
       if (item.children) {
@@ -82,7 +82,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   useEffect(() => {
     const handleScroll = () => {
       setShowBackToTop(window.scrollY > 400);
-      
+
       const headings = document.querySelectorAll('h1[id], h2[id], h3[id]');
       let currentActive = '';
       headings.forEach((heading) => {
@@ -121,7 +121,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   };
 
   const getSectionIcon = (title: string) => {
-    switch(title) {
+    switch (title) {
       case 'Getting Started': return <Rocket className="w-4 h-4" />;
       case 'Core Concepts': return <BookOpen className="w-4 h-4" />;
       case 'API Reference': return <Code2 className="w-4 h-4" />;
@@ -148,8 +148,8 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
             className={`
               w-full flex items-center justify-between px-3 py-2 rounded-lg text-left
               transition-colors group
-              ${level === 0 
-                ? 'font-semibold text-sm text-zinc-900 hover:bg-zinc-100' 
+              ${level === 0
+                ? 'font-semibold text-sm text-zinc-900 hover:bg-zinc-100'
                 : 'text-sm text-zinc-800 hover:text-zinc-900 hover:bg-zinc-50'
               }
             `}
@@ -160,8 +160,8 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
               </span>
               <span>{item.title}</span>
             </div>
-            <ChevronDown 
-              className={`w-4 h-4 text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+            <ChevronDown
+              className={`w-4 h-4 text-zinc-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             />
           </button>
           {isExpanded && item.children && (
@@ -180,8 +180,8 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
           onClick={() => navigateToDoc(item.path!)}
           className={`
             w-full text-left px-3 py-2 rounded-lg text-sm transition-colors
-            ${isSelected 
-              ? 'bg-zinc-900 text-white font-medium' 
+            ${isSelected
+              ? 'bg-zinc-900 text-white font-medium'
               : 'text-zinc-800 hover:text-zinc-900 hover:bg-zinc-100'
             }
           `}
@@ -206,10 +206,10 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
           content: md.substring(lastIndex, match.index),
         });
       }
-      
+
       const language = match[1] || 'text';
       let filename = 'code';
-      switch(language.toLowerCase()) {
+      switch (language.toLowerCase()) {
         case 'typescript':
         case 'tsx':
           filename = 'example.tsx';
@@ -231,24 +231,24 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         default:
           filename = `code.${language}`;
       }
-      
+
       parts.push({
         type: 'code',
         content: match[2],
         language: language,
         filename: filename,
       });
-      
+
       lastIndex = match.index + match[0].length;
     }
-    
+
     if (lastIndex < md.length) {
       parts.push({
         type: 'markdown',
         content: md.substring(lastIndex),
       });
     }
-    
+
     return parts;
   };
 
@@ -385,10 +385,10 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
   };
 
   const getBreadcrumbs = () => {
-    const breadcrumbs: Array<{title: string; path?: string}> = [
+    const breadcrumbs: Array<{ title: string; path?: string }> = [
       { title: 'Docs', path: 'README.md' }
     ];
-    
+
     for (const section of docsStructure) {
       if (section.path === selectedDoc) {
         breadcrumbs.push({ title: section.title });
@@ -403,7 +403,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         }
       }
     }
-    
+
     return breadcrumbs;
   };
 
@@ -436,8 +436,8 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                   onClick={() => navigateToDoc('README.md')}
                   className={`
                     w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors
-                    ${selectedDoc === 'README.md' 
-                      ? 'bg-zinc-900 text-white font-medium' 
+                    ${selectedDoc === 'README.md'
+                      ? 'bg-zinc-900 text-white font-medium'
                       : 'text-zinc-800 hover:text-zinc-900 hover:bg-zinc-100'
                     }
                   `}
@@ -445,9 +445,9 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                   <Zap className="w-4 h-4" />
                   Welcome
                 </button>
-                
+
                 <div className="h-px bg-zinc-200 my-3" />
-                
+
                 {docsStructure.filter(item => item.path !== 'README.md').map((item) => renderSidebarItem(item))}
               </nav>
             </div>
@@ -534,7 +534,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                 </div>
               </div>
             )}
-            
+
             {/* Content */}
             <article>
               {parseMarkdownWithCodeBlocks(content).map((part, idx) => {
@@ -544,7 +544,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                     filename: part.filename || 'code',
                     code: part.content,
                   }];
-                  
+
                   return (
                     <div key={idx} className="my-4 rounded-lg overflow-hidden border border-zinc-200">
                       <CodeBlock data={codeData} defaultValue={part.language || 'text'}>
@@ -583,7 +583,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                 );
               })}
             </article>
-            
+
             {/* Navigation */}
             <div className="mt-12 pt-6 border-t border-zinc-200">
               <div className="grid grid-cols-2 gap-4">
@@ -599,7 +599,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                     </div>
                   </button>
                 )}
-                
+
                 {nextDoc && (
                   <button
                     onClick={() => navigateToDoc(nextDoc.path)}
@@ -621,7 +621,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
         <aside className="hidden xl:block fixed right-0 top-16 bottom-0 w-56 border-l border-zinc-200 bg-white">
           <ScrollArea className="h-full">
             <div className="p-6">
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-4">
+              <h3 className="text-xs font-semibold text-black uppercase tracking-wider mb-4">
                 On this page
               </h3>
               {tableOfContents.length > 0 ? (
@@ -637,11 +637,11 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                       className={`
                         block text-sm py-1.5 transition-colors no-underline
                         ${item.level === 1 ? 'font-semibold text-zinc-900' : ''}
-                        ${item.level === 2 ? 'pl-3 text-zinc-700' : ''}
-                        ${item.level === 3 ? 'pl-5 text-xs text-zinc-600' : ''}
-                        ${activeHeading === item.id 
-                          ? 'text-zinc-900 font-medium' 
-                          : item.level === 1 ? 'text-zinc-900' : 'text-zinc-700 hover:text-zinc-900'
+                        ${item.level === 2 ? 'pl-3 text-zinc-800' : ''}
+                        ${item.level === 3 ? 'pl-5 text-xs text-zinc-700' : ''}
+                        ${activeHeading === item.id
+                          ? 'text-zinc-900 font-medium'
+                          : item.level === 1 ? 'text-zinc-900' : 'text-zinc-800 hover:text-zinc-900'
                         }
                       `}
                     >
@@ -650,7 +650,7 @@ export default function DocsClient({ initialContent, initialDocPath, docsStructu
                   ))}
                 </nav>
               ) : (
-                <p className="text-sm text-zinc-400">No headings found</p>
+                <p className="text-sm text-zinc-500">No headings found</p>
               )}
             </div>
           </ScrollArea>
