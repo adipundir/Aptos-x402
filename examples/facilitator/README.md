@@ -14,10 +14,10 @@ A facilitator is a service that handles blockchain interactions for x402 payment
  - Just testing/developing
 
 **Yes, if you:**
-- ⚠️ Want full control over payment processing in production
-- ⚠️ Need to customize verification logic
-- ⚠️ Have high-volume requirements
-- ⚠️ Need guaranteed uptime SLAs
+- Want full control over payment processing in production
+- Need to customize verification logic
+- Have high-volume requirements
+- Need guaranteed uptime SLAs
 
 ## How to Use
 

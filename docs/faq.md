@@ -97,12 +97,12 @@ Get an API key at [geomi.dev](https://geomi.dev)
 <summary><strong>Do I need a blockchain wallet?</strong></summary>
 
 **For Sellers:**
-- ✅ Need wallet address (to receive USDC)
-- ❌ Don't need private key on server
+- Need wallet address (to receive USDC)
+- Don't need private key on server
 
 **For Buyers:**
-- ✅ Need funded wallet with USDC
-- ✅ Need private key for signing
+- Need funded wallet with USDC
+- Need private key for signing
 
 </details>
 
@@ -194,8 +194,8 @@ USDC_TESTNET_ADDRESS=0x69091fbab5f7d635ee7ac5098cf0c1efbe31d68fec0f2cd565e8d168d
 
 | Network | CAIP-2 ID | Status |
 |---------|-----------|--------|
-| **Mainnet** | `aptos:1` | ✅ Supported |
-| **Testnet** | `aptos:2` | ✅ Supported |
+| **Mainnet** | `aptos:1` | Supported |
+| **Testnet** | `aptos:2` | Supported |
 
 </details>
 

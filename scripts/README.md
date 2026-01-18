@@ -31,35 +31,34 @@ npx tsx scripts/test-x402-axios.ts
 └─────────────────────────────────────────────────┘
 
 Enter your Aptos private key (0x...): 0x21c31d63f7719d3de90b9c14b264229db65609f11f86413cb81a7ed7fcb18f3f
-
-💰 Checking account balance...
+Checking account balance...
    Balance: 10.5 APT (1050000000 Octas)
 
-🚀 Making request to protected API endpoint...
+Making request to protected API endpoint...
 
 Request completed successfully!
 
-📋 Response Details:
+Response Details:
 Status: 200 OK
 Total Time: 2453ms
-  ↳ Verification: 87ms
-  ↳ Settlement: 2198ms
+  -> Verification: 87ms
+  -> Settlement: 2198ms
 
-🌤️  Weather Data:
+Weather Data:
 {
   "location": "San Francisco, CA",
   "temperature": 72,
   "conditions": "Sunny"
 }
 
-💰 Payment Details:
+Payment Details:
 Transaction Hash: 0x2e39909...
 Amount Paid: 0.01 APT (1000000 Octas)
 Recipient: 0x3dbd1c97...
 Network: aptos-testnet
-Settled: ✓
+Settled: Yes
 
-🔗 View on Explorer:
+View on Explorer:
    https://explorer.aptoslabs.com/txn/0x2e39909.../network=testnet
 ```
 
@@ -80,7 +79,7 @@ Address: 0x3dbd1c976225cd44bcc8bafc22ea2b78ccc9a83c5b3fee9ce8a67a6220230fa1
 Private Key: 0x21c31d63f7719d3de90b9c14b264229db65609f11f86413cb81a7ed7fcb18f3f
 Public Key: 0x...
 
-⚠️  IMPORTANT: Save your private key securely!
+IMPORTANT: Save your private key securely!
 Add to .env file:
 PRIVATE_KEY=0x21c31d63f7719d3de90b9c14b264229db65609f11f86413cb81a7ed7fcb18f3f
 ```

@@ -16,7 +16,7 @@ Features:
 - Geomi gas sponsorship included
 - Zero configuration
 
-**Only self-host if you need:** guaranteed SLAs, custom rate limits, private infrastructure.
+Only self-host if you need guaranteed SLAs, custom rate limits, or private infrastructure.
 
 ## Self-Hosting Prerequisites
 

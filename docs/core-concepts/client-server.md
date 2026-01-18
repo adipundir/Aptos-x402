@@ -58,7 +58,7 @@ export const proxy = paymentMiddleware(
 export const config = { matcher: ['/api/premium/:path*'] };
 ```
 
-**What the middleware does:**
+The middleware does the following:
 1. No `PAYMENT-SIGNATURE` → returns 402 with PaymentRequirements
 2. With `PAYMENT-SIGNATURE`:
    - POST to `<FACILITATOR_URL>/verify`

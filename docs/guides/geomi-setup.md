@@ -71,9 +71,9 @@ Monitor your API usage in the Geomi dashboard at [https://geomi.dev](https://geo
 ### Logs
 
 ```
-[GasStation] ✅ Geomi Gas Station initialized
+[GasStation] Geomi Gas Station initialized
 [GasStation] Sponsoring transaction via Geomi...
-[GasStation] ✅ Transaction sponsored and submitted via Geomi
+[GasStation] Transaction sponsored and submitted via Geomi
 ```
 
 ## Troubleshooting

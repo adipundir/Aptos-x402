@@ -4,8 +4,6 @@
 
 The `exact` scheme on Aptos transfers a specific amount of a stablecoin (such as USDC) or native APT from the payer to the resource server using Aptos's fungible asset framework. The approach requires the payer to construct a complete signed transaction ensuring that the facilitator cannot alter the transaction or redirect funds to any address other than the one specified by the resource server in paymentRequirements.
 
-**Version Support:** This specification supports x402 v2 protocol only.
-
 ## Protocol Sequencing
 
 The protocol flow for `exact` on Aptos is client-driven. When the facilitator supports sponsorship, it sets `extra.sponsored` to `true` in the payment requirements. This signals to the client that sponsored (gasless) transactions are available.

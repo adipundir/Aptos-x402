@@ -1,8 +1,6 @@
 # Quickstart for Buyers
 
-Access x402-protected APIs with automatic payment handling using **x402 v2 compliant** client.
-
-> ✅ **x402 v2 protocol** | ⚠️ v1 is deprecated
+Access x402-protected APIs with automatic payment handling using x402 v2 compliant client.
 
 ## Overview
 

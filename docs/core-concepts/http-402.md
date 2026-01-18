@@ -103,10 +103,6 @@ interface PaymentResponse {
 }
 ```
 
-## Protocol Version
-
-This package implements **x402 v2 protocol only**. If you see references to v1 anywhere, it is deprecated and not supported.
-
 ## USDC Addresses
 
 | Network | Address |

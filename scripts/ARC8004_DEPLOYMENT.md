@@ -9,7 +9,7 @@
 **v1.0 (Legacy)**:
 - **Module Address**: `0xa4d7e1f47887dc6b84743297164fdd63deaa872329f8617be1d4c87375d39323`
 
-## ⚠️ Contract Update Required (v2.0)
+## Contract Update Required (v2.0)
 
 The `reputation.move` contract was updated with **on-chain agent scores**:
 - New `AgentScore` struct with aggregated scores per agent
@@ -43,7 +43,7 @@ If the contracts are already deployed and unchanged:
 tsx scripts/initialize-arc8004.ts
 ```
 
-> ⚠️ This won't work if the contract code changed - use Option 1 instead.
+> This won't work if the contract code changed - use Option 1 instead.
 
 ## Testing On-Chain Scores
 

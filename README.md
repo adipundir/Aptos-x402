@@ -18,19 +18,19 @@
 
 **Aptos x402** is a TypeScript SDK implementing the **x402 v2 protocol** ([spec](https://github.com/coinbase/x402)) for the Aptos blockchain. Enable your APIs to require cryptocurrency payments before serving responses using the standardized HTTP 402 status code.
 
-> ✅ **x402 v2 compliant**
+> x402 v2 compliant
 
 Built for **machine-to-machine micropayments**, this SDK provides zero-friction payment integration for Next.js applications with automatic payment handling, cryptographic verification, and **sub-second settlement times** (optimized from 2-3s to 200-500ms).
 
 ### What’s new in 2.2.0
-- 🛡️ **ARC-8004 Agent Trust Layer**: Agent identity, reputation, and task validation (Aptos-native).
-- ⛽ **Geomi Gas Sponsorship**: Native support for gasless transactions (facilitator pays gas).
-- 📋 **Protocol Updates**: Standardized `PAYMENT-SIGNATURE` headers (removed "X-").
-- 💰 **Fungible Assets**: Direct USDC/FA transfer support.
-- 🚚 **Header-Based Spec**: Payment specs and proofs handling moved entirely to headers.
-- ⚡ **Performance**: Significant speed improvements with bug fixes and optimizations.
+- **ARC-8004 Agent Trust Layer**: Agent identity, reputation, and task validation (Aptos-native).
+- **Geomi Gas Sponsorship**: Native support for gasless transactions (facilitator pays gas).
+- **Protocol Updates**: Standardized `PAYMENT-SIGNATURE` headers (removed "X-").
+- **Fungible Assets**: Direct USDC/FA transfer support.
+- **Header-Based Spec**: Payment specs and proofs handling moved entirely to headers.
+- **Performance**: Significant speed improvements with bug fixes and optimizations.
 
-> ⚡ **Performance:** Latest optimizations deliver **faster settlement** with verification caching, async confirmation, and smart deduplication.
+> **Performance:** Latest optimizations deliver **faster settlement** with verification caching, async confirmation, and smart deduplication.
 
 <!-- ## Key Features
 
@@ -70,7 +70,7 @@ npm install aptos-x402
 
 
 
-## 🛒 Client Integration (Consuming Paid APIs)
+## Client Integration (Consuming Paid APIs)
 
 Access x402-protected APIs with zero configuration. The `x402axios` client automatically detects payment requirements, builds transactions, and handles the entire payment flow.
 
@@ -127,7 +127,7 @@ The client automatically handles the complete payment flow:
 
 ---
 
-## 🏪 Server Integration (Monetizing Your APIs)
+## Server Integration (Monetizing Your APIs)
 
 Protect Next.js API routes with x402 middleware - zero payment code required in your route handlers.
 
@@ -422,7 +422,7 @@ import type {
 
 ---
 
-## 🛡️ ARC-8004: Agent Trust Layer
+## ARC-8004: Agent Trust Layer
 
 ARC-8004 provides identity, reputation, and validation for AI agents on Aptos. It integrates with x402 payments to build trust signals from paid interactions.
 

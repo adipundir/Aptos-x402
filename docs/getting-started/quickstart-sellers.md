@@ -1,8 +1,6 @@
 # Quickstart for Sellers
 
-Add payment requirements to your Next.js API in 5 minutes with **x402 v2 compliant** middleware.
-
-> ✅ **x402 v2 protocol** | ⚠️ v1 is deprecated
+Add payment requirements to your Next.js API in 5 minutes with x402 v2 compliant middleware.
 
 ## Prerequisites
 

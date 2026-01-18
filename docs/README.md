@@ -1,8 +1,6 @@
 # Aptos x402
 
-**x402 v2 compliant** HTTP 402 Payment Required implementation for Aptos. Enable pay-per-request API monetization with USDC micropayments.
-
-> ⚠️ **v1 is deprecated.** This package implements x402 v2 protocol only.
+x402 v2 compliant HTTP 402 Payment Required implementation for Aptos. Enable pay-per-request API monetization with USDC micropayments.
 
 ## Quick Start
 
@@ -59,10 +57,6 @@ Pay-per-request instead of subscriptions. Cryptographic signatures instead of AP
 ## Public Facilitator
 
 Use `https://aptos-x402.org/api/facilitator` for development and testing. Gas sponsorships are free as an introductory offer under limited usage.
-
-## Protocol Version
-
-This package implements **x402 v2 protocol only**. If you see references to v1 anywhere, it is deprecated and not supported.
 
 ## Documentation
 

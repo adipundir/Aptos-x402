@@ -30,14 +30,14 @@
  */
 
 // ============================================
-// FOR BUYERS 🛒
+// FOR BUYERS
 // ============================================
 
 export { x402axios, decodePaymentResponse } from "./x402-axios";
 export type { X402RequestConfig, X402Response, X402PaymentResponse } from "./x402-axios";
 
 // ============================================
-// FOR SELLERS 🏪
+// FOR SELLERS
 // ============================================
 
 export { paymentMiddleware } from "./x402-middleware";
@@ -45,7 +45,7 @@ export type { RouteConfig, FacilitatorConfig, ResolvedRouteConfig } from "./x402
 export { resolveRouteConfig } from "./x402-types";
 
 // ============================================
-// PROTOCOL TYPES 📋
+// PROTOCOL TYPES
 // ============================================
 
 export {
@@ -75,7 +75,7 @@ export type {
 } from "./x402-protocol-types";
 
 // ============================================
-// GAS SPONSORSHIP (Geomi) ⛽
+// GAS SPONSORSHIP (Geomi)
 // ============================================
 
 export {
@@ -89,7 +89,7 @@ export {
 export type { GasStationConfig, SponsorResult } from "./services/geomi-gas-station";
 
 // ============================================
-// APTOS UTILITIES 🔧
+// APTOS UTILITIES
 // ============================================
 
 export {
@@ -107,7 +107,7 @@ export {
 export type { FeePayerTransactionResult } from "./aptos-utils";
 
 // ============================================
-// ARC-8004: AGENT TRUST LAYER 🛡️
+// ARC-8004: AGENT TRUST LAYER
 // ============================================
 
 export {

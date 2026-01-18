@@ -2,18 +2,18 @@
 
 This guide explains how to deploy your own ARC-8004 contracts on Aptos, giving you full control over agent verification.
 
-> ⚠️ **Note:** Most users don't need this. The [DB-only mode](/docs/guides/arc8004) provides identity, reputation, and validation without any blockchain deployment. Only follow this guide if you specifically need on-chain verification authority.
+> **Note:** Most users don't need this. The [DB-only mode](/docs/guides/arc8004) provides identity, reputation, and validation without any blockchain deployment. Only follow this guide if you specifically need on-chain verification authority.
 
 ## Do You Need Self-Hosting?
 
 | Feature | DB-Only Mode | Shared Contracts | Self-Hosted |
 |---------|--------------|------------------|-------------|
-| Agent identity registration | ✅ | ✅ | ✅ |
-| Agent Cards with metadata | ✅ | ✅ | ✅ |
-| Reputation tracking | ✅ | ✅ | ✅ |
-| Task validation | ✅ | ✅ | ✅ |
-| On-chain NFT minting | ❌ | ✅ | ✅ |
-| **On-chain verification** | ❌ | ❌ (admin only) | ✅ **You control** |
+| Agent identity registration | Yes | Yes | Yes |
+| Agent Cards with metadata | Yes | Yes | Yes |
+| Reputation tracking | Yes | Yes | Yes |
+| Task validation | Yes | Yes | Yes |
+| On-chain NFT minting | No | Yes | Yes |
+| **On-chain verification** | No | No (admin only) | **You control** |
 | Setup complexity | None | Minimal | Advanced |
 
 **Choose self-hosting only if:**
@@ -54,12 +54,12 @@ npx tsx scripts/generate-account.ts
 
 This outputs:
 ```
-🔑 New Aptos Account Generated
+New Aptos Account Generated
 ================================
 Address: 0x1234...abcd
 Private Key: 0xabcd...1234
 
-⚠️ Save the private key securely!
+Save the private key securely!
 ```
 
 **Important: Store the private key securely. This is your `ARC8004_ADMIN_PRIVATE_KEY`.**
@@ -165,17 +165,17 @@ Network: aptos-testnet
 Module Address: 0xa4d7e1f...
 Admin Address: 0xa4d7e1f...
 
-1️⃣ Initializing agent_identity module...
-✅ agent_identity initialized: 0xa67bc9d...
+1. Initializing agent_identity module...
+Agent identity initialized: 0xa67bc9d...
 
-2️⃣ Initializing reputation module...
-✅ reputation initialized: 0xf6542db...
+2. Initializing reputation module...
+Reputation initialized: 0xf6542db...
 
-3️⃣ Initializing validation module...
-✅ validation initialized: 0x3198bac...
+3. Initializing validation module...
+Validation initialized: 0x3198bac...
 
-✅ All modules initialized successfully!
-📝 Admin account configured: 0xa4d7e1f...
+All modules initialized successfully!
+Admin account configured: 0xa4d7e1f...
 ```
 
 ## Step 6: Configure Your Application
@@ -227,7 +227,7 @@ async function verifyAgent(agentId: string, agentPrivateKey: string) {
     agentSigner
   );
 
-  console.log('✅ Agent verified!');
+  console.log('Agent verified!');
   console.log('Mint TX:', result.mintTxHash);
   console.log('Verify TX:', result.verifyTxHash);
   

@@ -264,10 +264,10 @@ if (result.isValid) {
 
 | Type | Status | Description |
 |------|--------|-------------|
-| `manual` | ✅ Implemented | Human validator approval |
-| `zkproof` | 🚧 Coming Soon | Zero-knowledge proof verification |
-| `tee` | 🚧 Coming Soon | Trusted Execution Environment |
-| `oracle` | 🚧 Coming Soon | External oracle verification |
+| `manual` | Implemented | Human validator approval |
+| `zkproof` | Coming Soon | Zero-knowledge proof verification |
+| `tee` | Coming Soon | Trusted Execution Environment |
+| `oracle` | Coming Soon | External oracle verification |
 
 ```typescript
 // Check if a type is implemented
