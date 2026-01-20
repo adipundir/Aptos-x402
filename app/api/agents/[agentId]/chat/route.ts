@@ -20,7 +20,7 @@ export async function POST(
   let userId: string | undefined;
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in to chat with agents.' },
@@ -32,7 +32,7 @@ export async function POST(
     const resolved = await params;
     agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
-    
+
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -62,13 +62,13 @@ export async function POST(
       apiOverride: apiId || null,
       messagePreview,
     });
-    
+
     // Start user message write in background (don't wait for it)
-    addMessage(agentId, userId, {
+    addMessage(agentId, userId!, {
       role: 'user',
       content: message,
     }).catch(err => console.error('Failed to save user message:', err));
-    
+
     // Get agent's wallet private key (each agent has its own wallet)
     let paymentPrivateKey: string;
     try {
@@ -88,7 +88,7 @@ export async function POST(
       llm: llm || 'gemini-2.5-flash',
       apiId: apiId || null,
     }, paymentPrivateKey);
-    
+
     console.log('[Agent Chat] Agent execution result', {
       agentId,
       success: response.success,
@@ -101,14 +101,14 @@ export async function POST(
 
     // Format agent response message
     let agentMessage = response.message;
-    
+
     // If LLM was used for extraction, don't append raw JSON
     if (response.success && response.data && response.apiCalled && !response.llmUsed) {
       const messageLower = response.message.toLowerCase();
       const isGenericMessage = messageLower.includes('successfully retrieved') ||
-                               messageLower.includes('here\'s the data') ||
-                               messageLower.includes('data from');
-      
+        messageLower.includes('here\'s the data') ||
+        messageLower.includes('data from');
+
       if (isGenericMessage || response.message.length < 50) {
         agentMessage = `${response.message}\n\n${JSON.stringify(response.data, null, 2)}`;
       }
@@ -126,7 +126,7 @@ export async function POST(
 
     // If there's an error, return it immediately
     if (!response.success && response.error) {
-      addMessage(agentId, userId, {
+      addMessage(agentId, userId!, {
         role: 'agent',
         content: agentMessage,
         metadata: {
@@ -137,7 +137,7 @@ export async function POST(
           llmUsed: response.llmUsed,
         },
       }).catch(err => console.error('Failed to save error message:', err));
-      
+
       return NextResponse.json({
         success: false,
         error: response.error,
@@ -146,7 +146,7 @@ export async function POST(
     }
 
     // Save agent message in background
-    addMessage(agentId, userId, {
+    addMessage(agentId, userId!, {
       role: 'agent',
       content: agentMessage,
       metadata: {
@@ -168,19 +168,19 @@ export async function POST(
       errorType: error.constructor?.name,
       errorMessage: error.message,
     });
-    
+
     const errorMessage = error.message || String(error);
-    const isBalanceError = errorMessage.includes('INSUFFICIENT_BALANCE') || 
-                          errorMessage.includes('insufficient');
+    const isBalanceError = errorMessage.includes('INSUFFICIENT_BALANCE') ||
+      errorMessage.includes('insufficient');
     const isWalletError = errorMessage.includes('WALLET_NOT_FOUND') ||
-                         errorMessage.includes('wallet not found') ||
-                         errorMessage.includes('ENCRYPTION_KEY');
-    
+      errorMessage.includes('wallet not found') ||
+      errorMessage.includes('ENCRYPTION_KEY');
+
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' : 
-               isWalletError ? 'WALLET_ERROR' : 'EXECUTION_ERROR',
+        error: isBalanceError ? 'INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE' :
+          isWalletError ? 'WALLET_ERROR' : 'EXECUTION_ERROR',
         message: errorMessage,
         details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
       },
@@ -197,7 +197,7 @@ export async function GET(
   let userId: string | undefined;
   try {
     const session = await auth();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -209,7 +209,7 @@ export async function GET(
     const resolved = await params;
     agentId = resolved.agentId;
     const agent = await getAgentById(agentId, userId);
-    
+
     if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found' },
@@ -217,9 +217,9 @@ export async function GET(
       );
     }
 
-    const chatData = await getChatWithMessages(agentId, userId);
+    const chatData = await getChatWithMessages(agentId, userId!);
     if (!chatData) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         chat: {
           id: null,
           agentId,
@@ -230,7 +230,7 @@ export async function GET(
       });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       chat: {
         id: chatData.thread.id,
         agentId: chatData.thread.agentId,
@@ -247,7 +247,7 @@ export async function GET(
     });
   } catch (error: any) {
     return NextResponse.json(
-      { 
+      {
         error: error.message || 'Failed to fetch chat',
         details: process.env.NODE_ENV === 'development' ? { agentId, userId } : undefined,
       },

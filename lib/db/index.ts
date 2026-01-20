@@ -43,4 +43,3 @@ export const db = drizzle(sql, { schema });
 export { sql };
 
 export * from './schema';
-

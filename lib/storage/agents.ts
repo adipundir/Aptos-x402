@@ -7,7 +7,8 @@
 import { db, agents, sql as rawSql, type Agent, type NewAgent } from '@/lib/db';
 import { eq, and, or, desc, sql } from 'drizzle-orm';
 import { createAgentWallet, getAgentWalletPublic, deleteAgentWallet } from './agent-wallets';
-import { IdentityRegistry, createAgentCard } from '@/lib/arc8004';
+import { IdentityRegistry } from '@/lib/arc8004/identity/registry';
+import { createAgentCard } from '@/lib/arc8004/identity/agent-card';
 import type { AgentIdentity } from '@/lib/arc8004/types';
 
 // Re-export types for compatibility
@@ -41,7 +42,7 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
       .where(eq(agents.visibility, 'public'))
       .orderBy(desc(agents.createdAt));
   }
-  
+
   if (scope === 'mine' && userId) {
     // Return only user's agents
     return await db
@@ -50,7 +51,7 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
       .where(eq(agents.userId, userId))
       .orderBy(desc(agents.createdAt));
   }
-  
+
   if (userId) {
     // Return user's agents + public agents
     return await db
@@ -64,7 +65,7 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
       )
       .orderBy(desc(agents.createdAt));
   }
-  
+
   // No userId: return all public agents only
   return await db
     .select()
@@ -78,7 +79,7 @@ export async function getAllAgents(scope?: 'mine' | 'public', userId?: string): 
  */
 export async function getAgentsWithWallets(scope?: 'mine' | 'public', userId?: string): Promise<AgentWithWallet[]> {
   const agentList = await getAllAgents(scope, userId);
-  
+
   // Fetch wallet + identity for each agent
   const agentsWithWallets = await Promise.all(
     agentList.map(async (agent) => {
@@ -97,7 +98,7 @@ export async function getAgentsWithWallets(scope?: 'mine' | 'public', userId?: s
       };
     })
   );
-  
+
   return agentsWithWallets;
 }
 
@@ -109,23 +110,23 @@ export async function getAgentsWithWallets(scope?: 'mine' | 'public', userId?: s
  */
 export async function getAgentById(id: string, userId?: string): Promise<Agent | null> {
   const result = await db.select().from(agents).where(eq(agents.id, id)).limit(1);
-  
+
   if (result.length === 0) {
     return null;
   }
-  
+
   const agent = result[0];
-  
+
   // Owner always has access
   if (userId && agent.userId === userId) {
     return agent;
   }
-  
+
   // Public agents are accessible to everyone
   if (agent.visibility === 'public') {
     return agent;
   }
-  
+
   // Private agent, not owner: no access
   return null;
 }
@@ -135,11 +136,11 @@ export async function getAgentById(id: string, userId?: string): Promise<Agent |
  */
 export async function getAgentByIdWithWallet(id: string, userId?: string): Promise<AgentWithWallet | null> {
   const agent = await getAgentById(id, userId);
-  
+
   if (!agent) return null;
-  
+
   const wallet = await getAgentWalletPublic(agent.id);
-  
+
   // Also fetch identity if available
   let identity: AgentIdentity | null = null;
   try {
@@ -148,7 +149,7 @@ export async function getAgentByIdWithWallet(id: string, userId?: string): Promi
   } catch (error) {
     // Silently fail if identity lookup fails
   }
-  
+
   return {
     ...agent,
     wallet,
@@ -164,13 +165,13 @@ export async function createAgent(
 ): Promise<AgentWithWallet> {
   // Ensure apiIds is properly formatted as an array
   const apiIds: string[] = Array.isArray(agentData.apiIds) ? agentData.apiIds : [];
-  
+
   const agentId = generateId();
-  
+
   // Create wallet for the agent FIRST (before inserting agent)
   // This is needed because the database may still have wallet_address as a required column
   const wallet = await createAgentWallet(agentId);
-  
+
   const newAgent: NewAgent = {
     ...agentData,
     id: agentId,
@@ -225,13 +226,13 @@ export async function createAgent(
       throw rawError;
     }
   }
-  
+
   console.log(`[Agent] Created agent ${created.id} with wallet ${wallet.address}`);
-  
+
   // Auto-register ARC-8004 identity if enabled
   let identity: AgentIdentity | null = null;
   const arc8004Enabled = process.env.ARC8004_AUTO_REGISTER !== 'false';
-  
+
   if (arc8004Enabled && wallet) {
     try {
       const registry = new IdentityRegistry();
@@ -244,12 +245,12 @@ export async function createAgent(
         protocols: ['x402', 'http'],
         supportedNetworks: ['aptos-testnet'],
       });
-      
+
       const result = await registry.registerIdentity({
         agentId: created.id,
         agentCard,
       });
-      
+
       identity = result.identity;
       console.log(`[Agent] Registered ARC-8004 identity for agent ${created.id}`);
     } catch (error) {
@@ -257,7 +258,7 @@ export async function createAgent(
       console.warn(`[Agent] Failed to register ARC-8004 identity for agent ${created.id}:`, error);
     }
   }
-  
+
   return {
     ...created,
     wallet,
@@ -296,7 +297,7 @@ export async function updateAgent(
  */
 export async function deleteAgent(id: string, userId?: string): Promise<boolean> {
   let result;
-  
+
   if (userId) {
     result = await db
       .delete(agents)
@@ -305,11 +306,11 @@ export async function deleteAgent(id: string, userId?: string): Promise<boolean>
   } else {
     result = await db.delete(agents).where(eq(agents.id, id)).returning();
   }
-  
+
   if (result.length > 0) {
     // Also delete the agent's wallet
     await deleteAgentWallet(id);
-    
+
     // Also delete the agent's ARC-8004 identity
     try {
       const registry = new IdentityRegistry();
@@ -318,10 +319,10 @@ export async function deleteAgent(id: string, userId?: string): Promise<boolean>
       // Silently fail if identity deletion fails
       console.warn(`[Agent] Failed to delete ARC-8004 identity for agent ${id}:`, error);
     }
-    
+
     return true;
   }
-  
+
   return false;
 }
 
