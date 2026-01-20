@@ -30,13 +30,10 @@ export {
   createInMemoryStorage,
 } from './memory';
 
-// Export PostgreSQL implementations (lazy-loaded)
-export {
-  PostgresIdentityStorage,
-  PostgresReputationStorage,
-  PostgresValidationStorage,
-  createPostgresStorage,
-} from './postgres';
+// PostgreSQL implementations are only available in server-side code
+// They require @/lib/db which is project-specific and not bundled in npm
+// For npm consumers: use createInMemoryStorage() or provide custom storage
+// For server-side usage: import directly from your project's lib/arc8004/storage/postgres
 
 // ============================================
 // Storage Factory
@@ -81,11 +78,14 @@ export async function createStorage(config?: Partial<StorageConfig>): Promise<AR
       return createInMemoryStorage();
 
     case 'database': {
-      // Lazy import to avoid crash when DATABASE_URL is not set
-      const { createPostgresStorage } = await import('./postgres');
-      return createPostgresStorage({
-        skipAgentValidation: config?.skipAgentValidation,
-      });
+      // Database storage is not available in the npm package
+      // It requires @/lib/db which is project-specific
+      // For server-side usage, provide custom storage providers that wrap your database
+      throw new Error(
+        'Database storage is not available in the npm package. ' +
+        'Use "memory" for testing, or provide "custom" storage with your own database providers. ' +
+        'See: https://github.com/adipundir/aptos-x402#custom-storage-providers'
+      );
     }
 
     case 'custom': {

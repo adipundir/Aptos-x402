@@ -8,7 +8,10 @@
     "sourceMap": true,
     "module": "ES2022",
     "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -22,7 +25,9 @@
     "emitDeclarationOnly": false,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [
@@ -51,6 +56,10 @@
     "lib/storage/**",
     "lib/services/**",
     "lib/agent/**",
-    "lib/encryption.ts"
+    "lib/encryption.ts",
+    "lib/arc8004/storage/postgres.ts",
+    "lib/arc8004/identity/registry.ts",
+    "lib/arc8004/reputation/registry.ts",
+    "lib/arc8004/validation/registry.ts"
   ]
 }

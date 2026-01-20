@@ -110,16 +110,15 @@ export type { FeePayerTransactionResult } from "./aptos-utils";
 // ARC-8004: AGENT TRUST LAYER
 // ============================================
 
+// Version and utilities only - registries not available in npm package
+// Use createARC8004Client from 'aptos-x402/arc8004' for SDK usage
 export {
   ARC8004_VERSION,
   ARC8004_PROTOCOL,
-  IdentityRegistry,
   createAgentCard,
   validateAgentCard,
-  ReputationRegistry,
   calculateTrustLevel,
   getTrustLevelLabel,
-  ValidationRegistry,
   TrustLevel,
 } from "./arc8004";
 

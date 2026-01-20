@@ -38,22 +38,20 @@
 // Types
 export * from './types';
 
-// Identity Registry (legacy, uses database directly)
-export { IdentityRegistry } from './identity/registry';
+// Agent Card utilities (no database dependency)
 export { createAgentCard, validateAgentCard } from './identity/agent-card';
 
-// Reputation Registry (legacy, uses database directly)
-export { ReputationRegistry } from './reputation/registry';
+// Scoring utilities (no database dependency)
 export { calculateTrustLevel, getTrustLevelLabel } from './reputation/scoring';
 
-// Validation Registry (legacy, uses database directly)
-export { ValidationRegistry } from './validation/registry';
+// Legacy Registries (IdentityRegistry, ReputationRegistry, ValidationRegistry) are NOT exported
+// They use @/lib/db which is project-specific and not bundled in npm
+// For npm consumers: use the SDK client (createARC8004Client) with memory or custom storage
 
 // Storage Providers (v2.0)
 export {
   createStorage,
   createInMemoryStorage,
-  createPostgresStorage,
 } from './storage';
 
 export type {
